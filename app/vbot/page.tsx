@@ -5,6 +5,7 @@ import type React from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Send, Loader2, Bot, UserIcon, Plus, MessageSquare, ChevronLeft, Trash2, Sparkles, Mic } from "lucide-react"
 import { useState, useRef, useEffect, useCallback } from "react"
+import { useSearchParams } from "next/navigation"
 import ReactMarkdown from "react-markdown"
 import { ButtonGlow } from "@/components/ui/button-glow"
 import { BottomNav } from "@/components/bottom-nav"
@@ -33,6 +34,10 @@ const DEFAULT_VOICE_PREFS: VoicePreferences = {
 }
 
 export default function VBotPage() {
+  const searchParams = useSearchParams()
+  const initialPrompt = searchParams.get("prompt")
+  const hasAutoSentRef = useRef(false)
+  
   const [input, setInput] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -296,6 +301,14 @@ export default function VBotPage() {
       abortControllerRef.current = null
     }
   }, [messages, isLoading, conversationId])
+
+  // Auto-send prompt from URL (e.g., from exercise help links)
+  useEffect(() => {
+    if (initialPrompt && !hasAutoSentRef.current && !isLoading) {
+      hasAutoSentRef.current = true
+      sendMessage(decodeURIComponent(initialPrompt))
+    }
+  }, [initialPrompt, isLoading, sendMessage])
 
   useEffect(() => {
     if (error) {

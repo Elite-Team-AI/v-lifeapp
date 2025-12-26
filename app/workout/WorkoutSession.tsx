@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { motion } from "framer-motion"
 import { ButtonGlow } from "@/components/ui/button-glow"
 import { Card, CardContent } from "@/components/ui/card"
@@ -9,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { CelebrationModal } from "@/components/confetti-celebration"
 import type { ActiveWorkoutPayload } from "@/lib/actions/workouts"
-import { ArrowLeft, CheckCircle, ListOrdered, Repeat, Sparkles, Clock, Target, Trophy } from "lucide-react"
+import { ArrowLeft, CheckCircle, ListOrdered, Repeat, Sparkles, Clock, Target, Trophy, HelpCircle } from "lucide-react"
 
 interface WorkoutSessionProps {
   initialWorkout: ActiveWorkoutPayload | null
@@ -27,7 +28,7 @@ export default function WorkoutSession({ initialWorkout }: WorkoutSessionProps) 
 
   if (!workout) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-20 flex flex-col items-center justify-center gap-4 px-4">
+      <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-nav-safe flex flex-col items-center justify-center gap-4 px-4">
         <div className="text-center">
           <p className="text-white/70 text-lg">No workout scheduled for today.</p>
           <p className="text-white/50 text-sm mt-2">Visit the Fitness tab to generate your AI workout.</p>
@@ -119,7 +120,7 @@ export default function WorkoutSession({ initialWorkout }: WorkoutSessionProps) 
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-nav-safe">
       <div className="container max-w-md px-4 py-6 space-y-6">
         <div className="flex items-center mb-4">
           <button onClick={() => router.back()} className="mr-4 rounded-full p-2 hover:bg-white/10">
@@ -188,7 +189,16 @@ export default function WorkoutSession({ initialWorkout }: WorkoutSessionProps) 
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-accent capitalize">{exercise.category || "Strength"}</p>
-                    <h3 className="text-white font-bold">{exercise.name}</h3>
+                    <h3 className="text-white font-bold flex items-center gap-2">
+                      {exercise.name}
+                      <Link 
+                        href={`/vbot?prompt=${encodeURIComponent(`How do I properly do a ${exercise.name}? Explain the correct form, key cues to focus on, and common mistakes to avoid.`)}`}
+                        className="text-white/40 hover:text-accent transition-colors"
+                        title={`How do I do a ${exercise.name}?`}
+                      >
+                        <HelpCircle className="h-4 w-4" />
+                      </Link>
+                    </h3>
                   </div>
                   <span className="text-sm text-white/70">
                     {exercise.completedSets}/{exercise.sets} sets
