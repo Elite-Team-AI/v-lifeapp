@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, lazy, Suspense, useMemo } from "react"
+import { useState, useEffect, lazy, Suspense, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import {
   Heart,
@@ -26,6 +26,7 @@ import {
   UserCheck,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
+import { PostImage } from "@/components/post-image"
 import { BottomNav } from "@/components/bottom-nav"
 import { ButtonGlow } from "@/components/ui/button-glow"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -479,7 +480,7 @@ export default function Community() {
 
                     {post.image && (
                       <div className="mt-2">
-                        <img src={post.image || "/placeholder.svg"} alt="Post content" className="w-full" />
+                        <PostImage src={post.image!} alt="Post content" className="w-full" />
                       </div>
                     )}
 
