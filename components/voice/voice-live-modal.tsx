@@ -1,11 +1,55 @@
 "use client"
 
-import { useEffect, useCallback, useRef } from "react"
+import { useEffect, useCallback, useRef, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, Mic, Loader2, Volume2, Wifi, WifiOff, RefreshCw } from "lucide-react"
 import { useGeminiLive, type LiveVoiceState } from "@/hooks/use-gemini-live"
 import type { GeminiVoiceName } from "@/lib/types"
 import { cn } from "@/lib/utils"
+
+/**
+ * Cleans up AI response text by removing markdown formatting and internal reasoning
+ */
+function cleanTranscription(text: string): string {
+  if (!text) return ""
+  
+  let cleaned = text
+  
+  // Remove markdown bold/italic formatting (e.g., **text** or *text*)
+  cleaned = cleaned.replace(/\*\*([^*]+)\*\*/g, "$1")
+  cleaned = cleaned.replace(/\*([^*]+)\*/g, "$1")
+  
+  // Remove markdown headers (e.g., ## Header)
+  cleaned = cleaned.replace(/^#{1,6}\s+/gm, "")
+  
+  // Remove internal reasoning patterns (e.g., "I realize I can't...", "I need to...", "I'm thinking about...")
+  // These are meta-commentary that shouldn't be spoken aloud
+  const internalPatterns = [
+    /I realize I (?:can't|cannot|need to)[^.!?]*[.!?]/gi,
+    /I need to (?:ask|check|think|consider)[^.!?]*[.!?]/gi,
+    /I'm thinking about[^.!?]*[.!?]/gi,
+    /I'll frame my[^.!?]*[.!?]/gi,
+    /I've noted[^.!?]*[.!?]/gi,
+    /This information[^.!?]*key to[^.!?]*[.!?]/gi,
+    /Recognizing their[^.!?]*[.!?]/gi,
+  ]
+  
+  for (const pattern of internalPatterns) {
+    cleaned = cleaned.replace(pattern, "")
+  }
+  
+  // Remove section labels that look like internal thinking (e.g., "Clarifying Fitness Status")
+  // These are typically short phrases followed by explanatory text
+  cleaned = cleaned.replace(/^[A-Z][a-zA-Z\s]+(?=\s+I\s)/gm, "")
+  
+  // Clean up extra whitespace and newlines
+  cleaned = cleaned.replace(/\s+/g, " ").trim()
+  
+  // Remove leading/trailing punctuation artifacts
+  cleaned = cleaned.replace(/^[,.\s]+|[,.\s]+$/g, "").trim()
+  
+  return cleaned
+}
 
 interface VoiceLiveModalProps {
   isOpen: boolean
@@ -30,10 +74,18 @@ export function VoiceLiveModal({
     startListening,
   } = useGeminiLive({
     voice,
-    systemInstruction: `You are VBot, a friendly AI fitness coach for V-Life. 
-Keep responses very brief - 1-2 sentences maximum. 
-Be conversational, encouraging, and supportive.
-Speak naturally as if having a real conversation.`,
+    systemInstruction: `You are VBot, a friendly AI fitness coach for V-Life.
+
+CRITICAL RULES FOR VOICE RESPONSES:
+- Keep responses very brief: 1-2 sentences maximum
+- Speak directly to the user - do NOT include any internal thoughts, reasoning, or meta-commentary
+- Do NOT use markdown formatting (no asterisks, headers, or bullet points)
+- Do NOT narrate what you're doing (e.g., "I'm thinking about..." or "Let me consider...")
+- Just give a natural, conversational response as if talking face-to-face
+- Be warm, encouraging, and supportive in tone
+
+Example of what NOT to do: "**Acknowledging your question** I realize I need to ask for clarification..."
+Example of what TO do: "That's a great question! How's your workout routine been going lately?"`,
   })
 
   // Connect when modal opens (only once per open)
@@ -124,6 +176,9 @@ Speak naturally as if having a real conversation.`,
 
   const config = getStateConfig(state)
   const Icon = config.icon
+  
+  // Clean the response text for display
+  const cleanedResponse = useMemo(() => cleanTranscription(response), [response])
 
   return (
     <AnimatePresence>
@@ -249,7 +304,7 @@ Speak naturally as if having a real conversation.`,
 
               {/* AI response */}
               <AnimatePresence>
-                {response && (
+                {cleanedResponse && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -259,7 +314,7 @@ Speak naturally as if having a real conversation.`,
                       VBot
                     </p>
                     <div className="rounded-xl border border-accent/20 bg-accent/5 p-3 backdrop-blur-sm">
-                      <p className="text-sm leading-relaxed text-white">{response}</p>
+                      <p className="text-sm leading-relaxed text-white">{cleanedResponse}</p>
                     </div>
                   </motion.div>
                 )}

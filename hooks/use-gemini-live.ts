@@ -63,7 +63,7 @@ export function useGeminiLive({
           apiKey,
           voice,
           systemInstruction: systemInstruction || 
-            "You are VBot, a helpful AI fitness coach for V-Life. Keep responses brief and conversational - 1-2 sentences maximum. Be encouraging, supportive, and reference the user's fitness data when relevant.",
+            "You are VBot, a helpful AI fitness coach for V-Life. Keep responses brief and conversational - 1-2 sentences maximum. Be encouraging and supportive. IMPORTANT: Speak directly to the user without any internal reasoning, meta-commentary, or markdown formatting. Just give natural conversational responses.",
         },
         {
           onAudioData: (audioData) => {
