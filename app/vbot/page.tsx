@@ -4,7 +4,7 @@ import type React from "react"
 
 import { motion, AnimatePresence } from "framer-motion"
 import { Send, Loader2, Bot, UserIcon, Plus, MessageSquare, ChevronLeft, Trash2, Sparkles, Mic } from "lucide-react"
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import ReactMarkdown from "react-markdown"
 import { ButtonGlow } from "@/components/ui/button-glow"
@@ -33,7 +33,7 @@ const DEFAULT_VOICE_PREFS: VoicePreferences = {
   autoPlayResponses: false,
 }
 
-export default function VBotPage() {
+function VBotPageContent() {
   const searchParams = useSearchParams()
   const initialPrompt = searchParams.get("prompt")
   const hasAutoSentRef = useRef(false)
@@ -746,5 +746,17 @@ export default function VBotPage() {
 
       <BottomNav />
     </div>
+  )
+}
+
+export default function VBotPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-black via-zinc-900 to-black">
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
+      </div>
+    }>
+      <VBotPageContent />
+    </Suspense>
   )
 }
