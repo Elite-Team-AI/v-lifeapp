@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **V-Life** is a comprehensive fitness and wellness app built with Next.js 16 (React Server Components), Supabase, and OpenAI. It helps users track workouts, nutrition, habits, progress, and community engagement with AI-powered coaching and insights.
 
-## Quick Start Commands!
+## Quick Start Commands!!
 
 ```bash
 # Install dependencies
