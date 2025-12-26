@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
     const totalTime = Date.now() - startTime
     console.log(`[VBot TTS] Complete: ${totalTime}ms total (auth: ${authTime}ms, gemini: ${geminiTime}ms), output: ${outputData.length} bytes`)
 
-    return new NextResponse(outputData, {
+    return new NextResponse(new Uint8Array(outputData), {
       status: 200,
       headers: {
         "Content-Type": outputMimeType,
