@@ -54,6 +54,7 @@ function VBotPageContent() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const conversationIdRef = useRef<string | null>(null)
+  const shouldScrollRef = useRef(false)
 
   // Load conversations and voice preferences on mount
   useEffect(() => {
@@ -306,6 +307,7 @@ function VBotPageContent() {
   useEffect(() => {
     if (initialPrompt && !hasAutoSentRef.current && !isLoading) {
       hasAutoSentRef.current = true
+      shouldScrollRef.current = true // Scroll to show the auto-sent message
       sendMessage(decodeURIComponent(initialPrompt))
     }
   }, [initialPrompt, isLoading, sendMessage])
@@ -320,14 +322,20 @@ function VBotPageContent() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
+  // Track if we should scroll (only when user sends a message, not during bot streaming)
   useEffect(() => {
-    scrollToBottom()
+    // Only scroll if explicitly requested (when user sends message)
+    if (shouldScrollRef.current) {
+      scrollToBottom()
+      shouldScrollRef.current = false
+    }
   }, [messages])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim() || isLoading) return
     setLastMessageWasVoice(false)
+    shouldScrollRef.current = true // Scroll to show user's message
     sendMessage(input)
   }
 
@@ -335,6 +343,7 @@ function VBotPageContent() {
   const handleVoiceTranscript = useCallback((transcript: string) => {
     if (transcript.trim()) {
       setLastMessageWasVoice(true)
+      shouldScrollRef.current = true // Scroll to show user's message
       sendMessage(transcript)
     }
   }, [sendMessage])
