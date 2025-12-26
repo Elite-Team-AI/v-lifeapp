@@ -29,11 +29,12 @@ const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>
 
 function validateEnv(): Env {
-  // Check if we're in a build context where env vars might not be available
-  // Allow build to proceed with placeholder values if env vars are missing
+  // Check if we're in a build context where env vars might not be available or invalid
+  // Allow build to proceed with placeholder values if env vars are missing or invalid
   const missingRequiredVars = !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   const isBuildContext = process.env.NEXT_PHASE === "phase-production-build" || 
                          process.env.NEXT_PHASE === "phase-development-build" ||
+                         process.env.VERCEL === "1" ||
                          (missingRequiredVars && process.env.NODE_ENV !== "development")
 
   const parsed = envSchema.safeParse({
@@ -47,10 +48,10 @@ function validateEnv(): Env {
   })
 
   if (!parsed.success) {
-    // During build with missing vars, use placeholders to allow build to complete
+    // During build (Vercel or Next.js build phase), use placeholders to allow build to complete
     // Runtime will validate properly when the app actually runs
-    if (isBuildContext && missingRequiredVars) {
-      console.warn("⚠️  Environment variables missing during build - using placeholders. Ensure env vars are set in Vercel.")
+    if (isBuildContext) {
+      console.warn("⚠️  Environment variables invalid or missing during build - using placeholders. Ensure env vars are properly set in Vercel.")
       return {
         NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co",
         NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-key",
