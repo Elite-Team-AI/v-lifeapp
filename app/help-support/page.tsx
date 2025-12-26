@@ -138,7 +138,7 @@ export default function HelpSupport() {
     .filter((category) => category.questions.length > 0)
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-nav-safe">
       <div className="container max-w-md px-4 py-6">
         {/* Header */}
         <motion.div

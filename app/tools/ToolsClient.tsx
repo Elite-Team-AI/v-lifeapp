@@ -137,7 +137,7 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-nav-safe">
       <div className="container max-w-md px-4 py-6">
         <motion.div className="mb-6" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
           <h1 className="text-2xl font-bold text-white">Tools</h1>

@@ -195,6 +195,25 @@
 
 /* Performance optimizations */
 @layer utilities {
+  /* Safe area padding for mobile devices with notches/home indicators */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  
+  /* Combined padding with safe area for content above fixed bottom nav */
+  .pb-nav-safe {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px) + 1rem);
+  }
+  
+  /* Padding for bottom sheet modals that appear above bottom nav */
+  .pb-modal-safe {
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+  }
+  
   /* Use GPU-accelerated transforms for animations */
   .animate-in {
     will-change: transform, opacity;

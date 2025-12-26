@@ -3,7 +3,7 @@ import { MealsListSkeleton, Skeleton } from "@/components/ui/skeleton-loaders"
 
 export default function NutritionLoading() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-nav-safe">
       <div className="container max-w-md px-4 py-6">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">

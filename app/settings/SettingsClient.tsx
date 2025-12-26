@@ -457,7 +457,7 @@ export default function SettingsClient() {
   // Show loading state while app data is being fetched
   if (appDataLoading && !appData) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-20 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-nav-safe flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-accent border-t-transparent" />
           <p className="text-white/70">Loading settings...</p>
@@ -467,7 +467,7 @@ export default function SettingsClient() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-nav-safe">
       <div className="container max-w-md px-4 py-6">
         {/* Header */}
         <div className="mb-6 flex items-center">

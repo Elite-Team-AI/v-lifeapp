@@ -5,7 +5,7 @@ import { SettingsSkeleton } from "@/components/ui/skeleton-loaders"
 
 export default function SettingsLoading() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-nav-safe">
       <div className="container max-w-md px-4 py-6">
         <div className="mb-6 flex items-center">
           <ButtonGlow variant="outline-glow" size="icon" className="mr-3 h-8 w-8" disabled>

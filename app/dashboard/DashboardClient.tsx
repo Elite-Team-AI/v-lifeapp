@@ -125,7 +125,7 @@ function DashboardClient() {
   // Show loading state while app data is being fetched
   if (appDataLoading && !appData) {
     return (
-      <div className="min-h-screen pb-24 relative flex items-center justify-center">
+      <div className="min-h-screen pb-nav-safe relative flex items-center justify-center">
         <AmbientBackground />
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-accent border-t-transparent" />
@@ -136,7 +136,7 @@ function DashboardClient() {
   }
 
   return (
-    <div className="min-h-screen pb-24 relative">
+    <div className="min-h-screen pb-nav-safe relative">
       <AmbientBackground />
       
       <motion.div 

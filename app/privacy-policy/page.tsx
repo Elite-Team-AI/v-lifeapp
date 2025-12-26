@@ -10,7 +10,7 @@ export default function PrivacyPolicy() {
   const router = useRouter()
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-nav-safe">
       <div className="container max-w-3xl px-4 py-6">
         {/* Header */}
         <motion.div
