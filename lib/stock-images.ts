@@ -59,9 +59,8 @@ export const SUPPLEMENT_IMAGES = {
 export const DEFAULT_PLACEHOLDER =
   "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&h=300&fit=crop&auto=format"
 
-// Default user avatar
-export const DEFAULT_AVATAR =
-  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&auto=format&crop=face"
+// Default user avatar - use vLife logo as fallback
+export const DEFAULT_AVATAR = "/logo.png"
 
 /**
  * Get a random avatar from the collection

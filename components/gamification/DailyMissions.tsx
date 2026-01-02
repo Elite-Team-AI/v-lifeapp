@@ -9,10 +9,12 @@ import {
   Zap,
   Clock,
   ChevronRight,
-  Trophy
+  Trophy,
+  Info
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { ButtonGlow } from "@/components/ui/button-glow"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { XP_REWARDS } from "@/lib/gamification"
@@ -52,6 +54,7 @@ export function DailyMissions({ missions: initialMissions, onMissionComplete, cl
   const [missions, setMissions] = useState(initialMissions)
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [celebratingId, setCelebratingId] = useState<string | null>(null)
+  const [showInfoModal, setShowInfoModal] = useState(false)
 
   const activeMissions = missions.filter(m => m.status === 'suggested' || m.status === 'accepted')
   const completedMissions = missions.filter(m => m.status === 'completed')
@@ -180,6 +183,13 @@ export function DailyMissions({ missions: initialMissions, onMissionComplete, cl
               <Trophy className="h-5 w-5 text-accent" />
             </motion.div>
             <h2 className="text-lg font-bold text-foreground">Daily Missions</h2>
+            <button
+              onClick={() => setShowInfoModal(true)}
+              className="p-1 rounded-full hover:bg-accent/10 transition-colors"
+              aria-label="What are Daily Missions?"
+            >
+              <Info className="h-4 w-4 text-muted-foreground hover:text-accent" />
+            </button>
           </div>
           
           {/* XP Badge */}
@@ -385,6 +395,54 @@ export function DailyMissions({ missions: initialMissions, onMissionComplete, cl
           </motion.div>
         )}
       </CardContent>
+      
+      {/* Info Modal */}
+      <Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
+        <DialogContent className="max-w-md bg-black/95 border-accent/30">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-accent" />
+              What are Daily Missions?
+            </DialogTitle>
+            <DialogDescription className="text-white/70">
+              Your personalized daily wellness challenges
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 text-sm">
+            <div className="bg-white/5 rounded-lg p-3">
+              <p className="font-semibold text-accent mb-1">🎯 Personalized Goals</p>
+              <p className="text-white/70">
+                Daily Missions are AI-generated tasks tailored to your fitness goals, schedule, and preferences.
+              </p>
+            </div>
+            <div className="bg-white/5 rounded-lg p-3">
+              <p className="font-semibold text-accent mb-1">⚡ Earn XP</p>
+              <p className="text-white/70">
+                Complete missions to earn XP (experience points). The more you complete, the more you level up!
+              </p>
+            </div>
+            <div className="bg-white/5 rounded-lg p-3">
+              <p className="font-semibold text-accent mb-1">🔥 Build Streaks</p>
+              <p className="text-white/70">
+                Consistent mission completion builds your streak and unlocks bonus XP rewards.
+              </p>
+            </div>
+            <div className="bg-white/5 rounded-lg p-3">
+              <p className="font-semibold text-accent mb-1">🏆 All Complete Bonus</p>
+              <p className="text-white/70">
+                Complete all daily missions for a special bonus of +{XP_REWARDS.all_missions_complete} XP!
+              </p>
+            </div>
+          </div>
+          <ButtonGlow 
+            variant="accent-glow" 
+            className="w-full mt-2"
+            onClick={() => setShowInfoModal(false)}
+          >
+            Got it!
+          </ButtonGlow>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

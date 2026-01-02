@@ -28,6 +28,11 @@ const defaultData: OnboardingData = {
   // Goals data
   primaryGoal: "",
 
+  // Training preferences
+  trainingStyle: "",
+  availableTimeMinutes: 45,
+  trainingDaysPerWeek: 4,
+
   // Preferences data
   allergies: [],
   customRestrictions: [],

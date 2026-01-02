@@ -1,18 +1,20 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Settings, Target, Dumbbell, Calendar, ArrowRight, Sparkles, Zap, Clock } from "lucide-react"
+import { Settings, Target, Dumbbell, Calendar, ArrowRight, Sparkles, Zap, Clock, Info } from "lucide-react"
 import { BottomNav } from "@/components/bottom-nav"
 import { Card, CardContent } from "@/components/ui/card"
 import { ButtonGlow } from "@/components/ui/button-glow"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { useAppData } from "@/lib/contexts/app-data-context"
 import { useFitnessData } from "@/hooks/use-fitness-data"
 import { Skeleton } from "@/components/ui/skeleton-loaders"
 
 export function FitnessClient() {
   const router = useRouter()
+  const [showRestDayInfo, setShowRestDayInfo] = useState(false)
   
   // Get user name from cached app data (instant)
   const { appData } = useAppData()
@@ -56,6 +58,7 @@ export function FitnessClient() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
+          className="space-y-2"
         >
           <ButtonGlow
             variant="accent-glow"
@@ -64,6 +67,9 @@ export function FitnessClient() {
           >
             🏋️ Access AI Fitness Coach
           </ButtonGlow>
+          <p className="text-xs text-white/50 text-center px-4">
+            Camera-based movement tracking for at-home workouts. Beginner-friendly, mobility-friendly, and great for all ages.
+          </p>
         </motion.div>
 
         {/* Today's Programming Context */}
@@ -169,10 +175,19 @@ export function FitnessClient() {
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <Zap className="h-5 w-5 text-accent" />
-              Today&apos;s Workout
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Zap className="h-5 w-5 text-accent" />
+                Today&apos;s Workout
+              </h2>
+              <button
+                onClick={() => setShowRestDayInfo(true)}
+                className="p-1 rounded-full hover:bg-accent/10 transition-colors"
+                aria-label="About rest days and workout splits"
+              >
+                <Info className="h-4 w-4 text-muted-foreground hover:text-accent" />
+              </button>
+            </div>
             <ButtonGlow variant="outline-glow" size="sm" onClick={() => router.push("/workout")}>
               View Plan
             </ButtonGlow>
@@ -329,6 +344,58 @@ export function FitnessClient() {
       </div>
 
       <BottomNav />
+      
+      {/* Rest Day & Workout Split Info Modal */}
+      <Dialog open={showRestDayInfo} onOpenChange={setShowRestDayInfo}>
+        <DialogContent className="max-w-md bg-black/95 border-accent/30">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-accent" />
+              Workout Splits & Rest Days
+            </DialogTitle>
+            <DialogDescription className="text-white/70">
+              Understanding your weekly workout structure
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 text-sm">
+            <div className="bg-white/5 rounded-lg p-3">
+              <p className="font-semibold text-accent mb-1">📅 Weekly Split</p>
+              <p className="text-white/70">
+                Your workouts are designed to target different muscle groups each day, 
+                allowing proper recovery while maximizing progress.
+              </p>
+            </div>
+            <div className="bg-white/5 rounded-lg p-3">
+              <p className="font-semibold text-accent mb-1">🧘 Rest Days</p>
+              <p className="text-white/70">
+                Rest days are essential for muscle recovery and growth. Don&apos;t skip them – 
+                your body builds muscle during rest, not during workouts.
+              </p>
+            </div>
+            <div className="bg-white/5 rounded-lg p-3">
+              <p className="font-semibold text-accent mb-1">🚶 Active Recovery</p>
+              <p className="text-white/70">
+                On rest days, light activity like walking, stretching, or yoga helps 
+                maintain blood flow and reduce soreness without stressing your muscles.
+              </p>
+            </div>
+            <div className="bg-white/5 rounded-lg p-3">
+              <p className="font-semibold text-accent mb-1">⚡ What to Expect</p>
+              <p className="text-white/70">
+                A typical week includes training days and rest/recovery days. 
+                The AI adjusts your split based on your goals and availability.
+              </p>
+            </div>
+          </div>
+          <ButtonGlow 
+            variant="accent-glow" 
+            className="w-full mt-2"
+            onClick={() => setShowRestDayInfo(false)}
+          >
+            Got it!
+          </ButtonGlow>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

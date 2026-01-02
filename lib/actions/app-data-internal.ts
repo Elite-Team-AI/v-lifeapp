@@ -586,21 +586,50 @@ export async function shouldPromptWeeklyReflectionInternal(
   supabase: SupabaseClient
 ): Promise<boolean> {
   const weekStart = getWeekStartDate()
+  const now = new Date()
+  const dayOfWeek = now.getDay() // 0 = Sunday, 1 = Monday
+
+  // Only prompt on Sunday (0) or Monday (1) - not every day
+  if (dayOfWeek !== 0 && dayOfWeek !== 1) {
+    return false
+  }
 
   try {
-    const { data, error } = await supabase
+    // Check if there's already a reflection for this week
+    const { data: reflection, error: reflectionError } = await supabase
       .from("weekly_reflections")
       .select("id")
       .eq("user_id", userId)
       .eq("week_start_date", weekStart)
       .single()
 
-    if (error && error.code !== "PGRST116") {
-      console.error("[shouldPromptWeeklyReflectionInternal] Error:", error)
+    if (reflectionError && reflectionError.code !== "PGRST116") {
+      console.error("[shouldPromptWeeklyReflectionInternal] Error:", reflectionError)
       return false
     }
 
-    return !data
+    // If reflection already exists, don't prompt
+    if (reflection) {
+      return false
+    }
+
+    // Check if user dismissed the prompt this week (stored in profile)
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("weekly_reflection_dismissed_at")
+      .eq("id", userId)
+      .single()
+
+    if (profile?.weekly_reflection_dismissed_at) {
+      const dismissedAt = new Date(profile.weekly_reflection_dismissed_at)
+      const weekStartDate = new Date(weekStart)
+      // If dismissed after this week started, don't prompt again this week
+      if (dismissedAt >= weekStartDate) {
+        return false
+      }
+    }
+
+    return true
   } catch (error) {
     console.error("[shouldPromptWeeklyReflectionInternal] Exception:", error)
     return false

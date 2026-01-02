@@ -433,58 +433,7 @@ export function NutritionClient() {
           )}
         </motion.div>
 
-        <motion.div className="mb-6 animate-in fade-in slide-in-from-bottom-2 duration-200 delay-125">
-          <h2 className="mb-3 text-lg font-bold text-white">Tomorrow's Plan</h2>
-
-          {isLoading ? (
-            <MealsListSkeleton />
-          ) : (
-            <div className="space-y-3">
-              {tomorrowMeals.length === 0 ? (
-                <p className="text-sm text-white/60">Creating a fresh plan for tomorrow...</p>
-              ) : (
-                tomorrowMeals.map((meal) => (
-                  <Card
-                    key={`tomorrow-${meal.type}`}
-                    className="overflow-hidden border-white/10 bg-black/40 backdrop-blur-sm"
-                  >
-                    <CardContent className="p-0">
-                      <div className="flex">
-                        <div className="h-24 w-24 flex-shrink-0 overflow-hidden bg-white/5">
-                          <img
-                            src={meal.image || "/placeholder.svg"}
-                            alt={meal.name}
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-                        <div className="flex flex-1 flex-col justify-between p-3">
-                          <div>
-                            <span className="text-xs font-medium text-accent">{meal.type}</span>
-                            <h3 className="font-medium text-white">{meal.name}</h3>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-white/70">{meal.calories} kcal</span>
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => openSwapModal(meal)}
-                                className="flex items-center justify-center w-8 h-8 rounded-full bg-accent/20 hover:bg-accent/30 transition-all group"
-                                title="Swap this meal"
-                                type="button"
-                              >
-                                <RotateCcw className="h-4 w-4 text-accent group-hover:rotate-180 transition-transform duration-300" />
-                              </button>
-                              <ChevronRight className="h-4 w-4 text-white/40" />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          )}
-        </motion.div>
+        {/* Tomorrow's Plan section removed - simplified to single-day view */}
 
         <div className="flex gap-3 mb-6 animate-in fade-in slide-in-from-bottom-2 duration-200 delay-150">
           <ButtonGlow

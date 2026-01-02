@@ -1,11 +1,14 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
+import { ArrowLeft, X } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 export default function AICoach() {
   const srcURL = "https://kinestex.vercel.app"
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const router = useRouter()
 
   const [userData, setUserData] = useState<any>(null)
   const [readyFromKX, setReadyFromKX] = useState(false)
@@ -138,8 +141,32 @@ export default function AICoach() {
     return () => clearTimeout(t)
   }, [readyFromKX, acked, userData])
 
+  const handleExit = () => {
+    router.push("/fitness")
+  }
+
   return (
     <div className="relative w-full h-screen bg-black">
+      {/* Exit Button - Always visible overlay */}
+      <div className="fixed top-4 left-4 z-50 flex gap-2">
+        <button
+          onClick={handleExit}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/80 backdrop-blur-sm border border-white/20 text-white font-medium shadow-lg hover:bg-black/90 hover:border-white/30 transition-all"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="text-sm">Return to vLife</span>
+        </button>
+      </div>
+      
+      {/* Close button - top right */}
+      <button
+        onClick={handleExit}
+        className="fixed top-4 right-4 z-50 flex items-center justify-center w-10 h-10 rounded-full bg-black/80 backdrop-blur-sm border border-white/20 text-white shadow-lg hover:bg-red-500/80 hover:border-red-500/50 transition-all"
+        aria-label="Close AI Coach"
+      >
+        <X className="h-5 w-5" />
+      </button>
+      
       <iframe
         ref={iframeRef}
         src={srcURL}

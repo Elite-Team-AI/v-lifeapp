@@ -16,7 +16,7 @@ interface FoodLoggerInputProps {
   className?: string
 }
 
-const MEAL_TYPES = ["Breakfast", "Lunch", "Dinner", "Snack"] as const
+const MEAL_TYPES = ["Breakfast", "Snack (AM)", "Lunch", "Snack (PM)", "Dinner", "Late Snack"] as const
 type MealType = typeof MEAL_TYPES[number]
 
 export function FoodLoggerInput({ 
@@ -138,6 +138,11 @@ export function FoodLoggerInput({
         setIsTranscribing(true)
         
         try {
+          console.log("[FoodLogger] Sending audio for transcription:", {
+            type: audioBlob.type,
+            size: audioBlob.size,
+          })
+          
           const formData = new FormData()
           formData.append("audio", audioBlob, "recording.webm")
 
@@ -146,11 +151,15 @@ export function FoodLoggerInput({
             body: formData,
           })
 
+          const responseData = await response.json()
+          
           if (!response.ok) {
-            throw new Error("Transcription failed")
+            console.error("[FoodLogger] STT API error:", response.status, responseData)
+            throw new Error(responseData.error || "Transcription failed")
           }
 
-          const { transcript } = await response.json()
+          const { transcript } = responseData
+          console.log("[FoodLogger] Transcription result:", transcript)
           
           if (transcript && transcript.trim()) {
             // Parse the transcribed text
@@ -158,15 +167,25 @@ export function FoodLoggerInput({
           } else {
             toast({
               title: "No speech detected",
-              description: "Please try speaking again",
+              description: "Please speak clearly and try again",
               variant: "destructive",
             })
           }
         } catch (err) {
           console.error("[FoodLogger] Transcription error:", err)
+          const errorMessage = err instanceof Error ? err.message : "Unknown error"
+          
+          // Provide helpful error messages based on the error type
+          let description = "Please try again or type your food"
+          if (errorMessage.includes("not configured")) {
+            description = "Voice feature is not available. Please type your food instead."
+          } else if (errorMessage.includes("Unauthorized")) {
+            description = "Please log in to use voice input"
+          }
+          
           toast({
-            title: "Transcription failed",
-            description: "Please try again or type your food",
+            title: "Voice input failed",
+            description,
             variant: "destructive",
           })
         } finally {

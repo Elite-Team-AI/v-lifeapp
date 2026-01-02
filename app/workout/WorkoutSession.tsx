@@ -87,11 +87,35 @@ export default function WorkoutSession({ initialWorkout }: WorkoutSessionProps) 
       return
     }
 
-    toast({
-      title: "Set logged",
-      description: "Great work!",
+    // Update local state to reflect the logged set
+    setWorkout((prev) => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        exercises: prev.exercises.map((ex) => {
+          if (ex.workoutExerciseId === workoutExerciseId) {
+            const newCompletedSets = completedSets + 1
+            return {
+              ...ex,
+              completedSets: newCompletedSets,
+              completed: newCompletedSets >= totalSets,
+            }
+          }
+          return ex
+        }),
+      }
     })
-    router.refresh()
+
+    toast({
+      title: `Set ${completedSets + 1}/${totalSets} logged`,
+      description: result.completed ? "Exercise completed! 🎉" : "Keep it up!",
+    })
+    
+    // Clear inputs for this exercise after logging
+    setInputs((prev) => ({
+      ...prev,
+      [exerciseId]: { weight: prev[exerciseId]?.weight || "", reps: "" },
+    }))
   }
 
   const handleCompleteWorkout = async () => {

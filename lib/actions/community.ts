@@ -3,12 +3,11 @@
 import { createClient, getAuthUser, createServiceClient } from "@/lib/supabase/server"
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache"
 import type { TransformedPost, TransformedComment } from "@/lib/types"
-import { AVATAR_IMAGES } from "@/lib/stock-images"
+import { DEFAULT_AVATAR } from "@/lib/stock-images"
 
-// Helper to get a consistent avatar based on user ID
-function getUserAvatar(userId: string): string {
-  const hash = userId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0)
-  return AVATAR_IMAGES[hash % AVATAR_IMAGES.length]
+// Helper to get user's avatar - use their uploaded avatar or fallback to vLife logo
+function getUserAvatar(avatarUrl: string | null | undefined): string {
+  return avatarUrl || DEFAULT_AVATAR
 }
 
 interface PostReaction {
@@ -27,7 +26,7 @@ interface PostWithRelations {
   likes_count: number
   comments_count: number
   created_at: string
-  profiles: { id: string; name: string | null } | null
+  profiles: { id: string; name: string | null; avatar_url: string | null } | null
   post_reactions: PostReaction[]
 }
 
@@ -160,7 +159,8 @@ const getCachedPosts = unstable_cache(
         *,
         profiles:user_id (
           id,
-          name
+          name,
+          avatar_url
         ),
         post_reactions (
           id,
@@ -246,8 +246,8 @@ export async function getPosts(
         id: post.id,
         user: {
           id: post.user_id,
-          name: post.profiles?.name || "Unknown User",
-          avatar: getUserAvatar(post.user_id),
+          name: post.profiles?.name || "vLife User",
+          avatar: getUserAvatar(post.profiles?.avatar_url),
           isFollowing: followingSet.has(post.user_id),
         },
         title: post.title,
@@ -412,7 +412,8 @@ export async function getComments(postId: string): Promise<{ comments?: Transfor
       *,
       profiles:user_id (
         id,
-        name
+        name,
+        avatar_url
       )
     `)
     .eq("post_id", postId)
@@ -426,8 +427,8 @@ export async function getComments(postId: string): Promise<{ comments?: Transfor
   const transformedComments: TransformedComment[] = (comments || []).map((comment) => ({
     id: comment.id,
     user: {
-      name: comment.profiles?.name || "Unknown User",
-      avatar: getUserAvatar(comment.user_id),
+      name: comment.profiles?.name || "vLife User",
+      avatar: getUserAvatar(comment.profiles?.avatar_url),
     },
     content: comment.content,
     time: getTimeAgo(new Date(comment.created_at)),
@@ -487,6 +488,7 @@ export async function getLeaderboard(): Promise<{ leaderboard?: LeaderboardUser[
     .select(`
       id,
       name,
+      avatar_url,
       posts:posts(count),
       post_reactions:posts(post_reactions(count))
     `)
@@ -499,6 +501,7 @@ export async function getLeaderboard(): Promise<{ leaderboard?: LeaderboardUser[
   interface UserWithCounts {
     id: string
     name: string | null
+    avatar_url: string | null
     posts: { count: number }[]
     post_reactions: { post_reactions: { count: number }[] }[]
   }
@@ -506,8 +509,8 @@ export async function getLeaderboard(): Promise<{ leaderboard?: LeaderboardUser[
   // Transform and sort by engagement
   const leaderboard: LeaderboardUser[] = (users as UserWithCounts[] || [])
     .map((user) => ({
-      name: user.name || "Unknown User",
-      avatar: getUserAvatar(user.id),
+      name: user.name || "vLife User",
+      avatar: getUserAvatar(user.avatar_url),
       posts: user.posts?.[0]?.count || 0,
       likes: user.post_reactions?.reduce(
         (sum, post) => sum + (post.post_reactions?.[0]?.count || 0),

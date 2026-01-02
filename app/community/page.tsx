@@ -205,7 +205,7 @@ export default function Community() {
 
   const currentUser = {
     name: currentUserName,
-    avatar: DEFAULT_AVATAR,
+    avatar: appData?.profile?.avatar_url || DEFAULT_AVATAR,
   }
 
   const categories = [
@@ -629,8 +629,8 @@ export default function Community() {
       </Dialog>
 
       <Dialog open={showChallenges} onOpenChange={setShowChallenges}>
-        <DialogContent className="max-w-md bg-black/95 border-accent/30">
-          <DialogHeader>
+        <DialogContent className="max-w-md bg-black/95 border-accent/30 max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="text-white flex items-center">
               <Target className="mr-2 h-5 w-5 text-accent" />
               Active Challenges
@@ -644,7 +644,7 @@ export default function Community() {
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent border-t-transparent" />
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto flex-1 pr-1">
               {challenges.map((challenge) => (
                 <Card key={challenge.id} className="border-white/10 bg-black/50">
                   <CardContent className="p-4">

@@ -176,3 +176,32 @@ export async function getRecentReflections(weeks = 4) {
   }
 }
 
+/**
+ * Dismiss weekly reflection prompt for the current week
+ */
+export async function dismissWeeklyReflection() {
+  try {
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return { success: false, error: "Not authenticated" }
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ weekly_reflection_dismissed_at: new Date().toISOString() })
+      .eq('id', user.id)
+
+    if (error) {
+      console.error("[WeeklyReflection] Error dismissing:", error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, error: null }
+  } catch (error) {
+    console.error("[WeeklyReflection] Exception:", error)
+    return { success: false, error: "Failed to dismiss reflection" }
+  }
+}
+

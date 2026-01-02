@@ -14,7 +14,7 @@ import { Slider } from "@/components/ui/slider"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { saveWeeklyReflection } from "@/lib/actions/weekly-reflections"
+import { saveWeeklyReflection, dismissWeeklyReflection } from "@/lib/actions/weekly-reflections"
 
 interface WeeklyReflectionModalProps {
   isOpen: boolean
@@ -59,6 +59,23 @@ export function WeeklyReflectionModal({ isOpen, onClose }: WeeklyReflectionModal
         description: "Failed to save reflection",
         variant: "destructive",
       })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSkip = async () => {
+    setSaving(true)
+    try {
+      await dismissWeeklyReflection()
+      toast({
+        title: "Skipped for now",
+        description: "We'll ask again next week. You can complete reflections in Settings anytime.",
+      })
+      onClose()
+    } catch (error) {
+      console.error("[WeeklyReflection] Skip error:", error)
+      onClose()
     } finally {
       setSaving(false)
     }
@@ -155,7 +172,7 @@ export function WeeklyReflectionModal({ isOpen, onClose }: WeeklyReflectionModal
         <div className="flex gap-3">
           <Button
             variant="outline"
-            onClick={onClose}
+            onClick={handleSkip}
             className="flex-1"
             disabled={saving}
           >

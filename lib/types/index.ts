@@ -397,6 +397,11 @@ export interface OnboardingData {
   // Goals data
   primaryGoal: string
 
+  // Training preferences
+  trainingStyle: string
+  availableTimeMinutes: number
+  trainingDaysPerWeek: number
+
   // Preferences data
   allergies: string[]
   customRestrictions: string[]

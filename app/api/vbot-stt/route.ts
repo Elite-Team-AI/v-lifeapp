@@ -12,11 +12,24 @@ export async function POST(req: NextRequest) {
     const { data: { session }, error: authError } = await supabase.auth.getSession()
     
     if (authError || !session) {
+      console.error("[VBot STT Proxy] Auth error:", authError)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     // Get the audio formdata from the request
     const formData = await req.formData()
+    const audioFile = formData.get("audio") as File | null
+    
+    if (!audioFile) {
+      console.error("[VBot STT Proxy] No audio file in request")
+      return NextResponse.json({ error: "No audio file provided" }, { status: 400 })
+    }
+    
+    console.log("[VBot STT Proxy] Processing audio:", {
+      type: audioFile.type,
+      size: audioFile.size,
+      name: audioFile.name,
+    })
     
     // Build the edge function URL
     const edgeFunctionUrl = `${env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/vbot-stt`
@@ -33,11 +46,12 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: "Edge function error" }))
-      console.error("[VBot STT Proxy] Edge function error:", errorData)
+      console.error("[VBot STT Proxy] Edge function error:", response.status, errorData)
       return NextResponse.json(errorData, { status: response.status })
     }
 
     const data = await response.json()
+    console.log("[VBot STT Proxy] Transcription success:", data.transcript?.slice(0, 50))
     return NextResponse.json(data)
   } catch (error) {
     console.error("[VBot STT Proxy Error]", error)

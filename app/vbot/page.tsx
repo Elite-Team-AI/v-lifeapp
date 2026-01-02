@@ -538,9 +538,28 @@ function VBotPageContent() {
               <span className="text-white">Hi! I'm </span>
               <span className="bg-gradient-to-r from-accent via-yellow-400 to-orange-400 bg-clip-text text-transparent">VBot</span>
             </h2>
-            <p className="mb-8 max-w-sm text-lg text-white/60 leading-relaxed">
+            <p className="mb-4 max-w-sm text-lg text-white/60 leading-relaxed">
               I know everything about your fitness journey. What would you like to work on today?
             </p>
+            
+            {/* How to use VBot */}
+            <div className="w-full max-w-sm mb-6 p-4 rounded-xl bg-white/5 border border-white/10">
+              <p className="text-xs font-medium text-accent mb-2 uppercase tracking-wider">How to use VBot</p>
+              <ul className="space-y-1.5 text-sm text-white/70">
+                <li className="flex items-start gap-2">
+                  <span className="text-accent">•</span>
+                  <span><strong className="text-white/90">Situational coaching</strong> - traveling, sick, limited equipment</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-accent">•</span>
+                  <span><strong className="text-white/90">Personalized advice</strong> - uses your profile and progress data</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-accent">•</span>
+                  <span><strong className="text-white/90">On-demand Q&A</strong> - fitness, nutrition, recovery questions</span>
+                </li>
+              </ul>
+            </div>
 
             <div className="w-full max-w-sm space-y-3">
               <p className="text-xs font-medium text-white/40 uppercase tracking-wider mb-3">
@@ -675,19 +694,19 @@ function VBotPageContent() {
           {/* Voice-first layout when voice is enabled */}
           {voicePrefs.voiceEnabled ? (
             <div className="space-y-3">
-              {/* Prominent Voice Button - Opens Voice Focus Mode */}
+              {/* Voice Button - Opens Voice Focus Mode */}
               <div className="flex items-center justify-center">
                 <button
                   onClick={handleOpenVoiceModal}
                   disabled={isLoading}
-                  className="group flex items-center gap-4 rounded-full bg-gradient-to-br from-green-500 to-green-600 px-8 py-4 text-white shadow-lg shadow-green-500/30 transition-all hover:from-green-400 hover:to-green-500 hover:shadow-green-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group flex items-center gap-3 rounded-full bg-gradient-to-br from-green-500 to-green-600 px-5 py-2.5 text-white shadow-md shadow-green-500/25 transition-all hover:from-green-400 hover:to-green-500 hover:shadow-green-500/35 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
-                    <Mic className="h-7 w-7" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
+                    <Mic className="h-4 w-4" />
                   </div>
                   <div className="text-left">
-                    <p className="text-base font-semibold">Start Voice Chat</p>
-                    <p className="text-sm text-white/70">Tap to begin talking</p>
+                    <p className="text-sm font-semibold">Start Voice Chat</p>
+                    <p className="text-xs text-white/70">Tap to talk</p>
                   </div>
                 </button>
               </div>

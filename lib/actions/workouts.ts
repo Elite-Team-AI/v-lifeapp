@@ -46,6 +46,9 @@ interface ProfileInfo {
   weight?: number | null
   age?: number | null
   gender?: string | null
+  training_style?: string | null
+  available_time_minutes?: number | null
+  training_days_per_week?: number | null
 }
 
 interface AIGeneratedWorkout {
@@ -126,7 +129,7 @@ async function fetchProfileInfo(
 ): Promise<ProfileInfo | null> {
   const { data } = await supabase
     .from("profiles")
-    .select("primary_goal, activity_level, gym_access, custom_equipment, weight, age, gender")
+    .select("primary_goal, activity_level, gym_access, custom_equipment, weight, age, gender, training_style, available_time_minutes, training_days_per_week")
     .eq("id", userId)
     .maybeSingle()
   return data
@@ -160,6 +163,18 @@ async function generateAIWorkout(
     ? `Activity level: ${profile.activity_level}/5`
     : "Moderate activity"
 
+  const trainingStyleContext = profile?.training_style
+    ? `Training style preference: ${profile.training_style.replace("-", " ")}`
+    : ""
+
+  const timeContext = profile?.available_time_minutes
+    ? `Target workout duration: ${profile.available_time_minutes} minutes`
+    : ""
+
+  const daysContext = profile?.training_days_per_week
+    ? `User trains ${profile.training_days_per_week} days per week`
+    : ""
+
   const templateExercises = template.exercises
     .map((e) => `${e.name} (${e.sets}x${e.reps}, ${e.restSeconds}s rest)`)
     .join(", ")
@@ -170,6 +185,7 @@ Always return valid JSON with a "workout" object.`
 
   const userMessage = `Generate a ${dayName} workout for "${emphasis}" day.
 ${goalContext}. ${activityContext}. ${equipmentContext}.
+${trainingStyleContext} ${timeContext} ${daysContext}`.trim()
 
 Base template: "${template.name}" - ${template.description}
 Template exercises: ${templateExercises}
@@ -456,11 +472,24 @@ interface LogSetInput {
 export async function logExerciseSet(payload: LogSetInput) {
   const { user, error } = await getAuthUser()
   if (error || !user) {
+    console.error("[Workout] logExerciseSet: Not authenticated")
     return { success: false, error: "Not authenticated" }
   }
 
+  console.log("[Workout] Logging set:", {
+    userId: user.id,
+    workoutId: payload.workoutId,
+    exerciseId: payload.exerciseId,
+    setNumber: payload.setNumber,
+    totalSets: payload.totalSets,
+    weight: payload.weight,
+    reps: payload.reps,
+  })
+
   const supabase = await createClient()
-  const { error: logError } = await supabase.from("exercise_logs").insert({
+  
+  // Insert the exercise log
+  const { data: logData, error: logError } = await supabase.from("exercise_logs").insert({
     user_id: user.id,
     workout_id: payload.workoutId,
     exercise_id: payload.exerciseId,
@@ -468,15 +497,19 @@ export async function logExerciseSet(payload: LogSetInput) {
     reps: payload.reps,
     weight: payload.weight,
     notes: payload.unit,
-  })
+  }).select("id").single()
 
   if (logError) {
     console.error("[Workout] Failed to log set:", logError)
     return { success: false, error: "Unable to record set" }
   }
+  
+  console.log("[Workout] Exercise log created:", logData?.id)
 
   const isComplete = payload.setNumber >= payload.totalSets
-  const { error: updateError } = await supabase
+  
+  // Update workout_exercises with new completed_sets count
+  const { data: updateData, error: updateError } = await supabase
     .from("workout_exercises")
     .update({
       completed_sets: payload.setNumber,
@@ -484,13 +517,18 @@ export async function logExerciseSet(payload: LogSetInput) {
     })
     .eq("id", payload.workoutExerciseId)
     .eq("workout_id", payload.workoutId)
+    .select("id, completed_sets, completed")
+    .single()
 
   if (updateError) {
     console.error("[Workout] Failed to update exercise:", updateError)
     return { success: false, error: "Unable to update exercise" }
   }
+  
+  console.log("[Workout] Exercise updated:", updateData)
 
   revalidatePath("/fitness")
+  revalidatePath("/workout")
   return { success: true, completed: isComplete }
 }
 
