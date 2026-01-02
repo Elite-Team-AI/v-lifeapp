@@ -5,10 +5,11 @@ import { revalidatePath, revalidateTag, unstable_cache } from "next/cache"
 import type { TransformedPost, TransformedComment } from "@/lib/types"
 import { DEFAULT_AVATAR } from "@/lib/stock-images"
 
-// Helper to get user's avatar - use their uploaded avatar or fallback to vLife logo
-function getUserAvatar(avatarUrl: string | null | undefined): string {
-  return avatarUrl || DEFAULT_AVATAR
-}
+// Note: profiles table doesn't have avatar_url column yet
+// When it's added, restore this helper function:
+// function getUserAvatar(avatarUrl: string | null | undefined): string {
+//   return avatarUrl || DEFAULT_AVATAR
+// }
 
 interface PostReaction {
   id: string
@@ -26,7 +27,7 @@ interface PostWithRelations {
   likes_count: number
   comments_count: number
   created_at: string
-  profiles: { id: string; name: string | null; avatar_url: string | null } | null
+  profiles: { id: string; name: string | null } | null
   post_reactions: PostReaction[]
 }
 
@@ -159,8 +160,7 @@ const getCachedPosts = unstable_cache(
         *,
         profiles:user_id (
           id,
-          name,
-          avatar_url
+          name
         ),
         post_reactions (
           id,
@@ -199,7 +199,7 @@ const getCachedFollows = unstable_cache(
 )
 
 export async function getPosts(
-  category?: string, 
+  category?: string,
   sortBy?: "recent" | "popular" | "trending"
 ): Promise<{ posts?: TransformedPost[]; error?: string }> {
   const { user, error: authError } = await getAuthUser()
@@ -247,7 +247,7 @@ export async function getPosts(
         user: {
           id: post.user_id,
           name: post.profiles?.name || "vLife User",
-          avatar: getUserAvatar(post.profiles?.avatar_url),
+          avatar: DEFAULT_AVATAR, // profiles table doesn't have avatar_url yet
           isFollowing: followingSet.has(post.user_id),
         },
         title: post.title,
@@ -293,6 +293,7 @@ export async function createPost(data: {
   }
 
   const supabase = await createClient()
+
   const { error } = await supabase.from("posts").insert({
     user_id: user.id,
     title: data.title,
@@ -307,7 +308,7 @@ export async function createPost(data: {
     return { error: error.message }
   }
 
-  revalidateTag("community-posts", "max")
+  revalidateTag("community-posts")
   return { success: true }
 }
 
@@ -399,7 +400,7 @@ export async function toggleFollow(userId: string): Promise<{ success?: boolean;
     if (error) return { error: error.message }
   }
 
-  revalidateTag("user-follows", "max")
+  revalidateTag("user-follows")
   return { success: true }
 }
 
@@ -412,8 +413,7 @@ export async function getComments(postId: string): Promise<{ comments?: Transfor
       *,
       profiles:user_id (
         id,
-        name,
-        avatar_url
+        name
       )
     `)
     .eq("post_id", postId)
@@ -428,7 +428,7 @@ export async function getComments(postId: string): Promise<{ comments?: Transfor
     id: comment.id,
     user: {
       name: comment.profiles?.name || "vLife User",
-      avatar: getUserAvatar(comment.profiles?.avatar_url),
+      avatar: DEFAULT_AVATAR, // profiles table doesn't have avatar_url yet
     },
     content: comment.content,
     time: getTimeAgo(new Date(comment.created_at)),
@@ -488,7 +488,6 @@ export async function getLeaderboard(): Promise<{ leaderboard?: LeaderboardUser[
     .select(`
       id,
       name,
-      avatar_url,
       posts:posts(count),
       post_reactions:posts(post_reactions(count))
     `)
@@ -501,7 +500,6 @@ export async function getLeaderboard(): Promise<{ leaderboard?: LeaderboardUser[
   interface UserWithCounts {
     id: string
     name: string | null
-    avatar_url: string | null
     posts: { count: number }[]
     post_reactions: { post_reactions: { count: number }[] }[]
   }
@@ -510,7 +508,7 @@ export async function getLeaderboard(): Promise<{ leaderboard?: LeaderboardUser[
   const leaderboard: LeaderboardUser[] = (users as UserWithCounts[] || [])
     .map((user) => ({
       name: user.name || "vLife User",
-      avatar: getUserAvatar(user.avatar_url),
+      avatar: DEFAULT_AVATAR, // profiles table doesn't have avatar_url yet
       posts: user.posts?.[0]?.count || 0,
       likes: user.post_reactions?.reduce(
         (sum, post) => sum + (post.post_reactions?.[0]?.count || 0),

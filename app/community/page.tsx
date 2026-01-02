@@ -37,6 +37,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { DEFAULT_AVATAR } from "@/lib/stock-images"
 import { useAppData } from "@/lib/contexts/app-data-context"
+import { useToast } from "@/hooks/use-toast"
 
 // Lazy load modal
 const CreatePostModal = lazy(() => import("@/app/create-post-modal").then(m => ({ default: m.CreatePostModal })))
@@ -89,7 +90,8 @@ type Challenge = {
 
 export default function Community() {
   const router = useRouter()
-  
+  const { toast } = useToast()
+
   // Get user name from cached app data
   const { appData } = useAppData()
   const currentUserName = useMemo(() => {
@@ -230,11 +232,25 @@ export default function Community() {
       const result = await createPost(newPost)
       if (result.success) {
         await loadPosts()
+        toast({
+          title: "Post created!",
+          description: "Your post has been shared with the community.",
+        })
       } else {
         console.error("Error creating post:", result.error)
+        toast({
+          title: "Failed to create post",
+          description: result.error || "Something went wrong. Please try again.",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("Error creating post:", error)
+      toast({
+        title: "Failed to create post",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 

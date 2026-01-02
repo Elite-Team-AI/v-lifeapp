@@ -185,7 +185,7 @@ Always return valid JSON with a "workout" object.`
 
   const userMessage = `Generate a ${dayName} workout for "${emphasis}" day.
 ${goalContext}. ${activityContext}. ${equipmentContext}.
-${trainingStyleContext} ${timeContext} ${daysContext}`.trim()
+${trainingStyleContext} ${timeContext} ${daysContext}
 
 Base template: "${template.name}" - ${template.description}
 Template exercises: ${templateExercises}
@@ -206,7 +206,7 @@ Return JSON format:
     ],
     "conditioningNotes": "Brief conditioning instructions"
   }
-}`
+}`.trim()
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
