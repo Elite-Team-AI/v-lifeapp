@@ -1,9 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Emit standalone output for lean Docker/Cloud Run images
-  output: "standalone",
+  // Vercel optimizes builds automatically - standalone output not needed
+  // Keep typescript ignoreBuildErrors for now (errors are fixed but keeping as safety)
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false, // Changed to false since we fixed all errors
   },
   images: {
     unoptimized: true,

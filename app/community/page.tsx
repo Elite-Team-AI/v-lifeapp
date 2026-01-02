@@ -207,7 +207,7 @@ export default function Community() {
 
   const currentUser = {
     name: currentUserName,
-    avatar: appData?.profile?.avatar_url || DEFAULT_AVATAR,
+    avatar: DEFAULT_AVATAR, // profiles table doesn't have avatar_url yet
   }
 
   const categories = [
