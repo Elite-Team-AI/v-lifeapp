@@ -42,6 +42,7 @@ export function GroceryListClient({ items }: GroceryListClientProps) {
   const [selectedCategory, setSelectedCategory] = useState(categories[0])
   const [isSaving, setIsSaving] = useState(false)
   const [isSyncing, startSyncTransition] = useTransition()
+  const [syncRange, setSyncRange] = useState<"today" | "week">("week")
 
   const completedItems = groceryItems.filter((item) => item.checked).length
   const totalItems = groceryItems.length
@@ -125,11 +126,11 @@ export function GroceryListClient({ items }: GroceryListClientProps) {
   const handleSyncWithMeals = async () => {
     startSyncTransition(async () => {
       const { syncGroceryListWithMeals } = await import("@/lib/actions/grocery")
-      const result = await syncGroceryListWithMeals()
+      const result = await syncGroceryListWithMeals(syncRange)
       if (result.success) {
         toast({
           title: "Grocery list synced!",
-          description: `Added ${result.itemCount || 0} items from your meal plan and 7-day forecast.`,
+          description: `Added ${result.itemCount || 0} items from your ${syncRange === "today" ? "meals today" : "meal plan and 7-day forecast"}.`,
         })
         router.refresh()
       } else {
@@ -185,6 +186,30 @@ export function GroceryListClient({ items }: GroceryListClientProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
+          {/* Sync Range Selector */}
+          <div className="mb-3 flex gap-2 rounded-lg bg-white/5 p-1">
+            <button
+              onClick={() => setSyncRange("today")}
+              className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${
+                syncRange === "today"
+                  ? "bg-accent text-black"
+                  : "text-white/70 hover:text-white"
+              }`}
+            >
+              Today Only
+            </button>
+            <button
+              onClick={() => setSyncRange("week")}
+              className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${
+                syncRange === "week"
+                  ? "bg-accent text-black"
+                  : "text-white/70 hover:text-white"
+              }`}
+            >
+              7-Day Forecast
+            </button>
+          </div>
+
           <ButtonGlow
             variant="accent-glow"
             className="w-full"
@@ -195,7 +220,9 @@ export function GroceryListClient({ items }: GroceryListClientProps) {
             {isSyncing ? "Syncing with meals..." : "Sync with Meal Plan"}
           </ButtonGlow>
           <p className="mt-2 text-center text-xs text-white/50">
-            Pulls ingredients from today & tomorrow's meals + AI 7-day forecast
+            {syncRange === "today" 
+              ? "Pulls ingredients from today's meals only" 
+              : "Pulls ingredients from today & tomorrow's meals + AI 7-day forecast"}
           </p>
         </motion.div>
 

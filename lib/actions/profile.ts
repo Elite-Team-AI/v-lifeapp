@@ -137,7 +137,7 @@ export async function updateProfile(profileData: {
       { maxAttempts: 3 }
     )
 
-    revalidateTag("profile", "max")
+    revalidateTag("profile")
     revalidatePath("/settings")
     revalidatePath("/dashboard")
 

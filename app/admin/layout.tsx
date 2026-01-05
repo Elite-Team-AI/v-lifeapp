@@ -63,21 +63,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-gradient-to-b from-black to-charcoal">
       {/* Admin Header */}
       <header className="border-b border-white/10 bg-black/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="container max-w-6xl mx-auto px-4 py-3">
+          <div className="flex items-center gap-3 mb-3">
             <Link href="/dashboard" className="text-white/70 hover:text-white transition-colors">
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <div className="flex items-center gap-2">
-              <Shield className="h-6 w-6 text-accent" />
-              <span className="text-lg font-bold text-white">Admin Panel</span>
+              <Shield className="h-5 w-5 text-accent" />
+              <span className="text-lg font-bold text-white">Admin</span>
             </div>
           </div>
-          <nav className="flex items-center gap-2">
+          <nav className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
             {navItems.map((item) => (
-              <Link key={item.href} href={item.href}>
+              <Link key={item.href} href={item.href} className="flex-shrink-0">
                 <ButtonGlow variant="outline-glow" size="sm">
-                  <item.icon className="h-4 w-4 mr-2" />
+                  <item.icon className="h-4 w-4 mr-1" />
                   {item.label}
                 </ButtonGlow>
               </Link>

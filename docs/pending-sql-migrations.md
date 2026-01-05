@@ -27,27 +27,58 @@ ALTER TABLE posts ADD CONSTRAINT posts_category_check
 
 ---
 
-## 2. Add Avatar URL Column to Profiles (OPTIONAL - FUTURE)
+## 2. Avatar Upload Setup (REQUIRED for profile photos)
 
-The `profiles` table is missing an `avatar_url` column. Currently, all users display the default vLife logo avatar. If user profile pictures are needed, run this migration:
+The avatar upload feature requires:
+1. The `avatar_url` column in the `profiles` table
+2. A `avatars` storage bucket in Supabase
+3. RLS policies to allow users to upload their own avatars
 
+**Quick Fix:** Run the SQL script at `scripts/setup-avatar-storage.sql` in your Supabase SQL Editor.
+
+**Manual Setup (if script fails):**
+
+### Step 1: Add column (run in SQL Editor)
 ```sql
--- Add avatar_url column to profiles table
--- This enables users to have custom profile pictures
-
-ALTER TABLE profiles
-ADD COLUMN IF NOT EXISTS avatar_url TEXT;
-
--- Optional: Add a comment explaining the column
-COMMENT ON COLUMN profiles.avatar_url IS 'URL to user profile picture stored in Supabase Storage';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 ```
 
-**Status:** ⏳ Optional (not required for current functionality)
+### Step 2: Create storage bucket (via Dashboard)
+1. Go to Supabase Dashboard → Storage
+2. Click "New bucket"
+3. Name: `avatars`
+4. Check "Public bucket"
+5. Click "Create bucket"
 
-**After running this migration:**
-1. Update `lib/actions/community.ts` to restore `avatar_url` in profile queries
-2. Uncomment the `getUserAvatar` helper function
-3. Update transforms to use `getUserAvatar(post.profiles?.avatar_url)` instead of `DEFAULT_AVATAR`
+### Step 3: Add RLS policies (run in SQL Editor)
+```sql
+-- Users can upload their own avatar
+CREATE POLICY "Users can upload own avatar" ON storage.objects
+  FOR INSERT WITH CHECK (
+    bucket_id = 'avatars' 
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- Anyone can read avatars
+CREATE POLICY "Public avatar read access" ON storage.objects
+  FOR SELECT USING (bucket_id = 'avatars');
+
+-- Users can update their own avatar  
+CREATE POLICY "Users can update own avatar" ON storage.objects
+  FOR UPDATE USING (
+    bucket_id = 'avatars' 
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- Users can delete their own avatar
+CREATE POLICY "Users can delete own avatar" ON storage.objects
+  FOR DELETE USING (
+    bucket_id = 'avatars' 
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+```
+
+**Status:** ⏳ Required for avatar uploads to work
 
 ---
 

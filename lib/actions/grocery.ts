@@ -270,7 +270,7 @@ async function fetchMealsWithIngredients(
 }
 
 // Sync grocery list with meals - pulls from today/tomorrow and uses AI for 7-day forecast
-export async function syncGroceryListWithMeals() {
+export async function syncGroceryListWithMeals(dateRange: "today" | "week" = "week") {
   const { user, error } = await getAuthUser()
   if (error || !user) {
     return { success: false, error: "Not authenticated" }
@@ -287,16 +287,23 @@ export async function syncGroceryListWithMeals() {
 
   const profile = profileData as ProfileInfo | null
 
-  // Get today and the next 7 days
+  // Set date range based on parameter
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const weekEnd = new Date(today)
-  weekEnd.setDate(weekEnd.getDate() + 7)
-  weekEnd.setHours(23, 59, 59, 999)
+  const endDate = new Date(today)
+  
+  if (dateRange === "today") {
+    // Single day: just today
+    endDate.setHours(23, 59, 59, 999)
+  } else {
+    // Week: today + 7 days
+    endDate.setDate(endDate.getDate() + 7)
+    endDate.setHours(23, 59, 59, 999)
+  }
 
-  // Fetch meals with ingredients for the next 7 days
-  const meals = await fetchMealsWithIngredients(user.id, supabase, today, weekEnd)
-  console.log("[Grocery] Found", meals.length, "meals with ingredients")
+  // Fetch meals with ingredients for the date range
+  const meals = await fetchMealsWithIngredients(user.id, supabase, today, endDate)
+  console.log("[Grocery] Found", meals.length, "meals with ingredients for", dateRange)
 
   // Clear ALL existing items - a fresh sync replaces everything
   // Users can add manual items back after syncing if needed
@@ -342,7 +349,7 @@ export async function syncGroceryListWithMeals() {
           restrictions: (profile?.allergies || []).filter(Boolean),
         },
         currentMeals: mealIngredients,
-        daysToForecast: 7,
+        daysToForecast: dateRange === "today" ? 1 : 7,
       }
 
       console.log("[Grocery] Calling AI for smart grocery list with", mealIngredients.length, "meals...")

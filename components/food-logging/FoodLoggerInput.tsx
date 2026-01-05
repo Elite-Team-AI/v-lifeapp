@@ -236,7 +236,7 @@ export function FoodLoggerInput({
   return (
     <div className={cn("relative", className)}>
       {/* Main input container */}
-      <div className="rounded-2xl border border-white/10 bg-black/50 backdrop-blur-sm overflow-hidden">
+      <div className="rounded-2xl border border-white/10 bg-black/50 backdrop-blur-sm overflow-visible">
         {/* Meal type selector */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
           <div className="flex items-center gap-2">
@@ -260,7 +260,7 @@ export function FoodLoggerInput({
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -5 }}
-                  className="absolute right-0 top-full mt-1 z-10 rounded-lg border border-white/10 bg-charcoal/95 backdrop-blur-sm shadow-lg overflow-hidden"
+                  className="absolute right-0 top-full mt-1 z-10 rounded-lg border border-white/10 bg-charcoal/95 backdrop-blur-sm shadow-lg max-h-[240px] overflow-y-auto"
                 >
                   <button
                     type="button"

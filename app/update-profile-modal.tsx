@@ -12,8 +12,8 @@ import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { updateProfile } from "@/lib/actions/profile"
+import { uploadAvatar } from "@/lib/actions/avatar"
 import { useToast } from "@/hooks/use-toast"
-import { createClient } from "@/lib/supabase/client"
 import { DEFAULT_AVATAR } from "@/lib/stock-images"
 
 interface ProfileData {
@@ -123,44 +123,36 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
 
     setUploadingAvatar(true)
     try {
-      const supabase = createClient()
+      // Use server action for upload (handles auth and RLS properly)
+      const formData = new FormData()
+      formData.append("file", file)
       
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        throw new Error("Not authenticated")
+      console.log("[AvatarUpload] Uploading via server action, size:", file.size)
+      
+      const result = await uploadAvatar(formData)
+      
+      if (!result.success) {
+        console.error("[AvatarUpload] Server action error:", result.error)
+        throw new Error(result.error || "Upload failed")
       }
 
-      // Upload to Supabase storage
-      const fileExt = file.name.split(".").pop()
-      const fileName = `${user.id}/avatar.${fileExt}`
-      
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(fileName, file, { upsert: true })
+      console.log("[AvatarUpload] Upload successful:", result.avatarUrl)
 
-      if (uploadError) {
-        throw uploadError
+      // Update profile state with new avatar URL
+      if (result.avatarUrl) {
+        updateProfileState({ avatar_url: result.avatarUrl })
       }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(fileName)
-
-      // Update profile state with new avatar URL (add cache buster)
-      const avatarUrl = `${publicUrl}?t=${Date.now()}`
-      updateProfileState({ avatar_url: avatarUrl })
 
       toast({
         title: "Avatar uploaded",
         description: "Your profile photo has been updated",
       })
     } catch (error) {
-      console.error("Error uploading avatar:", error)
+      console.error("[AvatarUpload] Error:", error)
+      const errorMessage = error instanceof Error ? error.message : "Failed to upload avatar. Please try again."
       toast({
         title: "Upload failed",
-        description: "Failed to upload avatar. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {

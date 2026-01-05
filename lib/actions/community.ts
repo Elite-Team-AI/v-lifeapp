@@ -310,7 +310,7 @@ export async function createPost(data: {
     return { error: error.message }
   }
 
-  revalidateTag("community-posts", "max")
+  revalidateTag("community-posts")
   return { success: true }
 }
 
@@ -402,7 +402,7 @@ export async function toggleFollow(userId: string): Promise<{ success?: boolean;
     if (error) return { error: error.message }
   }
 
-  revalidateTag("user-follows", "max")
+  revalidateTag("user-follows")
   return { success: true }
 }
 
