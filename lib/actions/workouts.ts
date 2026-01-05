@@ -24,6 +24,8 @@ interface WorkoutExerciseDetail {
   restSeconds: number
   completed: boolean
   completedSets: number
+  lastWeight?: number | null
+  lastReps?: number | null
 }
 
 export interface ActiveWorkoutPayload {
@@ -372,6 +374,45 @@ async function getTodaysWorkout(
   return recentWorkout
 }
 
+// Get exercise history (last weight/reps for each exercise)
+async function getExerciseHistory(
+  userId: string,
+  exerciseIds: string[],
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<Map<string, { weight: number; reps: number }>> {
+  if (exerciseIds.length === 0) {
+    return new Map()
+  }
+
+  // Get the most recent log entry for each exercise
+  const { data: logs } = await supabase
+    .from("exercise_logs")
+    .select("exercise_id, weight, reps, logged_at")
+    .eq("user_id", userId)
+    .in("exercise_id", exerciseIds)
+    .order("logged_at", { ascending: false })
+
+  if (!logs || logs.length === 0) {
+    return new Map()
+  }
+
+  // Map exercise_id to the most recent entry
+  const historyMap = new Map<string, { weight: number; reps: number }>()
+  const seen = new Set<string>()
+
+  for (const log of logs) {
+    if (!seen.has(log.exercise_id) && log.weight != null && log.reps != null) {
+      historyMap.set(log.exercise_id, {
+        weight: Number(log.weight),
+        reps: Number(log.reps),
+      })
+      seen.add(log.exercise_id)
+    }
+  }
+
+  return historyMap
+}
+
 export async function getActiveWorkout(): Promise<ActiveWorkoutPayload | null> {
   const { user, error } = await getAuthUser()
   if (error || !user) {
@@ -426,8 +467,13 @@ export async function getActiveWorkout(): Promise<ActiveWorkoutPayload | null> {
 
   if (!exercises) return null
 
+  // Get exercise IDs to fetch history
+  const exerciseIds = exercises.map((ex) => ex.exercise_id).filter(Boolean) as string[]
+  const exerciseHistory = await getExerciseHistory(user.id, exerciseIds, supabase)
+
   const formatted: WorkoutExerciseDetail[] = exercises.map((exercise) => {
     const exerciseData = Array.isArray(exercise.exercises) ? exercise.exercises[0] : exercise.exercises
+    const history = exerciseHistory.get(exercise.exercise_id)
     return {
       workoutExerciseId: exercise.id,
       exerciseId: exercise.exercise_id,
@@ -438,6 +484,8 @@ export async function getActiveWorkout(): Promise<ActiveWorkoutPayload | null> {
       restSeconds: exercise.rest_seconds || 60,
       completed: exercise.completed ?? false,
       completedSets: exercise.completed_sets || 0,
+      lastWeight: history?.weight ?? null,
+      lastReps: history?.reps ?? null,
     }
   })
 

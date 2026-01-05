@@ -61,6 +61,9 @@ export async function updateProfile(profileData: {
   customEquipment?: string
   allergies?: string[]
   customRestrictions?: string[]
+  trainingStyle?: string
+  availableTimeMinutes?: number
+  trainingDaysPerWeek?: number
   timezone?: string
   onboardingCompleted?: boolean
 }): Promise<{ success?: boolean; error?: string }> {
@@ -109,6 +112,9 @@ export async function updateProfile(profileData: {
       custom_equipment: profileData.customEquipment,
       allergies: profileData.allergies,
       custom_restrictions: profileData.customRestrictions,
+      training_style: profileData.trainingStyle,
+      available_time_minutes: profileData.availableTimeMinutes,
+      training_days_per_week: profileData.trainingDaysPerWeek,
       timezone: profileData.timezone,
       onboarding_completed: profileData.onboardingCompleted,
       updated_at: new Date().toISOString(),

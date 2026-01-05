@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Shield, LayoutDashboard, Target, ArrowLeft } from "lucide-react"
+import { Shield, LayoutDashboard, Target, ArrowLeft, Users } from "lucide-react"
 import Link from "next/link"
 import { ButtonGlow } from "@/components/ui/button-glow"
 
@@ -56,6 +56,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navItems = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/challenges", label: "Challenges", icon: Target },
+    { href: "/admin/users", label: "Users", icon: Users },
   ]
 
   return (

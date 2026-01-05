@@ -79,6 +79,9 @@ function DashboardClient() {
         customEquipment: "",
         allergies: [],
         customRestrictions: [],
+        trainingStyle: "",
+        availableTimeMinutes: 45,
+        trainingDaysPerWeek: 4,
         timezone: "America/New_York",
       }
     }
@@ -99,6 +102,9 @@ function DashboardClient() {
       customEquipment: profile.custom_equipment || "",
       allergies: profile.allergies || [],
       customRestrictions: profile.custom_restrictions || [],
+      trainingStyle: profile.training_style || "",
+      availableTimeMinutes: profile.available_time_minutes || 45,
+      trainingDaysPerWeek: profile.training_days_per_week || 4,
       timezone: profile.timezone || "America/New_York",
     }
   }, [appData?.profile])

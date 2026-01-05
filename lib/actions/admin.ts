@@ -196,6 +196,82 @@ export async function getChallengeParticipants(
   return { participants: participants as ChallengeParticipant[] }
 }
 
+// Get all users for admin management
+export async function getAdminUsers(): Promise<{
+  users?: Array<{
+    id: string
+    name: string | null
+    email: string | null
+    avatar_url: string | null
+    is_admin: boolean
+    created_at: string
+  }>
+  error?: string
+}> {
+  const { isAdmin, error: adminError } = await checkIsAdmin()
+  if (!isAdmin) {
+    return { error: adminError || "Unauthorized" }
+  }
+
+  const supabase = await createClient()
+  
+  // Get profiles with auth user emails
+  const { data: profiles, error } = await supabase
+    .from("profiles")
+    .select("id, name, avatar_url, is_admin, created_at")
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  // Get emails from auth.users (requires service role, so we'll use a workaround)
+  // For now, return profiles without emails
+  const users = (profiles || []).map(p => ({
+    ...p,
+    email: null as string | null,
+    is_admin: p.is_admin || false,
+  }))
+
+  return { users }
+}
+
+// Toggle admin status for a user
+export async function toggleUserAdmin(userId: string): Promise<{ success?: boolean; isAdmin?: boolean; error?: string }> {
+  const { isAdmin, error: adminError } = await checkIsAdmin()
+  if (!isAdmin) {
+    return { error: adminError || "Unauthorized" }
+  }
+
+  const supabase = await createClient()
+
+  // Get current admin status
+  const { data: profile, error: fetchError } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", userId)
+    .single()
+
+  if (fetchError || !profile) {
+    return { error: "User not found" }
+  }
+
+  const newAdminStatus = !profile.is_admin
+
+  // Update admin status
+  const { error: updateError } = await supabase
+    .from("profiles")
+    .update({ is_admin: newAdminStatus })
+    .eq("id", userId)
+
+  if (updateError) {
+    return { error: updateError.message }
+  }
+
+  revalidatePath("/admin/users")
+  return { success: true, isAdmin: newAdminStatus }
+}
+
 // Get admin dashboard stats
 export async function getAdminStats(): Promise<{
   stats?: {

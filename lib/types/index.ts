@@ -73,6 +73,9 @@ export interface Profile {
   custom_equipment: string | null
   allergies: string[] | null
   custom_restrictions: string[] | null
+  training_style: string | null
+  available_time_minutes: number | null
+  training_days_per_week: number | null
   timezone: string | null
   referral_code: string | null
   credits: number
@@ -99,6 +102,9 @@ export interface ProfileFormData {
   customEquipment: string
   allergies: string[]
   customRestrictions: string[]
+  trainingStyle?: string
+  availableTimeMinutes?: number
+  trainingDaysPerWeek?: number
   timezone?: string
 }
 

@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, User, Save, Dumbbell, Home, Hotel, Building, Settings, Camera, Loader2 } from "lucide-react"
+import { X, User, Save, Dumbbell, Home, Hotel, Building, Settings, Camera, Loader2, Clock, Calendar } from "lucide-react"
 import { ButtonGlow } from "@/components/ui/button-glow"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -32,6 +32,9 @@ interface ProfileData {
   customEquipment: string
   allergies: string[]
   customRestrictions: string[]
+  trainingStyle?: string
+  availableTimeMinutes?: number
+  trainingDaysPerWeek?: number
   timezone?: string
 }
 
@@ -62,9 +65,26 @@ const popularGyms = [
 
 const commonAllergies = ["Dairy", "Gluten", "Peanuts", "Tree Nuts", "Soy", "Eggs", "Fish", "Shellfish"]
 
+const trainingStyles = [
+  { id: "bodybuilding", label: "Bodybuilding / Aesthetic", description: "Muscle growth & definition" },
+  { id: "strength", label: "Strength & Power", description: "Lift heavy, get stronger" },
+  { id: "functional", label: "Functional Fitness", description: "Real-world movement" },
+  { id: "cardio", label: "Cardio Focus", description: "Endurance & heart health" },
+  { id: "mobility", label: "Mobility / Recovery", description: "Flexibility & injury prevention" },
+]
+
+const timeOptions = [
+  { value: 20, label: "20 min" },
+  { value: 30, label: "30 min" },
+  { value: 45, label: "45 min" },
+  { value: 60, label: "60+ min" },
+]
+
+const daysOptions = [2, 3, 4, 5, 6]
+
 export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }: UpdateProfileModalProps) {
   const [profile, setProfile] = useState<ProfileData>(currentProfile)
-  const [activeTab, setActiveTab] = useState<"basic" | "goals" | "gym" | "nutrition">("basic")
+  const [activeTab, setActiveTab] = useState<"basic" | "goals" | "gym" | "nutrition" | "training">("basic")
   const [showActivityDefinitions, setShowActivityDefinitions] = useState(false)
   const [newRestriction, setNewRestriction] = useState("")
   const [saving, setSaving] = useState(false)
@@ -218,6 +238,7 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
     { id: "basic", label: "Basic Info", icon: User },
     { id: "goals", label: "Goals", icon: Dumbbell },
     { id: "gym", label: "Gym Access", icon: Building },
+    { id: "training", label: "Training", icon: Dumbbell },
     { id: "nutrition", label: "Nutrition", icon: Settings },
   ]
 
@@ -552,6 +573,83 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                             <p className="text-xs text-white/60">List the equipment you have access to</p>
                           </div>
                         )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Training Tab */}
+                  {activeTab === "training" && (
+                    <div className="space-y-6">
+                      {/* Training Style */}
+                      <div className="space-y-3">
+                        <h2 className="text-lg font-medium text-white flex items-center gap-2">
+                          <Dumbbell className="h-5 w-5 text-accent" />
+                          Training Style
+                        </h2>
+                        <div className="grid gap-2">
+                          {trainingStyles.map((style) => (
+                            <Card
+                              key={style.id}
+                              className={`p-3 cursor-pointer transition-all ${
+                                profile.trainingStyle === style.id
+                                  ? "border-accent bg-accent/10"
+                                  : "border-white/10 hover:border-white/30"
+                              }`}
+                              onClick={() => updateProfileState({ trainingStyle: style.id })}
+                            >
+                              <p className={`font-medium ${profile.trainingStyle === style.id ? "text-accent" : "text-white"}`}>
+                                {style.label}
+                              </p>
+                              <p className="text-xs text-white/60">{style.description}</p>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Available Time */}
+                      <div className="space-y-3">
+                        <h2 className="text-lg font-medium text-white flex items-center gap-2">
+                          <Clock className="h-5 w-5 text-accent" />
+                          Available Workout Time
+                        </h2>
+                        <div className="flex gap-2">
+                          {timeOptions.map((option) => (
+                            <button
+                              key={option.value}
+                              className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                                profile.availableTimeMinutes === option.value
+                                  ? "bg-accent text-black"
+                                  : "bg-black/50 text-white/70 border border-accent/30 hover:border-accent/50"
+                              }`}
+                              onClick={() => updateProfileState({ availableTimeMinutes: option.value })}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Training Days */}
+                      <div className="space-y-3">
+                        <h2 className="text-lg font-medium text-white flex items-center gap-2">
+                          <Calendar className="h-5 w-5 text-accent" />
+                          Days Per Week
+                        </h2>
+                        <div className="flex gap-2">
+                          {daysOptions.map((days) => (
+                            <button
+                              key={days}
+                              className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                                profile.trainingDaysPerWeek === days
+                                  ? "bg-accent text-black"
+                                  : "bg-black/50 text-white/70 border border-accent/30 hover:border-accent/50"
+                              }`}
+                              onClick={() => updateProfileState({ trainingDaysPerWeek: days })}
+                            >
+                              {days}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}

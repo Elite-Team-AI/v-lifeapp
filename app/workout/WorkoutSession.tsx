@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
@@ -27,6 +27,24 @@ export default function WorkoutSession({ initialWorkout }: WorkoutSessionProps) 
   const [showCelebration, setShowCelebration] = useState(false)
   const [isWorkoutCompleted, setIsWorkoutCompleted] = useState(false)
   const [demoExerciseName, setDemoExerciseName] = useState<string | null>(null)
+
+  // Initialize inputs with last used weight/reps from history
+  useEffect(() => {
+    if (workout?.exercises) {
+      const initialInputs: Record<string, { weight: string; reps: string }> = {}
+      workout.exercises.forEach((exercise) => {
+        if (exercise.lastWeight != null || exercise.lastReps != null) {
+          initialInputs[exercise.exerciseId] = {
+            weight: exercise.lastWeight != null ? String(exercise.lastWeight) : "",
+            reps: exercise.lastReps != null ? String(exercise.lastReps) : "",
+          }
+        }
+      })
+      if (Object.keys(initialInputs).length > 0) {
+        setInputs(initialInputs)
+      }
+    }
+  }, [workout])
 
   if (!workout) {
     return (
@@ -225,6 +243,11 @@ export default function WorkoutSession({ initialWorkout }: WorkoutSessionProps) 
                         <HelpCircle className="h-4 w-4" />
                       </Link>
                     </h3>
+                    {exercise.lastWeight != null && exercise.lastReps != null && (
+                      <p className="text-xs text-white/50 mt-1">
+                        Last: {exercise.lastWeight}lbs × {exercise.lastReps} reps
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <button

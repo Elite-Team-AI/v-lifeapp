@@ -36,6 +36,9 @@ export async function POST(req: Request) {
       custom_equipment: payload.customEquipment || null,
       allergies: payload.allergies || [],
       custom_restrictions: payload.customRestrictions || [],
+      training_style: payload.trainingStyle || null,
+      available_time_minutes: payload.availableTimeMinutes || null,
+      training_days_per_week: payload.trainingDaysPerWeek || null,
       onboarding_completed: true,
       updated_at: new Date().toISOString(),
     }
