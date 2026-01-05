@@ -112,10 +112,27 @@ function DashboardClient() {
   const dailyInsight = appData?.dailyInsight || "Start small and build momentum. Complete one habit today!"
 
   // Check if we should prompt for weekly reflection (from batched app data)
+  // Uses sessionStorage to prevent re-showing the modal on repeated logins/navigations
   useEffect(() => {
     if (appData?.shouldPromptWeeklyReflection) {
+      // Calculate current week start (Monday) for session tracking
+      const getWeekStart = () => {
+        const d = new Date()
+        const day = d.getDay()
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+        return new Date(d.setDate(diff)).toISOString().split("T")[0]
+      }
+      
+      const REFLECTION_SHOWN_KEY = "v-life-weekly-reflection-shown"
+      const weekStart = getWeekStart()
+      const shownForWeek = sessionStorage.getItem(REFLECTION_SHOWN_KEY)
+      
+      // Skip if already shown this session for this week
+      if (shownForWeek === weekStart) return
+      
       // Delay the prompt slightly to avoid overwhelming the user on page load
       const timer = setTimeout(() => {
+        sessionStorage.setItem(REFLECTION_SHOWN_KEY, weekStart)
         setIsWeeklyReflectionModalOpen(true)
       }, 3000)
       return () => clearTimeout(timer)
