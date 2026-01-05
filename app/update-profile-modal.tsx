@@ -2,19 +2,23 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, User, Save, Dumbbell, Home, Hotel, Building, Settings } from "lucide-react"
+import { X, User, Save, Dumbbell, Home, Hotel, Building, Settings, Camera, Loader2 } from "lucide-react"
 import { ButtonGlow } from "@/components/ui/button-glow"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { updateProfile } from "@/lib/actions/profile"
 import { useToast } from "@/hooks/use-toast"
+import { createClient } from "@/lib/supabase/client"
+import { DEFAULT_AVATAR } from "@/lib/stock-images"
 
 interface ProfileData {
   name: string
+  avatar_url?: string
   age: string
   gender: string
   heightFeet: string
@@ -64,12 +68,85 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
   const [showActivityDefinitions, setShowActivityDefinitions] = useState(false)
   const [newRestriction, setNewRestriction] = useState("")
   const [saving, setSaving] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
   useEffect(() => {
     console.log("[v0] UpdateProfileModal received profile:", currentProfile)
     setProfile(currentProfile)
   }, [currentProfile])
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Invalid file",
+        description: "Please upload an image file",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please upload an image smaller than 5MB",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setUploadingAvatar(true)
+    try {
+      const supabase = createClient()
+      
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        throw new Error("Not authenticated")
+      }
+
+      // Upload to Supabase storage
+      const fileExt = file.name.split(".").pop()
+      const fileName = `${user.id}/avatar.${fileExt}`
+      
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, file, { upsert: true })
+
+      if (uploadError) {
+        throw uploadError
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(fileName)
+
+      // Update profile state with new avatar URL (add cache buster)
+      const avatarUrl = `${publicUrl}?t=${Date.now()}`
+      updateProfileState({ avatar_url: avatarUrl })
+
+      toast({
+        title: "Avatar uploaded",
+        description: "Your profile photo has been updated",
+      })
+    } catch (error) {
+      console.error("Error uploading avatar:", error)
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload avatar. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
 
   const handleSave = async () => {
     setSaving(true)
@@ -199,6 +276,43 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                   {/* Basic Info Tab */}
                   {activeTab === "basic" && (
                     <div className="space-y-6">
+                      {/* Avatar Upload */}
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="relative">
+                          <Avatar className="h-24 w-24 border-2 border-accent/30">
+                            <AvatarImage 
+                              src={profile.avatar_url || DEFAULT_AVATAR} 
+                              alt={profile.name || "Profile"} 
+                            />
+                            <AvatarFallback className="text-2xl">
+                              {profile.name?.charAt(0)?.toUpperCase() || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadingAvatar}
+                            className="absolute bottom-0 right-0 p-2 rounded-full bg-accent text-black hover:bg-accent/90 transition-colors disabled:opacity-50"
+                          >
+                            {uploadingAvatar ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Camera className="h-4 w-4" />
+                            )}
+                          </button>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarUpload}
+                            className="hidden"
+                          />
+                        </div>
+                        <p className="text-sm text-white/60">
+                          Click the camera icon to upload a profile photo
+                        </p>
+                      </div>
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="name">Name</Label>

@@ -276,12 +276,17 @@ Deno.serve(async (req: Request) => {
 
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    if (authError) {
+      console.error("[VBot] Auth error:", JSON.stringify(authError))
+    }
+    if (!user) {
+      console.error("[VBot] No user found from auth token")
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       )
     }
+    console.log("[VBot] Authenticated user:", user.id, user.email)
 
     // Parse request body
     const { messages, conversationId: requestConversationId } = await req.json() as ChatRequest
@@ -322,8 +327,16 @@ Deno.serve(async (req: Request) => {
         8  // Increased limit for better coverage
       )
       console.log("[VBot] Retrieved", retrievedMessages.length, "relevant messages from history")
+      
+      // Log RAG results for debugging
+      if (retrievedMessages.length > 0) {
+        console.log("[VBot] RAG top result similarity:", retrievedMessages[0]?.similarity)
+      } else {
+        console.log("[VBot] RAG: No relevant history found (this is normal for new users)")
+      }
     } catch (embeddingError) {
       console.error("[VBot] Embedding/RAG error:", embeddingError instanceof Error ? embeddingError.message : embeddingError)
+      console.error("[VBot] Embedding/RAG full error:", JSON.stringify(embeddingError))
     }
 
     // Get recent messages from current conversation (PRIORITY)
@@ -348,6 +361,8 @@ Deno.serve(async (req: Request) => {
     )
 
     // Fetch all user fitness data in parallel
+    console.log("[VBot] Fetching user data for user:", user.id)
+    
     const [
       profileResult,
       habitsResult,
@@ -393,6 +408,32 @@ Deno.serve(async (req: Request) => {
         .limit(10),
     ])
 
+    // Log any errors from data fetching
+    if (profileResult.error) {
+      console.error("[VBot] Profile fetch error:", JSON.stringify(profileResult.error))
+    }
+    if (habitsResult.error) {
+      console.error("[VBot] Habits fetch error:", JSON.stringify(habitsResult.error))
+    }
+    if (workoutsResult.error) {
+      console.error("[VBot] Workouts fetch error:", JSON.stringify(workoutsResult.error))
+    }
+    if (mealsResult.error) {
+      console.error("[VBot] Meals fetch error:", JSON.stringify(mealsResult.error))
+    }
+    if (weightEntriesResult.error) {
+      console.error("[VBot] Weight entries fetch error:", JSON.stringify(weightEntriesResult.error))
+    }
+    if (progressPhotosResult.error) {
+      console.error("[VBot] Progress photos fetch error:", JSON.stringify(progressPhotosResult.error))
+    }
+    if (streaksResult.error) {
+      console.error("[VBot] Streaks fetch error:", JSON.stringify(streaksResult.error))
+    }
+    if (supplementsResult.error) {
+      console.error("[VBot] Supplements fetch error:", JSON.stringify(supplementsResult.error))
+    }
+
     // Build comprehensive user context
     const profile = profileResult.data
     const habits = habitsResult.data || []
@@ -402,6 +443,23 @@ Deno.serve(async (req: Request) => {
     const progressPhotos = progressPhotosResult.data || []
     const streaks = streaksResult.data || []
     const supplements = supplementsResult.data || []
+    
+    // Log data summary for debugging
+    console.log("[VBot] Data loaded - Profile:", profile ? "YES" : "NO", 
+      "| Habits:", habits.length, 
+      "| Workouts:", workouts.length,
+      "| Meals:", meals.length,
+      "| Weight entries:", weightEntries.length,
+      "| Streaks:", streaks.length)
+    
+    if (profile) {
+      console.log("[VBot] Profile data - Name:", profile.name, 
+        "| Weight:", profile.weight,
+        "| Goal:", profile.primary_goal,
+        "| Goal Weight:", profile.goal_weight)
+    } else {
+      console.warn("[VBot] WARNING: No profile found for user", user.id)
+    }
 
     // Calculate stats
     const completedHabitsToday = habits.filter((h: any) =>

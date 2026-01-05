@@ -47,6 +47,7 @@ export async function getProfile(): Promise<ProfileResult> {
 
 export async function updateProfile(profileData: {
   name?: string
+  avatar_url?: string
   age?: string
   gender?: string
   heightFeet?: string
@@ -94,6 +95,7 @@ export async function updateProfile(profileData: {
     const dataToUpsert = {
       id: user.id,
       name: profileData.name,
+      avatar_url: profileData.avatar_url,
       age: profileData.age ? Number.parseInt(profileData.age) : null,
       gender: profileData.gender,
       height_feet: profileData.heightFeet ? Number.parseInt(profileData.heightFeet) : null,

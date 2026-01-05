@@ -9,8 +9,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { CelebrationModal } from "@/components/confetti-celebration"
+import { ExerciseDemoModal } from "@/components/exercise-demo-modal"
 import type { ActiveWorkoutPayload } from "@/lib/actions/workouts"
-import { ArrowLeft, CheckCircle, ListOrdered, Repeat, Sparkles, Clock, Target, Trophy, HelpCircle } from "lucide-react"
+import { ArrowLeft, CheckCircle, ListOrdered, Repeat, Sparkles, Clock, Target, Trophy, HelpCircle, Play } from "lucide-react"
 
 interface WorkoutSessionProps {
   initialWorkout: ActiveWorkoutPayload | null
@@ -25,6 +26,7 @@ export default function WorkoutSession({ initialWorkout }: WorkoutSessionProps) 
   const [completingWorkout, setCompletingWorkout] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
   const [isWorkoutCompleted, setIsWorkoutCompleted] = useState(false)
+  const [demoExerciseName, setDemoExerciseName] = useState<string | null>(null)
 
   if (!workout) {
     return (
@@ -211,22 +213,32 @@ export default function WorkoutSession({ initialWorkout }: WorkoutSessionProps) 
             <Card key={exercise.workoutExerciseId} className="border-white/10 bg-black/60 backdrop-blur-sm">
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm text-accent capitalize">{exercise.category || "Strength"}</p>
                     <h3 className="text-white font-bold flex items-center gap-2">
                       {exercise.name}
                       <Link 
                         href={`/vbot?prompt=${encodeURIComponent(`How do I properly do a ${exercise.name}? Explain the correct form, key cues to focus on, and common mistakes to avoid.`)}`}
                         className="text-white/40 hover:text-accent transition-colors"
-                        title={`How do I do a ${exercise.name}?`}
+                        title={`Ask VBot about ${exercise.name}`}
                       >
                         <HelpCircle className="h-4 w-4" />
                       </Link>
                     </h3>
                   </div>
-                  <span className="text-sm text-white/70">
-                    {exercise.completedSets}/{exercise.sets} sets
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setDemoExerciseName(exercise.name)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 hover:bg-accent/20 text-accent text-xs font-medium transition-colors"
+                      title={`View demo for ${exercise.name}`}
+                    >
+                      <Play className="h-3.5 w-3.5" />
+                      Demo
+                    </button>
+                    <span className="text-sm text-white/70">
+                      {exercise.completedSets}/{exercise.sets} sets
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex gap-2">
@@ -309,6 +321,13 @@ export default function WorkoutSession({ initialWorkout }: WorkoutSessionProps) 
         onClose={handleCelebrationClose}
         workoutName={workout.name}
         exerciseCount={workout.exercises.length}
+      />
+
+      {/* Exercise Demo Modal */}
+      <ExerciseDemoModal
+        isOpen={demoExerciseName !== null}
+        onClose={() => setDemoExerciseName(null)}
+        exerciseName={demoExerciseName || ""}
       />
     </div>
   )

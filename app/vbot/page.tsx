@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { motion, AnimatePresence } from "framer-motion"
-import { Send, Loader2, Bot, UserIcon, Plus, MessageSquare, ChevronLeft, Trash2, Sparkles, Mic } from "lucide-react"
+import { Send, Loader2, Bot, UserIcon, Plus, MessageSquare, ChevronLeft, Trash2, Sparkles, Mic, Info } from "lucide-react"
 import { useState, useRef, useEffect, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import ReactMarkdown from "react-markdown"
@@ -11,8 +11,9 @@ import { ButtonGlow } from "@/components/ui/button-glow"
 import { BottomNav } from "@/components/bottom-nav"
 import { cn } from "@/lib/utils"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
-import { VoiceChatButton, VoicePlayback, VoiceConversationModal, VoiceLiveModal } from "@/components/voice"
+import { VoicePlayback, InlineVoiceInput } from "@/components/voice"
 import type { VoicePreferences, GeminiVoiceName } from "@/lib/types"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface Message {
   id: string
@@ -50,7 +51,8 @@ function VBotPageContent() {
   const [lastAssistantMessageId, setLastAssistantMessageId] = useState<string | null>(null)
   const [lastMessageWasVoice, setLastMessageWasVoice] = useState(false)
   const [isStreamingComplete, setIsStreamingComplete] = useState(false)
-  const [showVoiceModal, setShowVoiceModal] = useState(false)
+  const [isVoiceInputActive, setIsVoiceInputActive] = useState(false)
+  const [showInfoModal, setShowInfoModal] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const conversationIdRef = useRef<string | null>(null)
@@ -348,23 +350,6 @@ function VBotPageContent() {
     }
   }, [sendMessage])
 
-  // Handle opening Voice Focus Mode
-  const handleOpenVoiceModal = useCallback(() => {
-    setShowVoiceModal(true)
-  }, [])
-
-  // Handle voice modal messages update
-  const handleVoiceMessagesUpdate = useCallback((voiceMessages: Array<{ role: "user" | "assistant"; content: string }>) => {
-    // Convert voice messages to our Message format and update state
-    const formattedMessages: Message[] = voiceMessages.map((msg, idx) => ({
-      id: `voice-${Date.now()}-${idx}`,
-      role: msg.role,
-      content: msg.content,
-    }))
-    setMessages(formattedMessages)
-    // Refresh conversations list
-    loadConversations()
-  }, [loadConversations])
 
   // History sidebar
   const HistorySidebar = () => (
@@ -471,6 +456,13 @@ function VBotPageContent() {
               <div>
                 <h1 className="text-lg font-bold text-white flex items-center gap-2">
                   VBot 
+                  <button
+                    onClick={() => setShowInfoModal(true)}
+                    className="group flex h-5 w-5 items-center justify-center rounded-full text-white/40 hover:text-accent transition-colors"
+                    title="How to use VBot"
+                  >
+                    <Info className="h-4 w-4" />
+                  </button>
                   <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">BETA</span>
                   {voicePrefs.voiceEnabled && (
                     <span className="flex items-center gap-1 rounded-full bg-green-500/20 px-2 py-0.5 text-[10px] font-medium text-green-400">
@@ -501,7 +493,7 @@ function VBotPageContent() {
       </div>
 
       {/* Messages */}
-      <div className="relative z-0 container mx-auto max-w-md flex-1 overflow-y-auto px-4 pt-6 pb-80">
+      <div className="relative z-0 container mx-auto max-w-2xl flex-1 overflow-y-auto px-4 pt-6 pb-28">
         {messages.length === 0 ? (
           <motion.div
             className="flex flex-col items-center text-center pt-8"
@@ -688,91 +680,133 @@ function VBotPageContent() {
         )}
       </div>
 
-      {/* Input */}
-      <div className="sticky bottom-28 z-10 border-t border-white/5 bg-black/60 backdrop-blur-xl">
-        <div className="container mx-auto max-w-md px-4 py-4">
-          {/* Voice-first layout when voice is enabled */}
-          {voicePrefs.voiceEnabled ? (
-            <div className="space-y-3">
-              {/* Voice Button - Opens Voice Focus Mode */}
-              <div className="flex items-center justify-center">
-                <button
-                  onClick={handleOpenVoiceModal}
+      {/* Input - fixed above bottom nav */}
+      <div className="fixed bottom-20 left-0 right-0 z-40 bg-black/90 backdrop-blur-lg border-t border-white/5">
+        <div className="container mx-auto max-w-2xl px-4 py-3">
+          <form onSubmit={handleSubmit} className="relative">
+            <AnimatePresence mode="wait">
+              {isVoiceInputActive ? (
+                <InlineVoiceInput
+                  key="voice-input"
+                  onTranscript={handleVoiceTranscript}
+                  onActiveChange={setIsVoiceInputActive}
                   disabled={isLoading}
-                  className="group flex items-center gap-3 rounded-full bg-gradient-to-br from-green-500 to-green-600 px-5 py-2.5 text-white shadow-md shadow-green-500/25 transition-all hover:from-green-400 hover:to-green-500 hover:shadow-green-500/35 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
-                    <Mic className="h-4 w-4" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-semibold">Start Voice Chat</p>
-                    <p className="text-xs text-white/70">Tap to talk</p>
-                  </div>
-                </button>
-              </div>
-              
-              {/* Divider */}
-              <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-white/10" />
-                <span className="text-[10px] text-white/30 uppercase tracking-wider">or type</span>
-                <div className="h-px flex-1 bg-white/10" />
-              </div>
-              
-              {/* Text input (secondary) */}
-              <form onSubmit={handleSubmit} className="relative flex gap-2">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Type your message..."
-                  className="flex-1 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-white shadow-inner placeholder:text-white/30 focus:border-accent/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-all"
-                  disabled={isLoading}
+                  className="w-full"
                 />
-                <ButtonGlow
-                  type="submit"
-                  variant="accent-glow"
-                  size="icon"
-                  className="h-11 w-11 flex-shrink-0 rounded-full shadow-lg shadow-accent/20"
-                  disabled={!input.trim() || isLoading}
+              ) : (
+                <motion.div
+                  key="text-input-wrapper"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="relative flex items-center"
                 >
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </ButtonGlow>
-              </form>
-            </div>
-          ) : (
-            /* Standard text-first layout */
-            <form onSubmit={handleSubmit} className="relative flex gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask me anything..."
-                className="flex-1 rounded-full border border-white/10 bg-white/5 px-6 py-3.5 text-sm text-white shadow-inner placeholder:text-white/30 focus:border-accent/50 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-accent/50 transition-all"
-                disabled={isLoading}
-              />
-              <ButtonGlow
-                type="submit"
-                variant="accent-glow"
-                size="icon"
-                className="h-12 w-12 flex-shrink-0 rounded-full shadow-lg shadow-accent/20"
-                disabled={!input.trim() || isLoading}
-              >
-                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-              </ButtonGlow>
-            </form>
-          )}
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Message VBot..."
+                    className="w-full rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 pr-24 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none transition-colors"
+                    disabled={isLoading}
+                  />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    {/* Mic button */}
+                    {voicePrefs.voiceEnabled && (
+                      <button
+                        type="button"
+                        onClick={() => setIsVoiceInputActive(true)}
+                        disabled={isLoading}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50"
+                      >
+                        <Mic className="h-4 w-4" />
+                      </button>
+                    )}
+                    {/* Send button */}
+                    <button
+                      type="submit"
+                      disabled={!input.trim() || isLoading}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-black transition-all hover:bg-accent/90 disabled:bg-white/10 disabled:text-white/30"
+                    >
+                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </form>
           {error && <p className="mt-2 text-xs text-red-500">Error: {error}</p>}
         </div>
       </div>
 
-      {/* Voice Live Modal - Real-time streaming voice */}
-      <VoiceLiveModal
-        isOpen={showVoiceModal}
-        onClose={() => setShowVoiceModal(false)}
-        voice={voicePrefs.selectedVoice}
-      />
-
       <BottomNav />
+
+      {/* VBot Info Modal */}
+      <Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
+        <DialogContent className="bg-black/95 border-white/10 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Bot className="h-5 w-5 text-accent" />
+              How to Use VBot
+            </DialogTitle>
+            <DialogDescription className="text-white/70">
+              Your AI Fitness Coach
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <p className="text-sm text-white/90 mb-3">
+                VBot is your <strong className="text-accent">digital fitness coach</strong> that provides personalized, on-demand guidance tailored to your fitness journey. Unlike static features, VBot understands your profile, progress, and goals to give you real-time coaching.
+              </p>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5">
+                  <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
+                    <span className="text-accent text-sm font-bold">1</span>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-white mb-1">Situational Coaching</h4>
+                  <p className="text-sm text-white/70">
+                    Get personalized workout adjustments when traveling, sick, or with limited equipment. VBot adapts to your current situation.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5">
+                  <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
+                    <span className="text-accent text-sm font-bold">2</span>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-white mb-1">Personalized Advice</h4>
+                  <p className="text-sm text-white/70">
+                    Uses your profile data, workout history, and progress to provide tailored recommendations. Every answer is customized to you.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5">
+                  <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
+                    <span className="text-accent text-sm font-bold">3</span>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-white mb-1">On-Demand Q&A</h4>
+                  <p className="text-sm text-white/70">
+                    Ask anything about fitness, nutrition, recovery, or form. Get instant answers with context from your journey.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="pt-3 border-t border-white/10">
+              <p className="text-xs text-white/50">
+                <strong className="text-white/70">Note:</strong> VBot is not medical advice. Consult your physician before starting any fitness program.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

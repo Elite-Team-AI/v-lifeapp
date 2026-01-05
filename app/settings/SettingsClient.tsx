@@ -63,10 +63,11 @@ export default function SettingsClient() {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default")
 
   // Derive data from cached app data using useMemo
-  const profileData = useMemo<ProfileFormData>(() => {
+  const profileData = useMemo(() => {
     if (!appData?.profile) {
       return {
         name: "",
+        avatar_url: undefined,
         age: "",
         gender: "",
         heightFeet: "",
@@ -87,6 +88,7 @@ export default function SettingsClient() {
     const profile = appData.profile
     return {
       name: profile.name || "",
+      avatar_url: profile.avatar_url || undefined,
       age: profile.age?.toString() || "",
       gender: profile.gender || "",
       heightFeet: profile.height_feet?.toString() || "",

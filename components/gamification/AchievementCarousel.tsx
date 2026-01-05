@@ -94,7 +94,7 @@ export function AchievementCarousel({
         {/* Scrollable carousel */}
         <div
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1"
+          className="flex gap-3 overflow-x-auto scrollbar-hide py-2 -mx-1 px-3"
           style={{ scrollSnapType: 'x mandatory' }}
         >
           {sortedAchievements.map((achievement, index) => {
@@ -105,7 +105,7 @@ export function AchievementCarousel({
             return (
               <motion.div
                 key={achievement.id}
-                className="flex-shrink-0"
+                className={cn("flex-shrink-0", isRecent && "p-2 -m-2")}
                 style={{ scrollSnapAlign: 'start' }}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}

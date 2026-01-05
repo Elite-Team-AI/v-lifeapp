@@ -19,6 +19,9 @@ const envSchema = z.object({
   // NOTE: For production, use a WebSocket proxy to keep this server-side
   NEXT_PUBLIC_GOOGLE_API_KEY: z.string().optional(),
   
+  // RapidAPI Key for ExerciseDB API (server-side only)
+  RAPIDAPI_KEY: z.string().optional(),
+  
   // App URL (optional - can be empty string during build)
   NEXT_PUBLIC_APP_URL: z.union([
     z.string().url(),
@@ -43,6 +46,7 @@ function validateEnv(): Env {
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
     NEXT_PUBLIC_GOOGLE_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_API_KEY,
+    RAPIDAPI_KEY: process.env.RAPIDAPI_KEY,
     // Allow empty string for APP_URL during build
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || undefined,
   })
@@ -58,6 +62,7 @@ function validateEnv(): Env {
         OPENAI_API_KEY: undefined,
         GOOGLE_API_KEY: undefined,
         NEXT_PUBLIC_GOOGLE_API_KEY: undefined,
+        RAPIDAPI_KEY: undefined,
         NEXT_PUBLIC_APP_URL: undefined,
       }
     }

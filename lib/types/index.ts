@@ -59,6 +59,7 @@ export const GEMINI_VOICES: VoiceOption[] = [
 export interface Profile {
   id: string
   name: string | null
+  avatar_url: string | null
   age: number | null
   gender: 'male' | 'female' | 'other' | 'prefer_not_to_say' | null
   height_feet: number | null
@@ -76,6 +77,7 @@ export interface Profile {
   referral_code: string | null
   credits: number
   onboarding_completed: boolean | null
+  is_admin: boolean | null
   voice_preferences?: VoicePreferences | null
   created_at: string
   updated_at: string
@@ -83,6 +85,7 @@ export interface Profile {
 
 export interface ProfileFormData {
   name: string
+  avatar_url?: string
   age: string
   gender: string
   heightFeet: string

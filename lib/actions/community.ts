@@ -5,11 +5,10 @@ import { revalidatePath, revalidateTag, unstable_cache } from "next/cache"
 import type { TransformedPost, TransformedComment } from "@/lib/types"
 import { DEFAULT_AVATAR } from "@/lib/stock-images"
 
-// Note: profiles table doesn't have avatar_url column yet
-// When it's added, restore this helper function:
-// function getUserAvatar(avatarUrl: string | null | undefined): string {
-//   return avatarUrl || DEFAULT_AVATAR
-// }
+// Helper to get user avatar with fallback
+function getUserAvatar(avatarUrl: string | null | undefined): string {
+  return avatarUrl || DEFAULT_AVATAR
+}
 
 interface PostReaction {
   id: string
@@ -27,7 +26,7 @@ interface PostWithRelations {
   likes_count: number
   comments_count: number
   created_at: string
-  profiles: { id: string; name: string | null } | null
+  profiles: { id: string; name: string | null; avatar_url: string | null } | null
   post_reactions: PostReaction[]
 }
 
@@ -47,6 +46,8 @@ interface ChallengeProgress {
   participants: number
   daysLeft: number
   progress: number
+  joined: boolean
+  isDbChallenge: boolean
 }
 
 const MONTHLY_CHALLENGE_DEFS: Record<number, Omit<ChallengeDefinition, 'participants'>[]> = {
@@ -160,7 +161,8 @@ const getCachedPosts = unstable_cache(
         *,
         profiles:user_id (
           id,
-          name
+          name,
+          avatar_url
         ),
         post_reactions (
           id,
@@ -247,7 +249,7 @@ export async function getPosts(
         user: {
           id: post.user_id,
           name: post.profiles?.name || "vLife User",
-          avatar: DEFAULT_AVATAR, // profiles table doesn't have avatar_url yet
+          avatar: getUserAvatar(post.profiles?.avatar_url),
           isFollowing: followingSet.has(post.user_id),
         },
         title: post.title,
@@ -413,7 +415,8 @@ export async function getComments(postId: string): Promise<{ comments?: Transfor
       *,
       profiles:user_id (
         id,
-        name
+        name,
+        avatar_url
       )
     `)
     .eq("post_id", postId)
@@ -428,7 +431,7 @@ export async function getComments(postId: string): Promise<{ comments?: Transfor
     id: comment.id,
     user: {
       name: comment.profiles?.name || "vLife User",
-      avatar: DEFAULT_AVATAR, // profiles table doesn't have avatar_url yet
+      avatar: getUserAvatar(comment.profiles?.avatar_url),
     },
     content: comment.content,
     time: getTimeAgo(new Date(comment.created_at)),
@@ -488,6 +491,7 @@ export async function getLeaderboard(): Promise<{ leaderboard?: LeaderboardUser[
     .select(`
       id,
       name,
+      avatar_url,
       posts:posts(count),
       post_reactions:posts(post_reactions(count))
     `)
@@ -500,6 +504,7 @@ export async function getLeaderboard(): Promise<{ leaderboard?: LeaderboardUser[
   interface UserWithCounts {
     id: string
     name: string | null
+    avatar_url: string | null
     posts: { count: number }[]
     post_reactions: { post_reactions: { count: number }[] }[]
   }
@@ -508,7 +513,7 @@ export async function getLeaderboard(): Promise<{ leaderboard?: LeaderboardUser[
   const leaderboard: LeaderboardUser[] = (users as UserWithCounts[] || [])
     .map((user) => ({
       name: user.name || "vLife User",
-      avatar: DEFAULT_AVATAR, // profiles table doesn't have avatar_url yet
+      avatar: getUserAvatar(user.avatar_url),
       posts: user.posts?.[0]?.count || 0,
       likes: user.post_reactions?.reduce(
         (sum, post) => sum + (post.post_reactions?.[0]?.count || 0),
@@ -542,6 +547,23 @@ export async function getChallenges(): Promise<{ challenges?: ChallengeProgress[
   const endMs = rangeEnd.getTime()
   const totalDaysThisMonth = daysInMonth(now)
   const daysRemaining = daysLeftInMonth(now)
+  const todayStr = now.toISOString().split('T')[0]
+
+  // Fetch database challenges (active ones where end_date >= today)
+  const { data: dbChallenges, error: dbChallengesError } = await supabase
+    .from("challenges")
+    .select("*")
+    .gte("end_date", todayStr)
+    .order("created_at", { ascending: false })
+
+  // Fetch user's joined challenges
+  const { data: joinedChallenges } = await supabase
+    .from("challenge_participants")
+    .select("challenge_id, progress")
+    .eq("user_id", user.id)
+
+  const joinedChallengeIds = new Set(joinedChallenges?.map(j => j.challenge_id) || [])
+  const joinedProgressMap = new Map(joinedChallenges?.map(j => [j.challenge_id, j.progress]) || [])
 
   // Get active user count for this month (users who have logged anything)
   const { data: activeUsersData, error: activeUsersError } = await supabase
@@ -623,16 +645,40 @@ export async function getChallenges(): Promise<{ challenges?: ChallengeProgress[
     activeDays: activeDays.size,
   }
 
+  // Transform database challenges into ChallengeProgress format
+  const dbChallengesList: ChallengeProgress[] = (dbChallenges || []).map((challenge) => {
+    const endDate = new Date(challenge.end_date)
+    const daysLeft = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+    const userProgress = joinedProgressMap.get(challenge.id) || 0
+    const progressPercent = challenge.target_value > 0 
+      ? Math.min(100, Math.round((userProgress / challenge.target_value) * 100)) 
+      : 0
+
+    return {
+      id: challenge.id,
+      title: challenge.title,
+      description: challenge.description || "",
+      participants: challenge.participants_count || 0,
+      daysLeft,
+      progress: progressPercent,
+      joined: joinedChallengeIds.has(challenge.id),
+      isDbChallenge: true,
+    }
+  })
+
   const defs = MONTHLY_CHALLENGE_DEFS[month] || []
   const seasonalChallenges: ChallengeProgress[] = defs.map((challenge, index) => {
     const currentValue = metricValues[challenge.metric] || 0
     const progress = challenge.target > 0 ? Math.min(100, Math.round((currentValue / challenge.target) * 100)) : 0
+    const seasonalId = `${year}-${month}-seasonal-${index}`
     return {
       ...challenge,
-      id: `${year}-${month}-seasonal-${index}`,
+      id: seasonalId,
       participants: approximateActiveUsers,
       daysLeft: daysRemaining,
       progress,
+      joined: true, // Monthly challenges are auto-joined
+      isDbChallenge: false,
     }
   })
 
@@ -645,6 +691,8 @@ export async function getChallenges(): Promise<{ challenges?: ChallengeProgress[
       daysLeft: daysRemaining,
       progress:
         totalDaysThisMonth > 0 ? Math.min(100, Math.round((metricValues.nutritionDays / totalDaysThisMonth) * 100)) : 0,
+      joined: true,
+      isDbChallenge: false,
     },
     {
       id: `${year}-${month}-streak-workouts`,
@@ -654,10 +702,92 @@ export async function getChallenges(): Promise<{ challenges?: ChallengeProgress[
       daysLeft: daysRemaining,
       progress:
         totalDaysThisMonth > 0 ? Math.min(100, Math.round((metricValues.workoutDays / totalDaysThisMonth) * 100)) : 0,
+      joined: true,
+      isDbChallenge: false,
     },
   ]
 
-  return { challenges: [...seasonalChallenges, ...streakChallenges] }
+  // DB challenges first, then monthly/streak challenges
+  return { challenges: [...dbChallengesList, ...seasonalChallenges, ...streakChallenges] }
+}
+
+export async function joinChallenge(challengeId: string): Promise<{ success?: boolean; error?: string }> {
+  const { user, error: authError } = await getAuthUser()
+  if (authError || !user) {
+    return { error: "Not authenticated" }
+  }
+
+  const supabase = await createClient()
+
+  // Check if already joined
+  const { data: existing } = await supabase
+    .from("challenge_participants")
+    .select("id")
+    .eq("challenge_id", challengeId)
+    .eq("user_id", user.id)
+    .maybeSingle()
+
+  if (existing) {
+    return { error: "Already joined this challenge" }
+  }
+
+  // Join the challenge
+  const { error: joinError } = await supabase
+    .from("challenge_participants")
+    .insert({
+      challenge_id: challengeId,
+      user_id: user.id,
+      progress: 0,
+      completed: false,
+    })
+
+  if (joinError) {
+    console.error("Error joining challenge:", joinError)
+    return { error: "Failed to join challenge" }
+  }
+
+  // Increment participants count
+  const { error: updateError } = await supabase.rpc("increment_challenge_participants", { 
+    challenge_id_param: challengeId 
+  })
+
+  if (updateError) {
+    // Non-critical, just log
+    console.warn("Failed to update participants count:", updateError)
+  }
+
+  return { success: true }
+}
+
+export async function leaveChallenge(challengeId: string): Promise<{ success?: boolean; error?: string }> {
+  const { user, error: authError } = await getAuthUser()
+  if (authError || !user) {
+    return { error: "Not authenticated" }
+  }
+
+  const supabase = await createClient()
+
+  const { error: deleteError } = await supabase
+    .from("challenge_participants")
+    .delete()
+    .eq("challenge_id", challengeId)
+    .eq("user_id", user.id)
+
+  if (deleteError) {
+    console.error("Error leaving challenge:", deleteError)
+    return { error: "Failed to leave challenge" }
+  }
+
+  // Decrement participants count
+  const { error: updateError } = await supabase.rpc("decrement_challenge_participants", { 
+    challenge_id_param: challengeId 
+  })
+
+  if (updateError) {
+    console.warn("Failed to update participants count:", updateError)
+  }
+
+  return { success: true }
 }
 
 function getTimeAgo(date: Date): string {

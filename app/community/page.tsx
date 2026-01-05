@@ -86,6 +86,8 @@ type Challenge = {
   participants: number
   daysLeft: number
   progress: number
+  joined: boolean
+  isDbChallenge: boolean
 }
 
 export default function Community() {
@@ -184,6 +186,70 @@ export default function Community() {
     }
   }
 
+  const handleJoinChallenge = async (challengeId: string) => {
+    try {
+      const { joinChallenge } = await import("@/lib/actions/community")
+      const result = await joinChallenge(challengeId)
+      
+      if (result.success) {
+        // Optimistically update UI
+        setChallenges((prev) =>
+          prev.map((c) =>
+            c.id === challengeId
+              ? { ...c, joined: true, participants: c.participants + 1 }
+              : c
+          )
+        )
+        toast({
+          title: "Challenge Joined!",
+          description: "You've joined the challenge. Good luck!",
+        })
+      } else {
+        toast({
+          title: "Could not join",
+          description: result.error || "Already joined or error occurred.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Error joining challenge:", error)
+      toast({
+        title: "Error",
+        description: "Failed to join challenge. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleLeaveChallenge = async (challengeId: string) => {
+    try {
+      const { leaveChallenge } = await import("@/lib/actions/community")
+      const result = await leaveChallenge(challengeId)
+      
+      if (result.success) {
+        setChallenges((prev) =>
+          prev.map((c) =>
+            c.id === challengeId
+              ? { ...c, joined: false, participants: Math.max(0, c.participants - 1) }
+              : c
+          )
+        )
+        toast({
+          title: "Left Challenge",
+          description: "You've left the challenge.",
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Could not leave challenge.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Error leaving challenge:", error)
+    }
+  }
+
   const loadComments = async (postId: number) => {
     try {
       const { getComments } = await import("@/lib/actions/community")
@@ -207,7 +273,7 @@ export default function Community() {
 
   const currentUser = {
     name: currentUserName,
-    avatar: DEFAULT_AVATAR, // profiles table doesn't have avatar_url yet
+    avatar: appData?.profile?.avatar_url || DEFAULT_AVATAR,
   }
 
   const categories = [
@@ -685,9 +751,31 @@ export default function Community() {
                         />
                       </div>
                     </div>
-                    <ButtonGlow variant="accent-glow" size="sm" className="w-full mt-3">
-                      Join Challenge
-                    </ButtonGlow>
+                    {challenge.isDbChallenge ? (
+                      challenge.joined ? (
+                        <ButtonGlow 
+                          variant="outline-glow" 
+                          size="sm" 
+                          className="w-full mt-3"
+                          onClick={() => handleLeaveChallenge(challenge.id)}
+                        >
+                          Leave Challenge
+                        </ButtonGlow>
+                      ) : (
+                        <ButtonGlow 
+                          variant="accent-glow" 
+                          size="sm" 
+                          className="w-full mt-3"
+                          onClick={() => handleJoinChallenge(challenge.id)}
+                        >
+                          Join Challenge
+                        </ButtonGlow>
+                      )
+                    ) : (
+                      <div className="mt-3 text-center text-xs text-white/50">
+                        Auto-tracked monthly challenge
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
