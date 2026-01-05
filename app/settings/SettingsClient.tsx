@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeft, Briefcase } from "lucide-react"
+import { ArrowLeft, Briefcase, Shield } from "lucide-react"
 import { BottomNav } from "@/components/bottom-nav"
 import { ButtonGlow } from "@/components/ui/button-glow"
 import { useRouter } from "next/navigation"
@@ -487,6 +487,18 @@ export default function SettingsClient() {
             <p className="text-white/70">Manage your preferences</p>
           </div>
         </div>
+
+        {/* Admin Panel Link - only shows for admins */}
+        {appData?.profile?.is_admin && (
+          <ButtonGlow
+            variant="accent-glow"
+            className="w-full mb-6"
+            onClick={() => router.push("/admin")}
+          >
+            <Shield className="h-4 w-4 mr-2" />
+            Admin Panel
+          </ButtonGlow>
+        )}
 
         <Accordion type="multiple" className="space-y-4">
           <AccountSection
