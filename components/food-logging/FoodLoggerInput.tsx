@@ -260,7 +260,7 @@ export function FoodLoggerInput({
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -5 }}
-                  className="absolute right-0 top-full mt-1 z-10 rounded-lg border border-white/10 bg-charcoal/95 backdrop-blur-sm shadow-lg max-h-[240px] overflow-y-auto"
+                  className="absolute right-0 top-full mt-1 z-20 rounded-lg border border-white/10 bg-charcoal/95 backdrop-blur-sm shadow-lg max-h-[240px] overflow-y-auto"
                 >
                   <button
                     type="button"

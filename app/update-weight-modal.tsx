@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, Scale, TrendingDown, TrendingUp, Minus } from "lucide-react"
@@ -26,6 +26,13 @@ export function UpdateWeightModal({ isOpen, onClose, currentWeight, recentEntrie
   const [note, setNote] = useState("")
   const [unit, setUnit] = useState<"lbs" | "kg">("lbs")
   const [isPending, startTransition] = useTransition()
+
+  // Pre-populate with latest weight when modal opens
+  useEffect(() => {
+    if (isOpen && currentWeight) {
+      setWeight(currentWeight.toString())
+    }
+  }, [isOpen, currentWeight])
 
   const handleUpdate = () => {
     const weightValue = Number.parseFloat(weight)

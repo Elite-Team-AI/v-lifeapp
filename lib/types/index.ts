@@ -102,7 +102,8 @@ export interface ProfileFormData {
   customEquipment: string
   allergies: string[]
   customRestrictions: string[]
-  trainingStyle?: string
+  programType?: string
+  customProgramType?: string
   availableTimeMinutes?: number
   trainingDaysPerWeek?: number
   timezone?: string
@@ -371,7 +372,7 @@ export interface ProgressPhoto {
   id: string
   user_id: string
   image_url: string
-  notes: string | null
+  note: string | null
   taken_at: string
   created_at?: string
 }
@@ -417,7 +418,8 @@ export interface OnboardingData {
   primaryGoal: string
 
   // Training preferences
-  trainingStyle: string
+  programType: string
+  customProgramType?: string
   availableTimeMinutes: number
   trainingDaysPerWeek: number
 

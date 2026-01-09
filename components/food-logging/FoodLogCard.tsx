@@ -17,18 +17,26 @@ interface FoodLogCardProps {
   compact?: boolean
 }
 
+const MEAL_TYPES = ["Breakfast", "Snack (AM)", "Lunch", "Snack (PM)", "Dinner", "Late Snack"] as const
+
 const MEAL_TYPE_ICONS: Record<string, string> = {
   Breakfast: "🌅",
+  "Snack (AM)": "☕",
   Lunch: "☀️",
+  "Snack (PM)": "🍪",
   Dinner: "🌙",
-  Snack: "🍎",
+  "Late Snack": "🌜",
+  Snack: "🍎", // fallback for legacy entries
 }
 
 const MEAL_TYPE_COLORS: Record<string, string> = {
   Breakfast: "text-orange-400",
+  "Snack (AM)": "text-amber-400",
   Lunch: "text-yellow-400",
+  "Snack (PM)": "text-lime-400",
   Dinner: "text-purple-400",
-  Snack: "text-green-400",
+  "Late Snack": "text-indigo-400",
+  Snack: "text-green-400", // fallback for legacy entries
 }
 
 export function FoodLogCard({ entry, onUpdate, onDelete, compact = false }: FoodLogCardProps) {
@@ -223,7 +231,7 @@ export function FoodLogCard({ entry, onUpdate, onDelete, compact = false }: Food
                     exit={{ opacity: 0, y: -5 }}
                     className="absolute left-0 right-0 top-full mt-1 z-10 rounded-lg border border-white/10 bg-charcoal/95 backdrop-blur-sm shadow-lg overflow-hidden"
                   >
-                    {(["Breakfast", "Lunch", "Dinner", "Snack"] as const).map((type) => (
+                    {MEAL_TYPES.map((type) => (
                       <button
                         key={type}
                         type="button"

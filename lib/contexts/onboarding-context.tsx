@@ -29,7 +29,8 @@ const defaultData: OnboardingData = {
   primaryGoal: "",
 
   // Training preferences
-  trainingStyle: "",
+  programType: "",
+  customProgramType: "",
   availableTimeMinutes: 45,
   trainingDaysPerWeek: 4,
 

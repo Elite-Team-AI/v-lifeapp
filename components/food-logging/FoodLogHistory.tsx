@@ -21,7 +21,7 @@ interface FoodLogHistoryProps {
   className?: string
 }
 
-const MEAL_ORDER = ["Breakfast", "Lunch", "Dinner", "Snack"] as const
+const MEAL_ORDER = ["Breakfast", "Snack (AM)", "Lunch", "Snack (PM)", "Dinner", "Late Snack"] as const
 
 export function FoodLogHistory({ 
   initialDate, 
@@ -121,8 +121,8 @@ export function FoodLogHistory({
 
   // Confirm and log food
   const handleConfirmLog = useCallback(async (
-    foods: ParsedFood[], 
-    mealType: "Breakfast" | "Lunch" | "Dinner" | "Snack"
+    foods: ParsedFood[],
+    mealType: "Breakfast" | "Snack (AM)" | "Lunch" | "Snack (PM)" | "Dinner" | "Late Snack"
   ) => {
     if (!pendingInput) return
 

@@ -10,17 +10,19 @@ interface FoodParseConfirmModalProps {
   isOpen: boolean
   onClose: () => void
   parseResult: FoodParseResult
-  onConfirm: (foods: ParsedFood[], mealType: "Breakfast" | "Lunch" | "Dinner" | "Snack") => Promise<void>
+  onConfirm: (foods: ParsedFood[], mealType: "Breakfast" | "Snack (AM)" | "Lunch" | "Snack (PM)" | "Dinner" | "Late Snack") => Promise<void>
 }
 
-const MEAL_TYPES = ["Breakfast", "Lunch", "Dinner", "Snack"] as const
+const MEAL_TYPES = ["Breakfast", "Snack (AM)", "Lunch", "Snack (PM)", "Dinner", "Late Snack"] as const
 type MealType = typeof MEAL_TYPES[number]
 
 const MEAL_TYPE_ICONS: Record<MealType, string> = {
   Breakfast: "🌅",
+  "Snack (AM)": "☕",
   Lunch: "☀️",
+  "Snack (PM)": "🍪",
   Dinner: "🌙",
-  Snack: "🍎",
+  "Late Snack": "🌜",
 }
 
 export function FoodParseConfirmModal({ 

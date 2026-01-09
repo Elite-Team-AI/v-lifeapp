@@ -3,12 +3,13 @@
 import { useMemo, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { RefreshCw, ShoppingCart, ChevronRight, RotateCcw, Settings, UtensilsCrossed, ClipboardList } from "lucide-react"
+import { RefreshCw, ShoppingCart, ChevronRight, RotateCcw, Settings, UtensilsCrossed, ClipboardList, Info } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ButtonGlow } from "@/components/ui/button-glow"
 import { Card, CardContent } from "@/components/ui/card"
 import { BottomNav } from "@/components/bottom-nav"
 import { Progress } from "@/components/ui/progress"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Checkbox } from "@/components/ui/checkbox"
 import { MealSwapModal } from "@/app/meal-swap-modal"
 import { VitalFlowSupplementModal } from "@/app/vitalflow-supplement-modal"
@@ -307,7 +308,21 @@ export function NutritionClient() {
                 <div className="space-y-3">
                   <div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/70">Calories</span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-white/70">Calories</span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button type="button" className="text-white/40 hover:text-white/60 transition-colors">
+                                <Info className="h-3 w-3" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[200px] text-center">
+                              <p className="text-xs">Based on your goal weight and primary goal. Update in Profile Settings.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                       <span className="text-white">
                         {macrosWithCurrent.calories.current} / {macrosWithCurrent.calories.target} kcal
                       </span>

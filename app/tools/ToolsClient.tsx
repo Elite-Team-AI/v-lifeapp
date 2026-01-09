@@ -76,7 +76,7 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
           id: photo.id,
           date: photo.taken_at || photo.created_at || "",
           weight: (photo as any).weight || null,
-          note: photo.notes || null,
+          note: photo.note || null,
           type: (photo as any).photo_type || null,
           imageUrl: displayUrl,
         })
@@ -280,24 +280,44 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
                                 ))}
                               </ul>
                             )}
+                            <div className="flex items-center gap-2 mt-3">
+                              <ButtonGlow
+                                variant="outline-glow"
+                                size="sm"
+                                onClick={() => setExpandedSupplement(null)}
+                              >
+                                Show Less
+                              </ButtonGlow>
+                              {supplement.product_url && (
+                                <ButtonGlow
+                                  variant="accent-glow"
+                                  size="sm"
+                                  onClick={() => window.open(supplement.product_url!, '_blank')}
+                                >
+                                  Shop Now
+                                </ButtonGlow>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex items-center gap-2 mt-2">
                             <ButtonGlow
                               variant="outline-glow"
                               size="sm"
-                              className="mt-3"
-                              onClick={() => setExpandedSupplement(null)}
+                              onClick={() => setExpandedSupplement(supplement.id)}
                             >
-                              Show Less
+                              Learn More
                             </ButtonGlow>
-                          </>
-                        ) : (
-                          <ButtonGlow
-                            variant="outline-glow"
-                            size="sm"
-                            className="mt-2"
-                            onClick={() => setExpandedSupplement(supplement.id)}
-                          >
-                            Learn More
-                          </ButtonGlow>
+                            {supplement.product_url && supplement.featured && (
+                              <ButtonGlow
+                                variant="accent-glow"
+                                size="sm"
+                                onClick={() => window.open(supplement.product_url!, '_blank')}
+                              >
+                                Shop Now
+                              </ButtonGlow>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>

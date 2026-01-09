@@ -11,12 +11,13 @@ import { Card } from "@/components/ui/card"
 
 const allergies = ["Dairy", "Gluten", "Peanuts", "Tree Nuts", "Soy", "Eggs", "Fish", "Shellfish"]
 
-const trainingStyles = [
-  { id: "bodybuilding", label: "Bodybuilding / Aesthetic", description: "Muscle growth & definition" },
-  { id: "strength", label: "Strength & Power", description: "Lift heavy, get stronger" },
-  { id: "functional", label: "Functional Fitness", description: "Real-world movement" },
-  { id: "cardio", label: "Cardio Focus", description: "Endurance & heart health" },
-  { id: "mobility", label: "Mobility / Recovery", description: "Flexibility & injury prevention" },
+const programTypes = [
+  { id: "aesthetics", label: "Aesthetics / Hypertrophy", description: "Muscle building & definition" },
+  { id: "hiit", label: "HIIT", description: "High intensity interval training" },
+  { id: "crossfit", label: "CrossFit Style", description: "Varied functional movements" },
+  { id: "cardio", label: "Purely Cardio", description: "Endurance & cardiovascular focus" },
+  { id: "strength", label: "Strength / Powerlifting", description: "Maximum strength development" },
+  { id: "other", label: "Other", description: "Custom program type" },
 ]
 
 const timeOptions = [
@@ -35,7 +36,8 @@ export default function Preferences() {
   const [selectedAllergies, setSelectedAllergies] = useState<string[]>(data.allergies)
   const [customRestriction, setCustomRestriction] = useState("")
   const [customRestrictions, setCustomRestrictions] = useState<string[]>(data.customRestrictions)
-  const [trainingStyle, setTrainingStyle] = useState(data.trainingStyle || "")
+  const [programType, setProgramType] = useState(data.programType || "")
+  const [customProgramType, setCustomProgramType] = useState(data.customProgramType || "")
   const [availableTime, setAvailableTime] = useState(data.availableTimeMinutes || 45)
   const [trainingDays, setTrainingDays] = useState(data.trainingDaysPerWeek || 4)
 
@@ -58,7 +60,8 @@ export default function Preferences() {
     updateData({
       allergies: selectedAllergies,
       customRestrictions,
-      trainingStyle,
+      programType,
+      customProgramType: programType === "other" ? customProgramType : undefined,
       availableTimeMinutes: availableTime,
       trainingDaysPerWeek: trainingDays,
     })
@@ -79,30 +82,38 @@ export default function Preferences() {
         </div>
 
         <div className="space-y-6">
-          {/* Training Style */}
+          {/* Fitness Program Type */}
           <div className="space-y-3">
             <h2 className="text-lg font-medium text-white flex items-center gap-2">
               <Dumbbell className="h-5 w-5 text-accent" />
-              Training Style
+              Fitness Program
             </h2>
             <div className="grid gap-2">
-              {trainingStyles.map((style) => (
+              {programTypes.map((style) => (
                 <Card
                   key={style.id}
                   className={`p-3 cursor-pointer transition-all ${
-                    trainingStyle === style.id
+                    programType === style.id
                       ? "border-accent bg-accent/10"
                       : "border-white/10 hover:border-white/30"
                   }`}
-                  onClick={() => setTrainingStyle(style.id)}
+                  onClick={() => setProgramType(style.id)}
                 >
-                  <p className={`font-medium ${trainingStyle === style.id ? "text-accent" : "text-white"}`}>
+                  <p className={`font-medium ${programType === style.id ? "text-accent" : "text-white"}`}>
                     {style.label}
                   </p>
                   <p className="text-xs text-white/60">{style.description}</p>
                 </Card>
               ))}
             </div>
+            {programType === "other" && (
+              <Input
+                value={customProgramType}
+                onChange={(e) => setCustomProgramType(e.target.value)}
+                placeholder="Describe your program type"
+                className="mt-2"
+              />
+            )}
           </div>
 
           {/* Available Time */}

@@ -32,7 +32,8 @@ interface ProfileData {
   customEquipment: string
   allergies: string[]
   customRestrictions: string[]
-  trainingStyle?: string
+  programType?: string
+  customProgramType?: string
   availableTimeMinutes?: number
   trainingDaysPerWeek?: number
   timezone?: string
@@ -65,12 +66,13 @@ const popularGyms = [
 
 const commonAllergies = ["Dairy", "Gluten", "Peanuts", "Tree Nuts", "Soy", "Eggs", "Fish", "Shellfish"]
 
-const trainingStyles = [
-  { id: "bodybuilding", label: "Bodybuilding / Aesthetic", description: "Muscle growth & definition" },
-  { id: "strength", label: "Strength & Power", description: "Lift heavy, get stronger" },
-  { id: "functional", label: "Functional Fitness", description: "Real-world movement" },
-  { id: "cardio", label: "Cardio Focus", description: "Endurance & heart health" },
-  { id: "mobility", label: "Mobility / Recovery", description: "Flexibility & injury prevention" },
+const programTypes = [
+  { id: "aesthetics", label: "Aesthetics / Hypertrophy", description: "Muscle building & definition" },
+  { id: "hiit", label: "HIIT", description: "High intensity interval training" },
+  { id: "crossfit", label: "CrossFit Style", description: "Varied functional movements" },
+  { id: "cardio", label: "Purely Cardio", description: "Endurance & cardiovascular focus" },
+  { id: "strength", label: "Strength / Powerlifting", description: "Maximum strength development" },
+  { id: "other", label: "Other", description: "Custom program type" },
 ]
 
 const timeOptions = [
@@ -572,30 +574,38 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                   {/* Training Tab */}
                   {activeTab === "training" && (
                     <div className="space-y-6">
-                      {/* Training Style */}
+                      {/* Fitness Program Type */}
                       <div className="space-y-3">
                         <h2 className="text-lg font-medium text-white flex items-center gap-2">
                           <Dumbbell className="h-5 w-5 text-accent" />
-                          Training Style
+                          Fitness Program
                         </h2>
                         <div className="grid gap-2">
-                          {trainingStyles.map((style) => (
+                          {programTypes.map((style) => (
                             <Card
                               key={style.id}
                               className={`p-3 cursor-pointer transition-all ${
-                                profile.trainingStyle === style.id
+                                profile.programType === style.id
                                   ? "border-accent bg-accent/10"
                                   : "border-white/10 hover:border-white/30"
                               }`}
-                              onClick={() => updateProfileState({ trainingStyle: style.id })}
+                              onClick={() => updateProfileState({ programType: style.id })}
                             >
-                              <p className={`font-medium ${profile.trainingStyle === style.id ? "text-accent" : "text-white"}`}>
+                              <p className={`font-medium ${profile.programType === style.id ? "text-accent" : "text-white"}`}>
                                 {style.label}
                               </p>
                               <p className="text-xs text-white/60">{style.description}</p>
                             </Card>
                           ))}
                         </div>
+                        {profile.programType === "other" && (
+                          <Input
+                            value={profile.customProgramType || ""}
+                            onChange={(e) => updateProfileState({ customProgramType: e.target.value })}
+                            placeholder="Describe your program type"
+                            className="mt-2"
+                          />
+                        )}
                       </div>
 
                       {/* Available Time */}

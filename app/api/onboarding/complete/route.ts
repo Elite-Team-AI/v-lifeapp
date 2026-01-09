@@ -36,7 +36,10 @@ export async function POST(req: Request) {
       custom_equipment: payload.customEquipment || null,
       allergies: payload.allergies || [],
       custom_restrictions: payload.customRestrictions || [],
-      training_style: payload.trainingStyle || null,
+      // Store program type - if "other", use the custom value
+      training_style: payload.programType === "other" && payload.customProgramType
+        ? `other:${payload.customProgramType}`
+        : payload.programType || null,
       available_time_minutes: payload.availableTimeMinutes || null,
       training_days_per_week: payload.trainingDaysPerWeek || null,
       onboarding_completed: true,

@@ -61,7 +61,8 @@ export async function updateProfile(profileData: {
   customEquipment?: string
   allergies?: string[]
   customRestrictions?: string[]
-  trainingStyle?: string
+  programType?: string
+  customProgramType?: string
   availableTimeMinutes?: number
   trainingDaysPerWeek?: number
   timezone?: string
@@ -112,7 +113,10 @@ export async function updateProfile(profileData: {
       custom_equipment: profileData.customEquipment,
       allergies: profileData.allergies,
       custom_restrictions: profileData.customRestrictions,
-      training_style: profileData.trainingStyle,
+      // Store program type - if "other", use the custom value
+      training_style: profileData.programType === "other" && profileData.customProgramType
+        ? `other:${profileData.customProgramType}`
+        : profileData.programType,
       available_time_minutes: profileData.availableTimeMinutes,
       training_days_per_week: profileData.trainingDaysPerWeek,
       timezone: profileData.timezone,
