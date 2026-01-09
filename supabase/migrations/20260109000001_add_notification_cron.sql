@@ -1,0 +1,29 @@
+-- Scheduled Notification Delivery Setup
+--
+-- This migration documents the setup for scheduled notifications.
+-- pg_cron is only available on Supabase Pro plans and above.
+--
+-- OPTION 1: pg_cron (Supabase Pro+)
+-- Run this manually via Supabase SQL Editor after deploying:
+--
+-- SELECT cron.schedule(
+--   'send-scheduled-notifications',
+--   '* * * * *',
+--   $$
+--   SELECT net.http_post(
+--     url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/send-scheduled-notifications',
+--     headers := '{"Authorization": "Bearer YOUR_SERVICE_ROLE_KEY", "Content-Type": "application/json"}'::jsonb,
+--     body := '{}'::jsonb
+--   );
+--   $$
+-- );
+--
+-- OPTION 2: External Scheduler (Any Supabase plan)
+-- Use GitHub Actions, Google Cloud Scheduler, or similar to POST every minute:
+-- URL: https://YOUR_PROJECT_REF.supabase.co/functions/v1/send-scheduled-notifications
+-- Headers: Authorization: Bearer YOUR_SERVICE_ROLE_KEY
+-- Body: {}
+
+-- This is a placeholder migration - no automatic changes are made.
+-- Choose Option 1 or 2 above based on your Supabase plan.
+SELECT 1;

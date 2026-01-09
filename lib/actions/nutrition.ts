@@ -117,6 +117,7 @@ const DEFAULT_MEALS: Array<Omit<Meal, "id" | "user_id" | "created_at"> & { descr
 type ProfileInfo = {
   weight?: number | null
   goal_weight?: number | null
+  calorie_goal?: number | null
   primary_goal?: string | null
   activity_level?: number | null
   age?: number | null
@@ -143,7 +144,7 @@ interface GeneratedMeal {
 async function fetchProfileInfo(userId: string, supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data } = await supabase
     .from("profiles")
-    .select("weight, goal_weight, primary_goal, activity_level, age, gender, height_feet, height_inches, allergies, custom_restrictions")
+    .select("weight, goal_weight, calorie_goal, primary_goal, activity_level, age, gender, height_feet, height_inches, allergies, custom_restrictions")
     .eq("id", userId)
     .maybeSingle()
 
@@ -168,6 +169,23 @@ function normalizeMealType(value?: string): MealType | null {
 }
 
 function buildMacroTargets(profile?: ProfileInfo): Macros {
+  // Check for user-defined calorie goal override first
+  if (profile?.calorie_goal && profile.calorie_goal > 0) {
+    const calorieTarget = profile.calorie_goal
+    // Derive macros from custom calorie target using balanced ratios
+    const proteinTarget = Math.round((calorieTarget * 0.3) / 4) // 30% from protein (4 cal/g)
+    const carbsTarget = Math.round((calorieTarget * 0.4) / 4)   // 40% from carbs (4 cal/g)
+    const fatTarget = Math.round((calorieTarget * 0.3) / 9)     // 30% from fat (9 cal/g)
+
+    return {
+      calories: { current: 0, target: calorieTarget },
+      protein: { current: 0, target: proteinTarget, unit: "g" },
+      carbs: { current: 0, target: carbsTarget, unit: "g" },
+      fat: { current: 0, target: fatTarget, unit: "g" },
+    }
+  }
+
+  // Calculate based on goal weight and primary goal
   const safeBaseWeight = Number(profile?.weight ?? 170) || 170
   const fallbackGoalWeight = profile?.goal_weight ?? profile?.weight ?? safeBaseWeight
   const goalWeight = Number(fallbackGoalWeight) || safeBaseWeight

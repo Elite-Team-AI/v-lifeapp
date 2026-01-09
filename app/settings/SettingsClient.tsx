@@ -74,6 +74,7 @@ export default function SettingsClient() {
         heightInches: "",
         weight: "",
         goalWeight: "",
+        calorieGoal: "",
         primaryGoal: "",
         activityLevel: 3,
         gymAccess: "",
@@ -99,6 +100,7 @@ export default function SettingsClient() {
       heightInches: profile.height_inches?.toString() || "",
       weight: profile.weight?.toString() || "",
       goalWeight: profile.goal_weight?.toString() || "",
+      calorieGoal: profile.calorie_goal?.toString() || "",
       primaryGoal: profile.primary_goal || "",
       activityLevel: profile.activity_level || 3,
       gymAccess: profile.gym_access || "",
@@ -526,11 +528,15 @@ export default function SettingsClient() {
             onEnableNotifications={handleEnableNotifications}
             onToggle={handleNotificationToggle}
             onTimeChange={handleTimeChange}
-            onTestNotification={() =>
-              showLocalNotification("Test Notification", {
-                body: "This is how your notifications will look!",
+            onTestNotification={() => {
+              toast({
+                title: "Test notification sent",
+                description: "Check for a notification popup",
               })
-            }
+              showLocalNotification("V-Life Test", {
+                body: "Test notification - Your reminders will appear like this!",
+              })
+            }}
           />
 
           <UnitsSection

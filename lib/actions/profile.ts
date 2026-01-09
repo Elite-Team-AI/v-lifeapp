@@ -54,6 +54,7 @@ export async function updateProfile(profileData: {
   heightInches?: string
   weight?: string
   goalWeight?: string
+  calorieGoal?: string | null
   primaryGoal?: string
   activityLevel?: number | string
   gymAccess?: string
@@ -91,6 +92,13 @@ export async function updateProfile(profileData: {
     validationErrors.push("Invalid primary goal value")
   }
 
+  if (profileData.calorieGoal) {
+    const calorieValue = Number.parseInt(profileData.calorieGoal)
+    if (Number.isNaN(calorieValue) || calorieValue < 800 || calorieValue > 10000) {
+      validationErrors.push("Calorie goal must be between 800 and 10,000")
+    }
+  }
+
   if (validationErrors.length > 0) {
     return { error: `Validation failed: ${validationErrors.join(", ")}` }
   }
@@ -106,6 +114,7 @@ export async function updateProfile(profileData: {
       height_inches: profileData.heightInches ? Number.parseInt(profileData.heightInches) : null,
       weight: profileData.weight ? Number.parseFloat(profileData.weight) : null,
       goal_weight: profileData.goalWeight ? Number.parseFloat(profileData.goalWeight) : null,
+      calorie_goal: profileData.calorieGoal ? Number.parseInt(profileData.calorieGoal) : null,
       primary_goal: profileData.primaryGoal,
       activity_level: profileData.activityLevel,
       gym_access: profileData.gymAccess,

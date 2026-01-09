@@ -25,6 +25,7 @@ interface ProfileData {
   heightInches: string
   weight: string
   goalWeight: string
+  calorieGoal?: string
   primaryGoal: string
   activityLevel: number | string
   gymAccess: string
@@ -659,6 +660,59 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                   {/* Nutrition Tab */}
                   {activeTab === "nutrition" && (
                     <div className="space-y-6">
+                      {/* Calorie Goal Section */}
+                      <div>
+                        <Label className="text-white text-lg">Daily Calorie Goal</Label>
+                        <p className="text-white/70 text-sm mb-4">
+                          Override the calculated target or leave empty for recommended
+                        </p>
+
+                        {/* Show calculated reference */}
+                        <div className="mb-4 p-3 rounded-lg bg-white/5 border border-white/10">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-white/60">Calculated Target:</span>
+                            <span className="text-accent font-medium">
+                              {(() => {
+                                const goalWeight = Number(profile.goalWeight) || 170
+                                const isLosingWeight = profile.primaryGoal === "lose-weight"
+                                const multiplier = isLosingWeight ? 11 : 13
+                                return Math.round(goalWeight * multiplier)
+                              })()} kcal
+                            </span>
+                          </div>
+                          <p className="text-xs text-white/50 mt-1">
+                            Based on your goal weight ({profile.goalWeight || 170} lbs) and primary goal
+                          </p>
+                        </div>
+
+                        {/* Custom calorie goal input */}
+                        <div className="space-y-2">
+                          <Label htmlFor="calorieGoal" className="text-white/80">Custom Calorie Goal (optional)</Label>
+                          <div className="flex gap-2 items-center">
+                            <Input
+                              id="calorieGoal"
+                              type="number"
+                              value={profile.calorieGoal || ""}
+                              onChange={(e) => updateProfileState({ calorieGoal: e.target.value })}
+                              placeholder="e.g., 2000"
+                              min="800"
+                              max="10000"
+                              className="flex-1"
+                            />
+                            <span className="text-white/60 text-sm">kcal</span>
+                          </div>
+                          {profile.calorieGoal && (
+                            <button
+                              type="button"
+                              onClick={() => updateProfileState({ calorieGoal: "" })}
+                              className="text-xs text-accent hover:text-accent/80 underline"
+                            >
+                              Clear custom goal (use calculated)
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
                       <div>
                         <Label className="text-white text-lg">Allergies</Label>
                         <p className="text-white/70 text-sm mb-4">Select any allergies you have</p>
