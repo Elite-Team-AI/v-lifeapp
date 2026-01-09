@@ -272,6 +272,93 @@ export async function toggleUserAdmin(userId: string): Promise<{ success?: boole
   return { success: true, isAdmin: newAdminStatus }
 }
 
+// Get all app ratings for admin
+export async function getAdminRatings(): Promise<{
+  ratings?: Array<{
+    id: string
+    user_id: string
+    rating: number
+    feedback: string | null
+    created_at: string
+    user_name: string | null
+    user_avatar: string | null
+  }>
+  stats?: {
+    totalRatings: number
+    averageRating: number
+    ratingDistribution: Record<number, number>
+  }
+  error?: string
+}> {
+  const { isAdmin, error: adminError } = await checkIsAdmin()
+  if (!isAdmin) {
+    return { error: adminError || "Unauthorized" }
+  }
+
+  const supabase = await createClient()
+
+  // Get all ratings with user profile info
+  const { data: ratings, error } = await supabase
+    .from("app_ratings")
+    .select(`
+      id,
+      user_id,
+      rating,
+      feedback,
+      created_at,
+      profiles:user_id (
+        name,
+        avatar_url
+      )
+    `)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  // Transform the data to flatten profile info
+  const transformedRatings = (ratings || []).map((r: {
+    id: string
+    user_id: string
+    rating: number
+    feedback: string | null
+    created_at: string
+    profiles: { name: string | null; avatar_url: string | null } | null
+  }) => ({
+    id: r.id,
+    user_id: r.user_id,
+    rating: r.rating,
+    feedback: r.feedback,
+    created_at: r.created_at,
+    user_name: r.profiles?.name || null,
+    user_avatar: r.profiles?.avatar_url || null,
+  }))
+
+  // Calculate stats
+  const totalRatings = transformedRatings.length
+  const averageRating = totalRatings > 0
+    ? transformedRatings.reduce((sum, r) => sum + r.rating, 0) / totalRatings
+    : 0
+
+  // Calculate distribution (1-5 stars)
+  const ratingDistribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+  transformedRatings.forEach(r => {
+    if (r.rating >= 1 && r.rating <= 5) {
+      ratingDistribution[r.rating]++
+    }
+  })
+
+  return {
+    ratings: transformedRatings,
+    stats: {
+      totalRatings,
+      averageRating: Math.round(averageRating * 10) / 10,
+      ratingDistribution,
+    },
+  }
+}
+
 // Get admin dashboard stats
 export async function getAdminStats(): Promise<{
   stats?: {
