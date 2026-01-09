@@ -430,7 +430,7 @@ function VBotPageContent() {
   )
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-gradient-to-b from-black via-zinc-900 to-black noise-overlay">
+    <div className="relative flex h-screen max-h-screen flex-col bg-gradient-to-b from-black via-zinc-900 to-black noise-overlay overflow-hidden">
       {/* Background effects */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -left-[25%] -top-[25%] h-[50%] w-[50%] rounded-full bg-accent/5 blur-[120px]" />
@@ -742,7 +742,7 @@ function VBotPageContent() {
 
       {/* VBot Info Modal */}
       <Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
-        <DialogContent className="bg-black/95 border-white/10 text-white max-w-md">
+        <DialogContent className="bg-black/95 border-white/10 text-white max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white flex items-center gap-2">
               <Bot className="h-5 w-5 text-accent" />

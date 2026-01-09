@@ -395,6 +395,7 @@ export default function Community() {
           ),
         )
         setCommentText("")
+        setSelectedPost(null) // Auto-close dialog after successful comment
       }
     } catch (error) {
       console.error("Error adding comment:", error)
@@ -661,7 +662,7 @@ export default function Community() {
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddComment()}
-              className="flex-1"
+              className="flex-1 text-white bg-black/50 border-white/20 placeholder:text-white/40"
             />
             <ButtonGlow variant="accent-glow" size="icon" onClick={handleAddComment} disabled={!commentText.trim()}>
               <Send className="h-4 w-4" />
@@ -751,30 +752,29 @@ export default function Community() {
                         />
                       </div>
                     </div>
-                    {challenge.isDbChallenge ? (
-                      challenge.joined ? (
-                        <ButtonGlow 
-                          variant="outline-glow" 
-                          size="sm" 
-                          className="w-full mt-3"
-                          onClick={() => handleLeaveChallenge(challenge.id)}
-                        >
-                          Leave Challenge
-                        </ButtonGlow>
-                      ) : (
-                        <ButtonGlow 
-                          variant="accent-glow" 
-                          size="sm" 
-                          className="w-full mt-3"
-                          onClick={() => handleJoinChallenge(challenge.id)}
-                        >
-                          Join Challenge
-                        </ButtonGlow>
-                      )
+                    {challenge.joined ? (
+                      <ButtonGlow
+                        variant="outline-glow"
+                        size="sm"
+                        className="w-full mt-3"
+                        onClick={() => handleLeaveChallenge(challenge.id)}
+                      >
+                        Leave Challenge
+                      </ButtonGlow>
                     ) : (
-                      <div className="mt-3 text-center text-xs text-white/50">
-                        Auto-tracked monthly challenge
-                      </div>
+                      <ButtonGlow
+                        variant="accent-glow"
+                        size="sm"
+                        className="w-full mt-3"
+                        onClick={() => handleJoinChallenge(challenge.id)}
+                      >
+                        Join Challenge
+                      </ButtonGlow>
+                    )}
+                    {!challenge.isDbChallenge && (
+                      <p className="mt-2 text-center text-[10px] text-white/40">
+                        Progress tracked from your activity
+                      </p>
                     )}
                   </CardContent>
                 </Card>

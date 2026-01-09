@@ -157,7 +157,7 @@ export function FitnessClient() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-3">
               <Calendar className="h-4 w-4 text-accent" />
-              <p className="text-sm text-white/70">Ops this week</p>
+              <p className="text-sm text-white/70">Monthly Overview</p>
             </div>
             {isLoading || !overview ? (
               <div className="space-y-2">

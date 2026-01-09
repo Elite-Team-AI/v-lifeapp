@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { DM_Sans, Outfit } from "next/font/google"
 import { Providers } from "./ClientRootLayout"
 import "./globals.css"
@@ -106,6 +106,14 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.json",
   generator: 'v0.app'
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({

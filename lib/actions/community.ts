@@ -10,6 +10,12 @@ function getUserAvatar(avatarUrl: string | null | undefined): string {
   return avatarUrl || DEFAULT_AVATAR
 }
 
+// Helper to get display name with friendly fallback
+function getDisplayName(name: string | null | undefined): string {
+  if (name && name.trim()) return name.trim()
+  return "Community Member"
+}
+
 interface PostReaction {
   id: string
   reaction_type: 'heart' | 'celebrate' | 'support' | 'fire'
@@ -248,7 +254,7 @@ export async function getPosts(
         id: post.id,
         user: {
           id: post.user_id,
-          name: post.profiles?.name || "vLife User",
+          name: getDisplayName(post.profiles?.name),
           avatar: getUserAvatar(post.profiles?.avatar_url),
           isFollowing: followingSet.has(post.user_id),
         },
@@ -430,7 +436,7 @@ export async function getComments(postId: string): Promise<{ comments?: Transfor
   const transformedComments: TransformedComment[] = (comments || []).map((comment) => ({
     id: comment.id,
     user: {
-      name: comment.profiles?.name || "vLife User",
+      name: getDisplayName(comment.profiles?.name),
       avatar: getUserAvatar(comment.profiles?.avatar_url),
     },
     content: comment.content,
@@ -512,7 +518,7 @@ export async function getLeaderboard(): Promise<{ leaderboard?: LeaderboardUser[
   // Transform and sort by engagement
   const leaderboard: LeaderboardUser[] = (users as UserWithCounts[] || [])
     .map((user) => ({
-      name: user.name || "vLife User",
+      name: getDisplayName(user.name),
       avatar: getUserAvatar(user.avatar_url),
       posts: user.posts?.[0]?.count || 0,
       likes: user.post_reactions?.reduce(
