@@ -22,6 +22,13 @@ interface PostReaction {
   user_id: string
 }
 
+interface PostComment {
+  id: string
+  content: string
+  created_at: string
+  profiles: { id: string; name: string | null; avatar_url: string | null } | null
+}
+
 interface PostWithRelations {
   id: string
   user_id: string
@@ -34,6 +41,7 @@ interface PostWithRelations {
   created_at: string
   profiles: { id: string; name: string | null; avatar_url: string | null } | null
   post_reactions: PostReaction[]
+  comments: PostComment[]
 }
 
 type ChallengeMetric = "workoutDays" | "nutritionDays" | "activeDays"
@@ -174,6 +182,16 @@ const getCachedPosts = unstable_cache(
           id,
           reaction_type,
           user_id
+        ),
+        comments (
+          id,
+          content,
+          created_at,
+          profiles:user_id (
+            id,
+            name,
+            avatar_url
+          )
         )
       `)
       .order("created_at", { ascending: false })
@@ -250,6 +268,21 @@ export async function getPosts(
         }
       })
 
+      // Transform comments for preview (most recent 2)
+      const commentsList = (post.comments || [])
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 2)
+        .map((comment) => ({
+          id: comment.id,
+          content: comment.content,
+          time: getTimeAgo(new Date(comment.created_at)),
+          user: {
+            id: comment.profiles?.id || "",
+            name: getDisplayName(comment.profiles?.name),
+            avatar: getUserAvatar(comment.profiles?.avatar_url),
+          },
+        }))
+
       return {
         id: post.id,
         user: {
@@ -263,6 +296,7 @@ export async function getPosts(
         image: post.image_url,
         likes: post.likes_count || 0,
         comments: post.comments_count || 0,
+        commentsList,
         time: getTimeAgo(new Date(post.created_at)),
         category: post.category,
         reactions,

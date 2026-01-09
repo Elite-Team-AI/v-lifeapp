@@ -587,6 +587,26 @@ export default function Community() {
                       })}
                     </div>
 
+                    {/* Comment Preview Section */}
+                    {post.commentsList && post.commentsList.length > 0 && (
+                      <div className="px-4 py-2 border-t border-white/5">
+                        {post.commentsList.slice(0, 2).map((comment) => (
+                          <div key={comment.id} className="flex gap-2 py-1.5">
+                            <span className="text-sm font-medium text-white/80">{comment.user.name}</span>
+                            <span className="text-sm text-white/60 line-clamp-1 flex-1">{comment.content}</span>
+                          </div>
+                        ))}
+                        {post.comments > 2 && (
+                          <button
+                            onClick={() => setSelectedPost(post)}
+                            className="text-xs text-white/40 hover:text-accent mt-1"
+                          >
+                            View all {post.comments} comments
+                          </button>
+                        )}
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between border-t border-white/10 p-4">
                       <div className="flex items-center space-x-6">
                         <button

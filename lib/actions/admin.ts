@@ -193,7 +193,7 @@ export async function getChallengeParticipants(
     return { error: error.message }
   }
 
-  return { participants: participants as ChallengeParticipant[] }
+  return { participants: participants as unknown as ChallengeParticipant[] }
 }
 
 // Get all users for admin management

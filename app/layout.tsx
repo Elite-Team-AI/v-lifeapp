@@ -64,15 +64,15 @@ export const metadata: Metadata = {
     title: "V-Life Fitness",
     startupImage: [
       {
-        url: "https://xiezvibwxvsulfiooknp.supabase.co/storage/v1/object/public/Public-assets/white-vlife-logo.png",
+        url: "/icons/icon-512.png",
         media: "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)",
       },
       {
-        url: "https://xiezvibwxvsulfiooknp.supabase.co/storage/v1/object/public/Public-assets/white-vlife-logo.png",
+        url: "/icons/icon-512.png",
         media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)",
       },
       {
-        url: "https://xiezvibwxvsulfiooknp.supabase.co/storage/v1/object/public/Public-assets/white-vlife-logo.png",
+        url: "/icons/icon-512.png",
         media: "(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)",
       },
     ],
@@ -83,24 +83,16 @@ export const metadata: Metadata = {
   classification: "Health & Fitness",
   icons: {
     icon: [
-      { url: "https://xiezvibwxvsulfiooknp.supabase.co/storage/v1/object/public/Public-assets/white-vlife-logo.png", sizes: "32x32", type: "image/png" },
-      { url: "https://xiezvibwxvsulfiooknp.supabase.co/storage/v1/object/public/Public-assets/white-vlife-logo.png", sizes: "16x16", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
-      { url: "https://xiezvibwxvsulfiooknp.supabase.co/storage/v1/object/public/Public-assets/white-vlife-logo.png", sizes: "180x180", type: "image/png" },
-      { url: "https://xiezvibwxvsulfiooknp.supabase.co/storage/v1/object/public/Public-assets/white-vlife-logo.png", sizes: "152x152", type: "image/png" },
-      { url: "https://xiezvibwxvsulfiooknp.supabase.co/storage/v1/object/public/Public-assets/white-vlife-logo.png", sizes: "144x144", type: "image/png" },
-      { url: "https://xiezvibwxvsulfiooknp.supabase.co/storage/v1/object/public/Public-assets/white-vlife-logo.png", sizes: "120x120", type: "image/png" },
-      { url: "https://xiezvibwxvsulfiooknp.supabase.co/storage/v1/object/public/Public-assets/white-vlife-logo.png", sizes: "114x114", type: "image/png" },
-      { url: "https://xiezvibwxvsulfiooknp.supabase.co/storage/v1/object/public/Public-assets/white-vlife-logo.png", sizes: "76x76", type: "image/png" },
-      { url: "https://xiezvibwxvsulfiooknp.supabase.co/storage/v1/object/public/Public-assets/white-vlife-logo.png", sizes: "72x72", type: "image/png" },
-      { url: "https://xiezvibwxvsulfiooknp.supabase.co/storage/v1/object/public/Public-assets/white-vlife-logo.png", sizes: "60x60", type: "image/png" },
-      { url: "https://xiezvibwxvsulfiooknp.supabase.co/storage/v1/object/public/Public-assets/white-vlife-logo.png", sizes: "57x57", type: "image/png" },
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
     other: [
       {
         rel: "apple-touch-icon-precomposed",
-        url: "https://xiezvibwxvsulfiooknp.supabase.co/storage/v1/object/public/Public-assets/white-vlife-logo.png",
+        url: "/icons/apple-touch-icon.png",
       },
     ],
   },

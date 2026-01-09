@@ -266,6 +266,16 @@ export interface TransformedPost {
   image: string | null
   likes: number
   comments: number
+  commentsList?: {
+    id: string
+    content: string
+    time: string
+    user: {
+      id: string
+      name: string
+      avatar: string
+    }
+  }[]
   time: string
   category: string
   reactions: {
