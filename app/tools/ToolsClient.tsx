@@ -3,8 +3,8 @@
 import { useMemo, useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { PlusCircle, LineChart, Weight, Camera, Pill } from "lucide-react"
-import { Line, LineChart as RechartsLineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts"
+import { PlusCircle, LineChart, Weight, Camera, Pill, Dumbbell, Activity, TrendingUp, TrendingDown, ArrowLeftRight, X, ChevronLeft, ChevronRight } from "lucide-react"
+import { Line, LineChart as RechartsLineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar, Tooltip, Legend, AreaChart, Area } from "recharts"
 import { BottomNav } from "@/components/bottom-nav"
 import { ButtonGlow } from "@/components/ui/button-glow"
 import { Card, CardContent } from "@/components/ui/card"
@@ -12,6 +12,7 @@ import { AddHabitModal } from "@/app/add-habit-modal"
 import { UpdateWeightModal } from "@/app/update-weight-modal"
 import { ProgressPhotoModal } from "@/app/progress-photo-modal"
 import type { HabitWithStatus, ProgressPhoto, Supplement, WeightEntry } from "@/lib/types"
+import type { WorkoutOverview } from "@/lib/actions/workouts"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
 
@@ -21,6 +22,7 @@ interface ToolsClientProps {
   supplements: Supplement[]
   habits: HabitWithStatus[]
   initialSupplementId?: string | null
+  workoutOverview?: WorkoutOverview
 }
 
 interface ProgressPhotoPreview {
@@ -32,13 +34,15 @@ interface ProgressPhotoPreview {
   imageUrl: string
 }
 
-export function ToolsClient({ weightEntries, progressPhotos, supplements, habits, initialSupplementId = null }: ToolsClientProps) {
+export function ToolsClient({ weightEntries, progressPhotos, supplements, habits, initialSupplementId = null, workoutOverview }: ToolsClientProps) {
   const router = useRouter()
   const { toast } = useToast()
 
   const [addHabitModalOpen, setAddHabitModalOpen] = useState(false)
   const [updateWeightModalOpen, setUpdateWeightModalOpen] = useState(false)
   const [progressPhotoModalOpen, setProgressPhotoModalOpen] = useState(false)
+  const [compareMode, setCompareMode] = useState(false)
+  const [selectedPhotosForCompare, setSelectedPhotosForCompare] = useState<[ProgressPhotoPreview | null, ProgressPhotoPreview | null]>([null, null])
 
   const [habitList, setHabitList] = useState<HabitWithStatus[]>(habits)
   const [photoPreviews, setPhotoPreviews] = useState<ProgressPhotoPreview[]>([])
@@ -136,6 +140,25 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
     router.refresh()
   }
 
+  const handleSelectPhotoForCompare = (photo: ProgressPhotoPreview, slot: 0 | 1) => {
+    setSelectedPhotosForCompare(prev => {
+      const newSelection = [...prev] as [ProgressPhotoPreview | null, ProgressPhotoPreview | null]
+      newSelection[slot] = photo
+      return newSelection
+    })
+  }
+
+  const clearCompareSelection = () => {
+    setSelectedPhotosForCompare([null, null])
+    setCompareMode(false)
+  }
+
+  const formatVolume = (volume: number) => {
+    if (volume >= 1000000) return `${(volume / 1000000).toFixed(1)}M`
+    if (volume >= 1000) return `${(volume / 1000).toFixed(0)}K`
+    return volume.toFixed(0)
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-nav-safe">
       <div className="container max-w-md px-4 py-6">
@@ -200,6 +223,98 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Workout Analytics Section */}
+        {workoutOverview && workoutOverview.weeklyWorkoutData.length > 0 && (
+          <motion.div
+            className="mb-6"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.15 }}
+          >
+            <Card className="border-white/10 bg-black/50 backdrop-blur-sm">
+              <CardContent className="p-4">
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-white">Workout Analytics</h2>
+                  <Dumbbell className="h-5 w-5 text-accent" />
+                </div>
+
+                {/* Stats Summary */}
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="bg-black/30 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-accent">{workoutOverview.totalWorkoutsThisMonth}</p>
+                    <p className="text-xs text-white/60">This Month</p>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-white">{workoutOverview.avgWorkoutsPerWeek}</p>
+                    <p className="text-xs text-white/60">Avg/Week</p>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-3 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      {workoutOverview.volumeChange > 0 ? (
+                        <TrendingUp className="h-4 w-4 text-green-400" />
+                      ) : workoutOverview.volumeChange < 0 ? (
+                        <TrendingDown className="h-4 w-4 text-red-400" />
+                      ) : null}
+                      <p className={`text-2xl font-bold ${workoutOverview.volumeChange > 0 ? 'text-green-400' : workoutOverview.volumeChange < 0 ? 'text-red-400' : 'text-white'}`}>
+                        {workoutOverview.volumeChange > 0 ? '+' : ''}{workoutOverview.volumeChange.toFixed(0)}%
+                      </p>
+                    </div>
+                    <p className="text-xs text-white/60">Volume</p>
+                  </div>
+                </div>
+
+                {/* Weekly Volume Chart */}
+                <div className="mb-4">
+                  <p className="text-sm text-white/70 mb-2">Weekly Volume (lbs lifted)</p>
+                  <div className="h-40">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={workoutOverview.weeklyWorkoutData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                        <XAxis dataKey="week" stroke="rgba(255,255,255,0.5)" fontSize={11} tickLine={false} axisLine={false} />
+                        <YAxis stroke="rgba(255,255,255,0.5)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={formatVolume} />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                          labelStyle={{ color: '#fff' }}
+                          formatter={(value: number) => [`${formatVolume(value)} lbs`, 'Volume']}
+                        />
+                        <Bar dataKey="volume" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Cardio Minutes Chart */}
+                {workoutOverview.weeklyWorkoutData.some(w => w.cardioMinutes > 0) && (
+                  <div>
+                    <p className="text-sm text-white/70 mb-2">Cardio Minutes</p>
+                    <div className="h-32">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={workoutOverview.weeklyWorkoutData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                          <XAxis dataKey="week" stroke="rgba(255,255,255,0.5)" fontSize={11} tickLine={false} axisLine={false} />
+                          <YAxis stroke="rgba(255,255,255,0.5)" fontSize={11} tickLine={false} axisLine={false} />
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                            labelStyle={{ color: '#fff' }}
+                            formatter={(value: number) => [`${value} min`, 'Cardio']}
+                          />
+                          <Area type="monotone" dataKey="cardioMinutes" stroke="#22c55e" fill="#22c55e" fillOpacity={0.3} />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex items-center justify-between mt-2 text-xs">
+                      <span className="text-white/60">Weekly change:</span>
+                      <span className={workoutOverview.cardioChange > 0 ? 'text-green-400' : workoutOverview.cardioChange < 0 ? 'text-red-400' : 'text-white/60'}>
+                        {workoutOverview.cardioChange > 0 ? '+' : ''}{workoutOverview.cardioChange.toFixed(0)}%
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         <motion.div
           className="mb-6"
@@ -371,11 +486,40 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
         >
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-bold text-white">Progress Photos</h2>
-            <ButtonGlow variant="accent-glow" size="sm" onClick={() => setProgressPhotoModalOpen(true)}>
-              <Camera className="mr-1 h-4 w-4" />
-              Add
-            </ButtonGlow>
+            <div className="flex gap-2">
+              {photoPreviews.length >= 2 && (
+                <ButtonGlow
+                  variant="outline-glow"
+                  size="sm"
+                  onClick={() => setCompareMode(!compareMode)}
+                  className={compareMode ? "border-accent bg-accent/20" : ""}
+                >
+                  <ArrowLeftRight className="mr-1 h-4 w-4" />
+                  {compareMode ? "Cancel" : "Compare"}
+                </ButtonGlow>
+              )}
+              <ButtonGlow variant="accent-glow" size="sm" onClick={() => setProgressPhotoModalOpen(true)}>
+                <Camera className="mr-1 h-4 w-4" />
+                Add
+              </ButtonGlow>
+            </div>
           </div>
+
+          {compareMode && (
+            <Card className="border-accent/30 bg-accent/5 backdrop-blur-sm p-3 mb-3">
+              <p className="text-sm text-white/80 mb-2">
+                Select two photos to compare side-by-side
+              </p>
+              <div className="flex gap-2 text-xs">
+                <span className={`px-2 py-1 rounded ${selectedPhotosForCompare[0] ? 'bg-accent text-black' : 'bg-white/10 text-white/60'}`}>
+                  {selectedPhotosForCompare[0] ? `Before: ${new Date(selectedPhotosForCompare[0].date).toLocaleDateString()}` : 'Select "Before"'}
+                </span>
+                <span className={`px-2 py-1 rounded ${selectedPhotosForCompare[1] ? 'bg-accent text-black' : 'bg-white/10 text-white/60'}`}>
+                  {selectedPhotosForCompare[1] ? `After: ${new Date(selectedPhotosForCompare[1].date).toLocaleDateString()}` : 'Select "After"'}
+                </span>
+              </div>
+            </Card>
+          )}
 
           {photoPreviews.length === 0 ? (
             <Card className="border-white/10 bg-black/50 backdrop-blur-sm p-4 text-white/70 text-sm">
@@ -384,8 +528,35 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
           ) : (
             <div className="grid grid-cols-3 gap-2">
               {photoPreviews.slice(0, 6).map((photo) => (
-                <div key={photo.id} className="rounded-lg overflow-hidden bg-black/40">
-                  <img src={photo.imageUrl} alt="Progress photo" className="h-32 w-full object-cover" />
+                <div
+                  key={photo.id}
+                  className={`rounded-lg overflow-hidden bg-black/40 ${compareMode ? 'cursor-pointer hover:ring-2 hover:ring-accent' : ''} ${
+                    selectedPhotosForCompare[0]?.id === photo.id || selectedPhotosForCompare[1]?.id === photo.id
+                      ? 'ring-2 ring-accent'
+                      : ''
+                  }`}
+                  onClick={() => {
+                    if (compareMode) {
+                      if (!selectedPhotosForCompare[0]) {
+                        handleSelectPhotoForCompare(photo, 0)
+                      } else if (!selectedPhotosForCompare[1] && photo.id !== selectedPhotosForCompare[0].id) {
+                        handleSelectPhotoForCompare(photo, 1)
+                      } else if (photo.id === selectedPhotosForCompare[0]?.id) {
+                        setSelectedPhotosForCompare([null, selectedPhotosForCompare[1]])
+                      } else if (photo.id === selectedPhotosForCompare[1]?.id) {
+                        setSelectedPhotosForCompare([selectedPhotosForCompare[0], null])
+                      }
+                    }
+                  }}
+                >
+                  <div className="relative">
+                    <img src={photo.imageUrl} alt="Progress photo" className="h-32 w-full object-cover" />
+                    {compareMode && (selectedPhotosForCompare[0]?.id === photo.id || selectedPhotosForCompare[1]?.id === photo.id) && (
+                      <div className="absolute top-1 right-1 bg-accent text-black text-xs font-bold px-2 py-0.5 rounded">
+                        {selectedPhotosForCompare[0]?.id === photo.id ? 'Before' : 'After'}
+                      </div>
+                    )}
+                  </div>
                   <div className="px-2 py-1 text-[11px] text-white/70">
                     <p>{photo.type}</p>
                     <p>{new Date(photo.date).toLocaleDateString()}</p>
@@ -394,7 +565,94 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
               ))}
             </div>
           )}
+
+          {/* View Comparison Button */}
+          {compareMode && selectedPhotosForCompare[0] && selectedPhotosForCompare[1] && (
+            <ButtonGlow
+              variant="accent-glow"
+              className="w-full mt-3"
+              onClick={() => {
+                // Open comparison modal - we'll show inline for now
+              }}
+            >
+              <ArrowLeftRight className="mr-2 h-4 w-4" />
+              View Side-by-Side Comparison
+            </ButtonGlow>
+          )}
         </motion.div>
+
+        {/* Side-by-Side Comparison View */}
+        {compareMode && selectedPhotosForCompare[0] && selectedPhotosForCompare[1] && (
+          <motion.div
+            className="mb-6"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card className="border-accent/30 bg-black/50 backdrop-blur-sm overflow-hidden">
+              <div className="flex items-center justify-between border-b border-accent/20 p-3">
+                <h3 className="font-bold text-white">Transformation Comparison</h3>
+                <button onClick={clearCompareSelection} className="rounded-full p-1 hover:bg-white/10">
+                  <X className="h-5 w-5 text-white/60" />
+                </button>
+              </div>
+              <CardContent className="p-0">
+                <div className="grid grid-cols-2">
+                  {/* Before Photo */}
+                  <div className="border-r border-white/10">
+                    <div className="aspect-[3/4] w-full">
+                      <img
+                        src={selectedPhotosForCompare[0].imageUrl}
+                        alt="Before"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div className="p-3 text-center bg-black/30">
+                      <p className="text-accent font-medium text-sm">Before</p>
+                      <p className="text-white/70 text-xs">{new Date(selectedPhotosForCompare[0].date).toLocaleDateString()}</p>
+                      {selectedPhotosForCompare[0].weight && (
+                        <p className="text-white text-sm mt-1">{selectedPhotosForCompare[0].weight} lbs</p>
+                      )}
+                    </div>
+                  </div>
+                  {/* After Photo */}
+                  <div>
+                    <div className="aspect-[3/4] w-full">
+                      <img
+                        src={selectedPhotosForCompare[1].imageUrl}
+                        alt="After"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div className="p-3 text-center bg-black/30">
+                      <p className="text-green-400 font-medium text-sm">After</p>
+                      <p className="text-white/70 text-xs">{new Date(selectedPhotosForCompare[1].date).toLocaleDateString()}</p>
+                      {selectedPhotosForCompare[1].weight && (
+                        <p className="text-white text-sm mt-1">{selectedPhotosForCompare[1].weight} lbs</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {/* Weight Change Summary */}
+                {selectedPhotosForCompare[0].weight && selectedPhotosForCompare[1].weight && (
+                  <div className="border-t border-white/10 p-3 text-center">
+                    <p className="text-white/70 text-xs mb-1">Weight Change</p>
+                    <p className={`text-lg font-bold ${
+                      selectedPhotosForCompare[1].weight < selectedPhotosForCompare[0].weight
+                        ? 'text-green-400'
+                        : selectedPhotosForCompare[1].weight > selectedPhotosForCompare[0].weight
+                        ? 'text-red-400'
+                        : 'text-white'
+                    }`}>
+                      {selectedPhotosForCompare[1].weight < selectedPhotosForCompare[0].weight ? '' : '+'}
+                      {(selectedPhotosForCompare[1].weight - selectedPhotosForCompare[0].weight).toFixed(1)} lbs
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         <motion.div
           className="flex gap-3"
