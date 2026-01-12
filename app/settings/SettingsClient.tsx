@@ -563,12 +563,7 @@ export default function SettingsClient() {
             onPrivacyPolicy={() => router.push("/privacy-policy")}
             onTermsOfService={() => router.push("/terms-of-service")}
             onExportData={handleExportData}
-            onDeleteAccount={() => {
-              toast({
-                title: "Delete Account",
-                description: "Please contact support to delete your account.",
-              })
-            }}
+            onDeleteAccount={() => router.push("/delete")}
           />
 
           <StreaksSection
