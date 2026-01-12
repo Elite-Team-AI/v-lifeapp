@@ -28,3 +28,22 @@ next-env.d.ts
 
 # Windows reserved names
 android/nul
+
+# Android keystore (NEVER commit this!)
+*.keystore
+*.jks
+android/vlife-release.keystore
+
+# Secret info
+docs/SECRET_INFO.md
+
+# Android build outputs
+android/app/build/
+android/.gradle/
+
+# iOS build outputs
+ios/App/build/
+ios/App/Pods/
+
+# Capacitor
+android/local.properties
