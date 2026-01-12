@@ -193,13 +193,13 @@ export function InlineVoiceInput({
     )
   }
 
-  // Auto-start recording when component mounts (becomes active)
+  // Auto-start recording when component mounts and isSupported becomes true
   useEffect(() => {
     if (!disabled && isSupported && !isRecording && !isTranscribing) {
       handleStartRecording()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Only run on mount
+  }, [isSupported]) // Re-run when isSupported changes (fixes race condition)
 
   if (!isSupported) {
     return (

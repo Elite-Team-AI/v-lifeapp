@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { motion, AnimatePresence } from "framer-motion"
-import { Send, Loader2, Bot, UserIcon, Plus, MessageSquare, ChevronLeft, Trash2, Sparkles, Mic, Info } from "lucide-react"
+import { Send, Loader2, Bot, UserIcon, Plus, MessageSquare, ChevronLeft, Trash2, Sparkles, Mic, Info, Phone } from "lucide-react"
 import { useState, useRef, useEffect, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import ReactMarkdown from "react-markdown"
@@ -11,7 +11,7 @@ import { ButtonGlow } from "@/components/ui/button-glow"
 import { BottomNav } from "@/components/bottom-nav"
 import { cn } from "@/lib/utils"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
-import { VoicePlayback, InlineVoiceInput } from "@/components/voice"
+import { VoicePlayback, InlineVoiceInput, VoiceLiveModal } from "@/components/voice"
 import type { VoicePreferences, GeminiVoiceName } from "@/lib/types"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
@@ -53,6 +53,7 @@ function VBotPageContent() {
   const [isStreamingComplete, setIsStreamingComplete] = useState(false)
   const [isVoiceInputActive, setIsVoiceInputActive] = useState(false)
   const [showInfoModal, setShowInfoModal] = useState(false)
+  const [showVoiceLiveModal, setShowVoiceLiveModal] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const conversationIdRef = useRef<string | null>(null)
@@ -465,10 +466,14 @@ function VBotPageContent() {
                   </button>
                   <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">BETA</span>
                   {voicePrefs.voiceEnabled && (
-                    <span className="flex items-center gap-1 rounded-full bg-green-500/20 px-2 py-0.5 text-[10px] font-medium text-green-400">
-                      <Mic className="h-2.5 w-2.5" />
-                      VOICE
-                    </span>
+                    <button
+                      onClick={() => setShowVoiceLiveModal(true)}
+                      className="flex items-center gap-1 rounded-full bg-green-500/20 px-2 py-0.5 text-[10px] font-medium text-green-400 hover:bg-green-500/30 transition-colors"
+                      title="Open Voice Chat"
+                    >
+                      <Phone className="h-2.5 w-2.5" />
+                      LIVE
+                    </button>
                   )}
                 </h1>
                 <p className="text-xs text-white/50">
@@ -807,6 +812,13 @@ function VBotPageContent() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Voice Live Modal - Full-screen voice conversation */}
+      <VoiceLiveModal
+        isOpen={showVoiceLiveModal}
+        onClose={() => setShowVoiceLiveModal(false)}
+        voice={voicePrefs.selectedVoice}
+      />
     </div>
   )
 }
