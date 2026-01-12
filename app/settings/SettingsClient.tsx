@@ -533,8 +533,8 @@ export default function SettingsClient() {
                 title: "Test notification sent",
                 description: "Check for a notification popup",
               })
-              showLocalNotification("V-Life Test", {
-                body: "Test notification - Your reminders will appear like this!",
+              showLocalNotification("Test Notification", {
+                body: "This is a test - your reminders are working!",
               })
             }}
           />

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">V-Life Fitness</string>
+    <string name="title_activity_main">V-Life Fitness</string>
+    <string name="package_name">app.vlife.fitness</string>
+    <string name="custom_url_scheme">app.vlife.fitness</string>
+</resources>

@@ -70,6 +70,57 @@ interface AIGeneratedWorkout {
 
 const exerciseCache = new Map<string, string>()
 
+// Calculate realistic workout duration based on exercises
+function calculateWorkoutDuration(exercises: Array<{ sets: number; reps: string; restSeconds: number }>): number {
+  if (exercises.length === 0) return 30
+  
+  // Average time per rep: 3 seconds
+  const avgSecondsPerRep = 3
+  // Warmup: 5 minutes
+  const warmupMinutes = 5
+  // Cooldown: 5 minutes
+  const cooldownMinutes = 5
+  
+  let totalSeconds = 0
+  
+  for (const exercise of exercises) {
+    // Parse reps (handle formats like "8-12", "30 seconds", "10 each")
+    let repsPerSet = 10 // default
+    const repsStr = exercise.reps.toLowerCase()
+    
+    if (repsStr.includes('each')) {
+      // "10 each leg" = 20 total reps
+      const match = repsStr.match(/(\d+)/)
+      repsPerSet = match ? parseInt(match[1]) * 2 : 20
+    } else if (repsStr.includes('second')) {
+      // "30 seconds" - use as-is
+      const match = repsStr.match(/(\d+)/)
+      repsPerSet = match ? parseInt(match[1]) / avgSecondsPerRep : 10
+    } else if (repsStr.includes('-')) {
+      // "8-12" - use average
+      const parts = repsStr.split('-')
+      const low = parseInt(parts[0]) || 8
+      const high = parseInt(parts[1]) || 12
+      repsPerSet = (low + high) / 2
+    } else {
+      // Simple number
+      repsPerSet = parseInt(repsStr) || 10
+    }
+    
+    // Time for one set: (reps * seconds per rep) + rest
+    const timePerSet = (repsPerSet * avgSecondsPerRep) + exercise.restSeconds
+    // Total time for all sets
+    totalSeconds += timePerSet * exercise.sets
+  }
+  
+  // Convert to minutes and add warmup/cooldown
+  const exerciseMinutes = Math.ceil(totalSeconds / 60)
+  const totalMinutes = warmupMinutes + exerciseMinutes + cooldownMinutes
+  
+  // Round to nearest 5 minutes
+  return Math.ceil(totalMinutes / 5) * 5
+}
+
 async function getExerciseId(name: string, supabase: Awaited<ReturnType<typeof createClient>>) {
   if (exerciseCache.has(name)) {
     return exerciseCache.get(name)!
@@ -295,6 +346,9 @@ async function createDailyWorkout(
     workoutData = templateToWorkout(template)
   }
 
+  // Calculate realistic duration based on exercises
+  const calculatedDuration = calculateWorkoutDuration(workoutData.exercises)
+  
   // Create the workout record
   const { data: workout, error } = await supabase
     .from("workouts")
@@ -303,7 +357,7 @@ async function createDailyWorkout(
       name: workoutData.name,
       description: `${dayName} - ${emphasis}: ${workoutData.description}`,
       workout_type: template.workoutType,
-      duration_minutes: template.durationMinutes,
+      duration_minutes: calculatedDuration,
       mode: "sets",
       scheduled_date: now.toISOString().split("T")[0],
     })

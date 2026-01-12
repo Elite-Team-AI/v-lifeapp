@@ -186,6 +186,9 @@ export default function AdminUsers() {
                     <p className="text-xs text-white/50 font-mono">
                       {user.id.slice(0, 8)}...
                     </p>
+                    <p className="text-xs text-white/40 mt-0.5">
+                      Joined {new Date(user.created_at).toLocaleDateString()}
+                    </p>
                   </div>
                 </div>
                 <ButtonGlow

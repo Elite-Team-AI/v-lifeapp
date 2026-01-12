@@ -430,7 +430,7 @@ function VBotPageContent() {
   )
 
   return (
-    <div className="relative flex h-screen max-h-screen flex-col bg-gradient-to-b from-black via-zinc-900 to-black noise-overlay overflow-hidden">
+    <div className="relative flex h-screen max-h-screen flex-col bg-gradient-to-b from-black via-zinc-900 to-black noise-overlay overflow-hidden pb-20">
       {/* Background effects */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -left-[25%] -top-[25%] h-[50%] w-[50%] rounded-full bg-accent/5 blur-[120px]" />
@@ -493,7 +493,7 @@ function VBotPageContent() {
       </div>
 
       {/* Messages */}
-      <div className="relative z-0 container mx-auto max-w-2xl flex-1 overflow-y-auto px-4 pt-6 pb-28">
+      <div className="relative z-0 container mx-auto max-w-2xl flex-1 overflow-y-auto px-4 pt-6 pb-32 max-h-[calc(100vh-240px)]">
         {messages.length === 0 ? (
           <motion.div
             className="flex flex-col items-center text-center pt-8"
@@ -681,7 +681,7 @@ function VBotPageContent() {
       </div>
 
       {/* Input - fixed above bottom nav */}
-      <div className="fixed bottom-20 left-0 right-0 z-40 bg-black/90 backdrop-blur-lg border-t border-white/5">
+      <div className="fixed bottom-20 left-0 right-0 z-40 bg-black/90 backdrop-blur-lg border-t border-white/5 flex-shrink-0">
         <div className="container mx-auto max-w-2xl px-4 py-3">
           <form onSubmit={handleSubmit} className="relative">
             <AnimatePresence mode="wait">

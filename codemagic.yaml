@@ -1,0 +1,244 @@
+# Codemagic CI/CD Configuration for V-Life Fitness
+# iOS builds are done via Codemagic since development is on Windows
+# Android builds can be done locally or via Codemagic
+
+workflows:
+  # ============================================
+  # iOS Release Build (App Store)
+  # ============================================
+  ios-release:
+    name: iOS App Store Release
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: app.vlife.fitness
+      groups:
+        - ios_credentials  # Add your credentials in Codemagic dashboard
+      vars:
+        BUNDLE_ID: app.vlife.fitness
+        APP_NAME: V-Life Fitness
+      node: 18
+      xcode: latest
+      cocoapods: default
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+      tag_patterns:
+        - pattern: 'v*-ios'
+          include: true
+
+    scripts:
+      - name: Install Node dependencies
+        script: npm ci
+
+      - name: Sync Capacitor iOS
+        script: npx cap sync ios
+
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios/App
+          pod install
+
+      - name: Set up code signing
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+          keychain add-certificates
+
+      - name: Increment build number
+        script: |
+          cd ios/App
+          LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "$BUNDLE_ID" || echo "0")
+          NEW_BUILD=$((LATEST_BUILD + 1))
+          agvtool new-version -all $NEW_BUILD
+          echo "Build number set to $NEW_BUILD"
+
+      - name: Build IPA
+        script: |
+          cd ios/App
+          xcode-project build-ipa \
+            --workspace App.xcworkspace \
+            --scheme App \
+            --archive-flags="-destination 'generic/platform=iOS'"
+
+    artifacts:
+      - ios/App/build/ios/ipa/*.ipa
+      - ios/App/build/ios/ipa/ExportOptions.plist
+
+    publishing:
+      app_store_connect:
+        # Configure these in Codemagic dashboard under Team integrations
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false  # Set to true for production release
+
+  # ============================================
+  # iOS TestFlight Build
+  # ============================================
+  ios-testflight:
+    name: iOS TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: app.vlife.fitness
+      groups:
+        - ios_credentials
+      vars:
+        BUNDLE_ID: app.vlife.fitness
+      node: 18
+      xcode: latest
+      cocoapods: default
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: develop
+          include: true
+
+    scripts:
+      - name: Install Node dependencies
+        script: npm ci
+
+      - name: Sync Capacitor iOS
+        script: npx cap sync ios
+
+      - name: Install CocoaPods
+        script: |
+          cd ios/App
+          pod install
+
+      - name: Set up code signing
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+          keychain add-certificates
+
+      - name: Increment build number
+        script: |
+          cd ios/App
+          LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "$BUNDLE_ID" || echo "0")
+          agvtool new-version -all $((LATEST_BUILD + 1))
+
+      - name: Build IPA
+        script: |
+          cd ios/App
+          xcode-project build-ipa \
+            --workspace App.xcworkspace \
+            --scheme App
+
+    artifacts:
+      - ios/App/build/ios/ipa/*.ipa
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+
+  # ============================================
+  # Android Release Build (Play Store)
+  # ============================================
+  android-release:
+    name: Android Play Store Release
+    max_build_duration: 30
+    instance_type: linux_x2
+
+    environment:
+      android_signing:
+        - vlife_keystore  # Add keystore in Codemagic dashboard
+      groups:
+        - android_credentials
+      vars:
+        PACKAGE_NAME: app.vlife.fitness
+      node: 18
+      java: 17
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+      tag_patterns:
+        - pattern: 'v*-android'
+          include: true
+
+    scripts:
+      - name: Install Node dependencies
+        script: npm ci
+
+      - name: Sync Capacitor Android
+        script: npx cap sync android
+
+      - name: Set Android version
+        script: |
+          # Increment version code
+          VERSION_CODE=$(($(date +%Y%m%d%H%M)))
+          echo "Setting version code to $VERSION_CODE"
+
+          # Update build.gradle
+          sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" android/app/build.gradle
+
+      - name: Build AAB
+        script: |
+          cd android
+          ./gradlew bundleRelease
+
+    artifacts:
+      - android/app/build/outputs/**/*.aab
+      - android/app/build/outputs/**/*.apk
+
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal  # Options: internal, alpha, beta, production
+
+  # ============================================
+  # Android Debug Build (for testing)
+  # ============================================
+  android-debug:
+    name: Android Debug Build
+    max_build_duration: 20
+    instance_type: linux_x2
+
+    environment:
+      vars:
+        PACKAGE_NAME: app.vlife.fitness
+      node: 18
+      java: 17
+
+    triggering:
+      events:
+        - pull_request
+      branch_patterns:
+        - pattern: '*'
+          include: true
+
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+
+      - name: Sync Capacitor
+        script: npx cap sync android
+
+      - name: Build Debug APK
+        script: |
+          cd android
+          ./gradlew assembleDebug
+
+    artifacts:
+      - android/app/build/outputs/apk/debug/*.apk

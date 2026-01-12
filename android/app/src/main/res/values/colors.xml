@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- V-Life Brand Colors -->
+    <color name="colorPrimary">#000000</color>
+    <color name="colorPrimaryDark">#000000</color>
+    <color name="colorAccent">#F59E0B</color>
+
+    <!-- Splash Screen Colors -->
+    <color name="splash_background">#000000</color>
+
+    <!-- Status Bar -->
+    <color name="status_bar">#000000</color>
+
+    <!-- Navigation Bar -->
+    <color name="navigation_bar">#000000</color>
+</resources>

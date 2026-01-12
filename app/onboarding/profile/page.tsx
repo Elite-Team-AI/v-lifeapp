@@ -72,8 +72,8 @@ export default function ProfileSetup() {
 
         <div className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} />
+            <Label htmlFor="name">Name *</Label>
+            <Input id="name" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -322,7 +322,7 @@ export default function ProfileSetup() {
             </div>
           </div>
 
-          <ButtonGlow variant="accent-glow" className="w-full" onClick={handleContinue}>
+          <ButtonGlow variant="accent-glow" className="w-full" onClick={handleContinue} disabled={!name.trim()}>
             Continue <ArrowRight className="ml-2 h-4 w-4" />
           </ButtonGlow>
         </div>

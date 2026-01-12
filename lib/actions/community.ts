@@ -13,7 +13,7 @@ function getUserAvatar(avatarUrl: string | null | undefined): string {
 // Helper to get display name with friendly fallback
 function getDisplayName(name: string | null | undefined): string {
   if (name && name.trim()) return name.trim()
-  return "Community Member"
+  return "V-Life Member"
 }
 
 interface PostReaction {
