@@ -102,6 +102,15 @@ export function InlineVoiceInput({
     onActiveChange?.(isActive)
   }, [isRecording, isTranscribing, onActiveChange])
 
+  // Auto-start recording when component mounts and isSupported becomes true
+  // IMPORTANT: This must be before any conditional returns to follow React Rules of Hooks
+  useEffect(() => {
+    if (!disabled && isSupported && !isRecording && !isTranscribing) {
+      handleStartRecording()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSupported]) // Re-run when isSupported changes (fixes race condition)
+
   const displayError = error || recorderError
 
   // Show inline voice UI when recording or transcribing
@@ -192,14 +201,6 @@ export function InlineVoiceInput({
       </motion.div>
     )
   }
-
-  // Auto-start recording when component mounts and isSupported becomes true
-  useEffect(() => {
-    if (!disabled && isSupported && !isRecording && !isTranscribing) {
-      handleStartRecording()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSupported]) // Re-run when isSupported changes (fixes race condition)
 
   if (!isSupported) {
     return (
