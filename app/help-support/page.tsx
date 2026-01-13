@@ -21,8 +21,8 @@ const faqs = [
         a: "Go to Settings > Account > Edit Profile. Fill in your personal information, fitness goals, dietary preferences, and equipment access. This helps V-Bot create personalized plans for you.",
       },
       {
-        q: "What's the difference between free and premium?",
-        a: "Free users get basic workout and meal plans. Premium unlocks unlimited AI coaching, advanced analytics, custom meal plans, progress tracking, and priority support. You can also earn free months through referrals!",
+        q: "What's the difference between Pro and Elite plans?",
+        a: "Pro ($29.99/month) includes unlimited AI coaching, advanced meal plans, workout tracking, and progress analytics. Elite ($49.99/month) adds personalized training programs, priority support, and exclusive community features. Both plans include all core features plus you can earn free months through referrals!",
       },
       {
         q: "How do I earn free months?",
@@ -94,11 +94,15 @@ const faqs = [
       },
       {
         q: "Can I get a refund?",
-        a: "We offer a 7-day money-back guarantee. Contact support@vlife.app within 7 days of purchase for a full refund.",
+        a: "Refunds are handled according to Apple App Store and Google Play Store policies. For iOS, you can request a refund through the App Store. For Android, refunds are available within the Google Play refund window. Contact support@vlife.app if you need assistance with refund requests.",
       },
       {
         q: "What payment methods do you accept?",
-        a: "We accept all major credit cards, debit cards, Apple Pay, and Google Pay through our secure payment processor.",
+        a: "Subscriptions are processed through the Apple App Store (iOS) or Google Play Store (Android). You can use any payment method associated with your Apple ID or Google account, including credit cards, debit cards, Apple Pay, Google Pay, and carrier billing where available.",
+      },
+      {
+        q: "How much do subscriptions cost?",
+        a: "We offer two subscription tiers: Pro at $29.99/month and Elite at $49.99/month. Both are billed monthly and you can cancel anytime. Your subscription is managed through your device's app store.",
       },
     ],
   },

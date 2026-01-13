@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { motion, AnimatePresence } from "framer-motion"
-import { Send, Loader2, Bot, UserIcon, Plus, MessageSquare, ChevronLeft, Trash2, Sparkles, Mic, Info, Phone } from "lucide-react"
+import { Send, Loader2, Bot, UserIcon, Plus, MessageSquare, ChevronLeft, Trash2, Sparkles, Info, Phone } from "lucide-react"
 import { useState, useRef, useEffect, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import ReactMarkdown from "react-markdown"
@@ -11,7 +11,7 @@ import { ButtonGlow } from "@/components/ui/button-glow"
 import { BottomNav } from "@/components/bottom-nav"
 import { cn } from "@/lib/utils"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
-import { VoicePlayback, InlineVoiceInput, VoiceLiveModal } from "@/components/voice"
+import { VoicePlayback, VoiceLiveModal } from "@/components/voice"
 import type { VoicePreferences, GeminiVoiceName } from "@/lib/types"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
@@ -51,7 +51,6 @@ function VBotPageContent() {
   const [lastAssistantMessageId, setLastAssistantMessageId] = useState<string | null>(null)
   const [lastMessageWasVoice, setLastMessageWasVoice] = useState(false)
   const [isStreamingComplete, setIsStreamingComplete] = useState(false)
-  const [isVoiceInputActive, setIsVoiceInputActive] = useState(false)
   const [showInfoModal, setShowInfoModal] = useState(false)
   const [showVoiceLiveModal, setShowVoiceLiveModal] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -341,16 +340,6 @@ function VBotPageContent() {
     shouldScrollRef.current = true // Scroll to show user's message
     sendMessage(input)
   }
-
-  // Handle voice transcript from speech-to-text
-  const handleVoiceTranscript = useCallback((transcript: string) => {
-    if (transcript.trim()) {
-      setLastMessageWasVoice(true)
-      shouldScrollRef.current = true // Scroll to show user's message
-      sendMessage(transcript)
-    }
-  }, [sendMessage])
-
 
   // History sidebar
   const HistorySidebar = () => (
@@ -688,56 +677,24 @@ function VBotPageContent() {
       {/* Input - fixed above bottom nav */}
       <div className="fixed bottom-20 left-0 right-0 z-40 bg-black/90 backdrop-blur-lg border-t border-white/5 flex-shrink-0">
         <div className="container mx-auto max-w-2xl px-4 py-3">
-          <form onSubmit={handleSubmit} className="relative">
-            <AnimatePresence mode="wait">
-              {isVoiceInputActive ? (
-                <InlineVoiceInput
-                  key="voice-input"
-                  onTranscript={handleVoiceTranscript}
-                  onActiveChange={setIsVoiceInputActive}
-                  disabled={isLoading}
-                  className="w-full"
-                />
-              ) : (
-                <motion.div
-                  key="text-input-wrapper"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="relative flex items-center"
-                >
-                  <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Message VBot..."
-                    className="w-full rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 pr-24 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none transition-colors"
-                    disabled={isLoading}
-                  />
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                    {/* Mic button */}
-                    {voicePrefs.voiceEnabled && (
-                      <button
-                        type="button"
-                        onClick={() => setIsVoiceInputActive(true)}
-                        disabled={isLoading}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50"
-                      >
-                        <Mic className="h-4 w-4" />
-                      </button>
-                    )}
-                    {/* Send button */}
-                    <button
-                      type="submit"
-                      disabled={!input.trim() || isLoading}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-black transition-all hover:bg-accent/90 disabled:bg-white/10 disabled:text-white/30"
-                    >
-                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <form onSubmit={handleSubmit} className="relative flex items-center">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Message VBot..."
+              className="w-full rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 pr-14 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none transition-colors"
+              disabled={isLoading}
+            />
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              <button
+                type="submit"
+                disabled={!input.trim() || isLoading}
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-black transition-all hover:bg-accent/90 disabled:bg-white/10 disabled:text-white/30"
+              >
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </button>
+            </div>
           </form>
           {error && <p className="mt-2 text-xs text-red-500">Error: {error}</p>}
         </div>
