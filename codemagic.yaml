@@ -49,9 +49,16 @@ workflows:
 
       - name: Fetch signing files
         script: |
+          set -exo pipefail
+          CERT_KEY_PATH="$CM_BUILD_DIR/cert_key.pem"
+
+          # Generate certificate key (Codemagic will manage certs automatically)
+          openssl genrsa -out "$CERT_KEY_PATH" 2048
+
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
-            --create
+            --create \
+            --certificate-key=@file:"$CERT_KEY_PATH"
 
       - name: Set up keychain
         script: |
@@ -118,9 +125,16 @@ workflows:
 
       - name: Fetch signing files
         script: |
+          set -exo pipefail
+          CERT_KEY_PATH="$CM_BUILD_DIR/cert_key.pem"
+
+          # Generate certificate key (Codemagic will manage certs automatically)
+          openssl genrsa -out "$CERT_KEY_PATH" 2048
+
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
-            --create
+            --create \
+            --certificate-key=@file:"$CERT_KEY_PATH"
 
       - name: Set up keychain
         script: |
