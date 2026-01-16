@@ -52,9 +52,12 @@ workflows:
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --create
+
+      - name: Set up keychain
+        script: |
           keychain initialize
           keychain add-certificates
-          xcode-project use-profiles --project "$XCODE_PROJECT"
+          xcode-project use-profiles
 
       - name: Build iOS app
         script: |
@@ -118,9 +121,12 @@ workflows:
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --create
+
+      - name: Set up keychain
+        script: |
           keychain initialize
           keychain add-certificates
-          xcode-project use-profiles --project "$XCODE_PROJECT"
+          xcode-project use-profiles
 
       - name: Build iOS app
         script: |
