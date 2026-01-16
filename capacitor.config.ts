@@ -1,8 +1,10 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "app.vlife.fitness",
-  appName: "V-Life Fitness",
+  // NOTE: appId here is used as default for both platforms
+  // Android uses this value; iOS bundle ID is set separately in Xcode
+  appId: "app.vlife.android",
+  appName: "v-life",
   webDir: "out",
 
   server: {

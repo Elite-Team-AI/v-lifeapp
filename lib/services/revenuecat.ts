@@ -8,9 +8,8 @@ import {
 import { Capacitor } from "@capacitor/core";
 
 // RevenueCat API Keys
-// Get these from: https://app.revenuecat.com -> Project Settings -> API Keys
-const REVENUECAT_IOS_KEY = "test_jVHUfNuOjHhEncxwoGNFgvcBrnm";
-const REVENUECAT_ANDROID_KEY = "test_jVHUfNuOjHhEncxwoGNFgvcBrnm";
+const REVENUECAT_IOS_KEY = "appl_PpVZxhnVRIzIdWsYaVRUnRBigDm";
+const REVENUECAT_ANDROID_KEY = "goog_kkJoPPlOScqqaDCbeKwVhmrPluS";
 
 // Entitlement identifiers - must match RevenueCat dashboard
 export const ENTITLEMENTS = {

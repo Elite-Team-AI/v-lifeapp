@@ -33,6 +33,9 @@ android/nul
 *.keystore
 *.jks
 android/vlife-release.keystore
+android-signing/
+!android-signing/generate-keystore.sh
+!android-signing/SETUP-INSTRUCTIONS.md
 
 # Secret info
 docs/SECRET_INFO.md
