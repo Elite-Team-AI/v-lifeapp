@@ -201,26 +201,65 @@ export function FoodLoggerInput({
     const file = event.target.files?.[0]
     if (!file) return
 
+    // Reset file input immediately to prevent issues on subsequent captures
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+
     try {
-      // Convert to base64
-      const reader = new FileReader()
-      reader.onload = async () => {
-        const base64 = (reader.result as string).split(",")[1]
-        await handleSubmit("Analyze this food image", "image", base64)
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Invalid file",
+          description: "Please select an image file.",
+          variant: "destructive",
+        })
+        return
       }
-      reader.readAsDataURL(file)
+
+      // Validate file size (max 10MB)
+      const maxSizeBytes = 10 * 1024 * 1024
+      if (file.size > maxSizeBytes) {
+        toast({
+          title: "Image too large",
+          description: "Please select an image smaller than 10MB.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Convert to base64 with proper error handling
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+          try {
+            const result = reader.result as string
+            if (!result || !result.includes(",")) {
+              reject(new Error("Invalid image data"))
+              return
+            }
+            const base64Data = result.split(",")[1]
+            if (!base64Data) {
+              reject(new Error("Failed to extract image data"))
+              return
+            }
+            resolve(base64Data)
+          } catch (err) {
+            reject(err)
+          }
+        }
+        reader.onerror = () => reject(new Error("Failed to read image file"))
+        reader.readAsDataURL(file)
+      })
+
+      await handleSubmit("Analyze this food image", "image", base64)
     } catch (error) {
       console.error("[FoodLogger] Image error:", error)
       toast({
         title: "Image error",
-        description: "Failed to process image. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to process image. Please try again.",
         variant: "destructive",
       })
-    }
-
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""
     }
   }, [handleSubmit, toast])
 

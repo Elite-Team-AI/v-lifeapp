@@ -6,7 +6,8 @@ import { ButtonGlow } from "@/components/ui/button-glow"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { CreditCard, Check, Zap, Crown, Star } from "lucide-react"
+import { CreditCard, Check, Zap, Crown, Star, RefreshCw } from "lucide-react"
+import type { PurchasesPackage, CustomerInfo } from "@revenuecat/purchases-capacitor"
 
 interface ManageSubscriptionModalProps {
   isOpen: boolean
@@ -16,6 +17,9 @@ interface ManageSubscriptionModalProps {
 export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionModalProps) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
+  const [isNative, setIsNative] = useState(false)
+  const [revenueCatPackages, setRevenueCatPackages] = useState<PurchasesPackage[]>([])
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null)
   const [subscription, setSubscription] = useState<{
     plan: string
     status: string
@@ -27,12 +31,70 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
 
   useEffect(() => {
     if (!isOpen) return
-    const loadSubscription = async () => {
-      const { getSubscription } = await import("@/lib/actions/subscription")
-      const record = await getSubscription()
-      setSubscription(record)
+    
+    const loadSubscriptionData = async () => {
+      setLoading(true)
+      try {
+        // Check if we're on a native platform
+        const { isNativePlatform, getCurrentOffering, getCustomerInfo, getUserPlan, getExpirationDate, willRenew } = await import("@/lib/services/revenuecat")
+        const native = isNativePlatform()
+        setIsNative(native)
+        
+        if (native) {
+          // Load RevenueCat data on native platforms
+          const [packages, info] = await Promise.all([
+            getCurrentOffering(),
+            getCustomerInfo()
+          ])
+          
+          if (packages) {
+            setRevenueCatPackages(packages)
+          }
+          
+          if (info) {
+            setCustomerInfo(info)
+            const plan = getUserPlan(info)
+            const expirationDate = getExpirationDate(info)
+            const renews = willRenew(info)
+            
+            // Map RevenueCat data to our subscription format
+            setSubscription({
+              plan,
+              status: renews ? "active" : "cancelled",
+              billing_cycle: "monthly",
+              price: plan === "elite" ? 49.99 : plan === "pro" ? 29.99 : 0,
+              next_billing_date: expirationDate?.toISOString().split("T")[0] || null,
+              payment_method_last4: null,
+            })
+          } else {
+            // No subscription info, set free
+            setSubscription({
+              plan: "free",
+              status: "active",
+              billing_cycle: "monthly",
+              price: 0,
+              next_billing_date: null,
+              payment_method_last4: null,
+            })
+          }
+        } else {
+          // Fallback to local subscription for web
+          const { getSubscription } = await import("@/lib/actions/subscription")
+          const record = await getSubscription()
+          setSubscription(record)
+        }
+      } catch (error) {
+        console.error("[ManageSubscription] Error loading data:", error)
+        // Fallback to local subscription
+        const { getSubscription } = await import("@/lib/actions/subscription")
+        const record = await getSubscription()
+        setSubscription(record)
+      } finally {
+        setLoading(false)
+      }
     }
-    loadSubscription()
+    
+    loadSubscriptionData()
   }, [isOpen])
 
   const plans = [
@@ -76,27 +138,93 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
 
   const handleChangePlan = async (planId: string) => {
     setLoading(true)
-    const { changeSubscriptionPlan } = await import("@/lib/actions/subscription")
-    const result = await changeSubscriptionPlan(planId as "free" | "pro" | "elite")
-    setLoading(false)
-    if (!result.success) {
+    
+    try {
+      if (isNative) {
+        // Use RevenueCat for native purchases
+        const { purchaseProduct, getCustomerInfo, getUserPlan, getExpirationDate, willRenew, PRODUCTS } = await import("@/lib/services/revenuecat")
+        
+        // Map plan ID to RevenueCat product ID
+        const productId = planId === "elite" ? PRODUCTS.ELITE_MONTHLY : 
+                         planId === "pro" ? PRODUCTS.PRO_MONTHLY : null
+        
+        if (!productId) {
+          // Downgrading to free - user needs to cancel in App Store
+          toast({
+            title: "Manage in Settings",
+            description: "To downgrade, please cancel your subscription in your device's Settings > Subscriptions.",
+          })
+          setLoading(false)
+          return
+        }
+        
+        const info = await purchaseProduct(productId)
+        
+        if (info) {
+          setCustomerInfo(info)
+          const plan = getUserPlan(info)
+          const expirationDate = getExpirationDate(info)
+          const renews = willRenew(info)
+          
+          setSubscription({
+            plan,
+            status: renews ? "active" : "cancelled",
+            billing_cycle: "monthly",
+            price: plan === "elite" ? 49.99 : plan === "pro" ? 29.99 : 0,
+            next_billing_date: expirationDate?.toISOString().split("T")[0] || null,
+            payment_method_last4: null,
+          })
+          
+          toast({
+            title: "Purchase successful!",
+            description: `You're now on the ${plan} plan.`,
+          })
+        }
+      } else {
+        // Fallback to local subscription for web (development/testing only)
+        const { changeSubscriptionPlan } = await import("@/lib/actions/subscription")
+        const result = await changeSubscriptionPlan(planId as "free" | "pro" | "elite")
+        
+        if (!result.success) {
+          toast({
+            title: "Unable to change plan",
+            description: result.error || "Please try again.",
+            variant: "destructive",
+          })
+          return
+        }
+        
+        toast({
+          title: "Plan updated",
+          description: `You're now on the ${planId} plan.`,
+        })
+        
+        const { getSubscription } = await import("@/lib/actions/subscription")
+        const record = await getSubscription()
+        setSubscription(record)
+      }
+    } catch (error) {
+      console.error("[ManageSubscription] Purchase error:", error)
       toast({
-        title: "Unable to change plan",
-        description: result.error || "Please try again.",
+        title: "Purchase failed",
+        description: "There was an error processing your purchase. Please try again.",
         variant: "destructive",
       })
-      return
+    } finally {
+      setLoading(false)
     }
-    toast({
-      title: "Plan updated",
-      description: `You're now on the ${planId} plan.`,
-    })
-    const { getSubscription } = await import("@/lib/actions/subscription")
-    const record = await getSubscription()
-    setSubscription(record)
   }
 
   const handleCancelSubscription = async () => {
+    if (isNative) {
+      // On native platforms, users must cancel through their device settings
+      toast({
+        title: "Manage in Settings",
+        description: "To cancel your subscription, go to your device's Settings > Subscriptions > V-Life Fitness.",
+      })
+      return
+    }
+    
     if (!confirm("Are you sure you want to cancel your subscription? You'll lose access to Pro features.")) {
       return
     }
@@ -120,6 +248,46 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
     const { getSubscription } = await import("@/lib/actions/subscription")
     const record = await getSubscription()
     setSubscription(record)
+  }
+  
+  const handleRestorePurchases = async () => {
+    if (!isNative) return
+    
+    setLoading(true)
+    try {
+      const { restorePurchases, getUserPlan, getExpirationDate, willRenew } = await import("@/lib/services/revenuecat")
+      const info = await restorePurchases()
+      
+      if (info) {
+        setCustomerInfo(info)
+        const plan = getUserPlan(info)
+        const expirationDate = getExpirationDate(info)
+        const renews = willRenew(info)
+        
+        setSubscription({
+          plan,
+          status: renews ? "active" : "cancelled",
+          billing_cycle: "monthly",
+          price: plan === "elite" ? 49.99 : plan === "pro" ? 29.99 : 0,
+          next_billing_date: expirationDate?.toISOString().split("T")[0] || null,
+          payment_method_last4: null,
+        })
+        
+        toast({
+          title: "Purchases restored",
+          description: plan !== "free" ? `Your ${plan} subscription has been restored.` : "No active subscriptions found.",
+        })
+      }
+    } catch (error) {
+      console.error("[ManageSubscription] Restore error:", error)
+      toast({
+        title: "Restore failed",
+        description: "Unable to restore purchases. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const currentPlan = subscription || {
@@ -261,11 +429,29 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
             </CardContent>
           </Card>
 
+          {/* Restore Purchases - Native only */}
+          {isNative && (
+            <ButtonGlow
+              variant="outline-glow"
+              className="w-full"
+              onClick={handleRestorePurchases}
+              disabled={loading}
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              Restore Purchases
+            </ButtonGlow>
+          )}
+
           {/* Cancel Subscription */}
           <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4">
-            <h3 className="mb-2 font-bold text-red-400">Cancel Subscription</h3>
+            <h3 className="mb-2 font-bold text-red-400">
+              {isNative ? "Manage Subscription" : "Cancel Subscription"}
+            </h3>
             <p className="mb-3 text-sm text-white/70">
-              You'll continue to have access until the end of your current billing period.
+              {isNative 
+                ? "To cancel or modify your subscription, go to your device's Settings > Subscriptions."
+                : "You'll continue to have access until the end of your current billing period."
+              }
             </p>
             <ButtonGlow
               variant="outline-glow"
@@ -273,7 +459,7 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
               onClick={handleCancelSubscription}
               disabled={loading}
             >
-              Cancel Subscription
+              {isNative ? "How to Cancel" : "Cancel Subscription"}
             </ButtonGlow>
           </div>
         </div>
