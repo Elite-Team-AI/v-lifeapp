@@ -164,6 +164,35 @@ export default function TermsOfService() {
               </ul>
             </section>
 
+            <section className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
+              <h2 className="text-xl font-bold text-purple-400 mb-3">6.5 Community Guidelines and User-Generated Content</h2>
+              <p className="mb-3">
+                <strong className="text-white">Zero Tolerance Policy:</strong> We maintain a zero-tolerance policy for objectionable content and abusive behavior. The following content is strictly prohibited:
+              </p>
+              <ul className="list-disc pl-6 space-y-1 mb-3">
+                <li>Hate speech, harassment, or bullying</li>
+                <li>Sexually explicit or pornographic content</li>
+                <li>Violence or threats of violence</li>
+                <li>Spam, scams, or misleading content</li>
+                <li>Content that promotes illegal activities</li>
+                <li>Personal attacks or doxxing</li>
+                <li>Impersonation of other users</li>
+                <li>Content that infringes on intellectual property rights</li>
+              </ul>
+              <p className="mb-3 font-semibold text-purple-400">
+                Violations will result in immediate content removal and account suspension or termination.
+              </p>
+              <p className="mb-3">
+                <strong className="text-white">Reporting:</strong> Users can report objectionable content using the Report feature available on all community posts. We commit to reviewing all reports within 24 hours and taking appropriate action, including content removal and account suspension where warranted.
+              </p>
+              <p className="mb-3">
+                <strong className="text-white">Blocking:</strong> Users can block other users at any time. When you block a user, their content will be immediately hidden from your feed and they will not be able to interact with your posts.
+              </p>
+              <p>
+                <strong className="text-white">Content Moderation:</strong> We employ both automated filtering and human moderation to identify and remove objectionable content. Users who repeatedly violate these guidelines will have their accounts permanently terminated.
+              </p>
+            </section>
+
             <section>
               <h2 className="text-xl font-bold text-white mb-3">7. Subscription and Payment</h2>
               <p className="mb-3">

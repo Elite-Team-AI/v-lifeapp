@@ -24,6 +24,8 @@ import {
   Send,
   UserPlus,
   UserCheck,
+  Flag,
+  Ban,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { PostImage } from "@/components/post-image"
@@ -39,8 +41,9 @@ import { DEFAULT_AVATAR } from "@/lib/stock-images"
 import { useAppData } from "@/lib/contexts/app-data-context"
 import { useToast } from "@/hooks/use-toast"
 
-// Lazy load modal
+// Lazy load modals
 const CreatePostModal = lazy(() => import("@/app/create-post-modal").then(m => ({ default: m.CreatePostModal })))
+const ReportPostModal = lazy(() => import("@/app/report-post-modal").then(m => ({ default: m.ReportPostModal })))
 
 interface Comment {
   id: number
@@ -113,6 +116,7 @@ export default function Community() {
   const [isLoading, setIsLoading] = useState(true)
   const [challenges, setChallenges] = useState<Challenge[]>([])
   const [isLoadingChallenges, setIsLoadingChallenges] = useState(false)
+  const [reportModalPost, setReportModalPost] = useState<Post | null>(null)
 
   useEffect(() => {
     loadPosts()
@@ -375,6 +379,39 @@ export default function Community() {
     }
   }
 
+  const handleBlockUser = useCallback(async (userId: string, userName: string) => {
+    if (!confirm(`Are you sure you want to block ${userName}? Their posts will be hidden from your feed.`)) {
+      return
+    }
+
+    try {
+      const { blockUser } = await import("@/lib/actions/community")
+      const result = await blockUser(userId)
+
+      if (result.success) {
+        // Remove blocked user's posts from the feed immediately
+        setPosts((prevPosts) => prevPosts.filter((p) => p.user.id !== userId))
+        toast({
+          title: "User blocked",
+          description: `${userName} has been blocked. You won't see their posts anymore.`,
+        })
+      } else {
+        toast({
+          title: "Unable to block user",
+          description: result.error || "Please try again.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Error blocking user:", error)
+      toast({
+        title: "Error",
+        description: "Failed to block user. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }, [toast])
+
   const handleAddComment = async () => {
     if (!commentText.trim() || !selectedPost) return
 
@@ -551,7 +588,20 @@ export default function Community() {
                         <DropdownMenuContent align="end" className="bg-black/90 border-white/10">
                           <DropdownMenuItem className="text-white/80">Share Post</DropdownMenuItem>
                           <DropdownMenuItem className="text-white/80">Save Post</DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-400">Report Post</DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-red-400"
+                            onClick={() => setReportModalPost(post)}
+                          >
+                            <Flag className="mr-2 h-4 w-4" />
+                            Report Post
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-red-400"
+                            onClick={() => handleBlockUser(post.user.id || "", post.user.name)}
+                          >
+                            <Ban className="mr-2 h-4 w-4" />
+                            Block User
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -827,6 +877,17 @@ export default function Community() {
             onCreatePost={handleCreatePost}
             userName={currentUser.name}
             userAvatar={currentUser.avatar}
+          />
+        </Suspense>
+      )}
+
+      {reportModalPost && (
+        <Suspense fallback={null}>
+          <ReportPostModal
+            isOpen={!!reportModalPost}
+            onClose={() => setReportModalPost(null)}
+            postId={reportModalPost.id.toString()}
+            postTitle={reportModalPost.title}
           />
         </Suspense>
       )}

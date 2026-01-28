@@ -19,8 +19,8 @@ export const ENTITLEMENTS = {
 
 // Product identifiers - must match App Store Connect / Google Play Console
 export const PRODUCTS = {
-  PRO_MONTHLY: "vlife_pro_monthly",
-  ELITE_MONTHLY: "vlife_elite_monthly",
+  PRO_MONTHLY: "pro_monthly",
+  ELITE_MONTHLY: "elite_monthly",
 } as const;
 
 /**

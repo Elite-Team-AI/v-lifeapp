@@ -224,6 +224,20 @@ const getCachedFollows = unstable_cache(
   { revalidate: 60, tags: ["user-follows"] }
 )
 
+// Cached blocked users fetch
+const getCachedBlockedUsers = unstable_cache(
+  async (userId: string) => {
+    const supabase = createServiceClient()
+    const { data: blocks } = await supabase
+      .from("user_blocks")
+      .select("blocked_id")
+      .eq("blocker_id", userId)
+    return blocks?.map((b) => b.blocked_id) || []
+  },
+  ["user-blocks"],
+  { revalidate: 30, tags: ["user-blocks"] }
+)
+
 export async function getPosts(
   category?: string,
   sortBy?: "recent" | "popular" | "trending"
@@ -235,10 +249,11 @@ export async function getPosts(
   }
 
   try {
-    // Fetch posts and follows in parallel
-    const [posts, followingIds] = await Promise.all([
+    // Fetch posts, follows, and blocked users in parallel
+    const [posts, followingIds, blockedIds] = await Promise.all([
       getCachedPosts(category),
-      getCachedFollows(user.id)
+      getCachedFollows(user.id),
+      getCachedBlockedUsers(user.id)
     ])
 
     if (!posts) {
@@ -246,9 +261,13 @@ export async function getPosts(
     }
 
     const followingSet = new Set(followingIds)
+    const blockedSet = new Set(blockedIds)
+
+    // Filter out posts from blocked users, then transform
+    const filteredPosts = posts.filter(post => !blockedSet.has(post.user_id))
 
     // Transform posts
-    const transformedPosts: TransformedPost[] = posts.map((post) => {
+    const transformedPosts: TransformedPost[] = filteredPosts.map((post) => {
       const reactions = {
         heart: 0,
         celebrate: 0,
@@ -838,4 +857,178 @@ function getTimeAgo(date: Date): string {
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
   if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`
   return `${Math.floor(seconds / 604800)}w ago`
+}
+
+// ============================================
+// User-Generated Content Moderation Functions
+// Apple App Store Guideline 1.2 Compliance
+// ============================================
+
+/**
+ * Block a user - their posts will be hidden from the blocker's feed
+ */
+export async function blockUser(blockedUserId: string): Promise<{ success?: boolean; error?: string }> {
+  const { user, error: authError } = await getAuthUser()
+  if (authError || !user) {
+    return { error: "Not authenticated" }
+  }
+
+  if (blockedUserId === user.id) {
+    return { error: "You cannot block yourself" }
+  }
+
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from("user_blocks")
+    .insert({
+      blocker_id: user.id,
+      blocked_id: blockedUserId,
+    })
+
+  if (error) {
+    // Check if already blocked (unique constraint violation)
+    if (error.code === "23505") {
+      return { error: "User already blocked" }
+    }
+    console.error("Error blocking user:", error)
+    return { error: "Failed to block user" }
+  }
+
+  revalidateTag("community-posts")
+  return { success: true }
+}
+
+/**
+ * Unblock a user
+ */
+export async function unblockUser(blockedUserId: string): Promise<{ success?: boolean; error?: string }> {
+  const { user, error: authError } = await getAuthUser()
+  if (authError || !user) {
+    return { error: "Not authenticated" }
+  }
+
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from("user_blocks")
+    .delete()
+    .eq("blocker_id", user.id)
+    .eq("blocked_id", blockedUserId)
+
+  if (error) {
+    console.error("Error unblocking user:", error)
+    return { error: "Failed to unblock user" }
+  }
+
+  revalidateTag("community-posts")
+  return { success: true }
+}
+
+/**
+ * Get list of blocked user IDs for the current user
+ */
+export async function getBlockedUsers(): Promise<{ blockedIds?: string[]; error?: string }> {
+  const { user, error: authError } = await getAuthUser()
+  if (authError || !user) {
+    return { error: "Not authenticated" }
+  }
+
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("user_blocks")
+    .select("blocked_id")
+    .eq("blocker_id", user.id)
+
+  if (error) {
+    console.error("Error fetching blocked users:", error)
+    return { error: "Failed to fetch blocked users" }
+  }
+
+  return { blockedIds: data?.map(b => b.blocked_id) || [] }
+}
+
+/**
+ * Report a post for objectionable content
+ * Apple requires 24-hour response commitment
+ */
+export async function reportPost(
+  postId: string,
+  reason: string,
+  details?: string
+): Promise<{ success?: boolean; error?: string }> {
+  const { user, error: authError } = await getAuthUser()
+  if (authError || !user) {
+    return { error: "Not authenticated" }
+  }
+
+  if (!reason || !reason.trim()) {
+    return { error: "Please provide a reason for the report" }
+  }
+
+  const supabase = await createClient()
+
+  // Check if post exists
+  const { data: post, error: postError } = await supabase
+    .from("posts")
+    .select("id, user_id")
+    .eq("id", postId)
+    .single()
+
+  if (postError || !post) {
+    return { error: "Post not found" }
+  }
+
+  // Don't allow reporting own posts
+  if (post.user_id === user.id) {
+    return { error: "You cannot report your own post" }
+  }
+
+  const { error } = await supabase
+    .from("post_reports")
+    .insert({
+      post_id: postId,
+      reporter_id: user.id,
+      reason: reason.trim(),
+      details: details?.trim() || null,
+      status: "pending",
+    })
+
+  if (error) {
+    // Check if already reported (unique constraint violation)
+    if (error.code === "23505") {
+      return { error: "You have already reported this post" }
+    }
+    console.error("Error reporting post:", error)
+    return { error: "Failed to report post" }
+  }
+
+  return { success: true }
+}
+
+/**
+ * Check if a user is blocked by the current user
+ */
+export async function isUserBlocked(userId: string): Promise<{ blocked?: boolean; error?: string }> {
+  const { user, error: authError } = await getAuthUser()
+  if (authError || !user) {
+    return { error: "Not authenticated" }
+  }
+
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("user_blocks")
+    .select("id")
+    .eq("blocker_id", user.id)
+    .eq("blocked_id", userId)
+    .maybeSingle()
+
+  if (error) {
+    console.error("Error checking block status:", error)
+    return { error: "Failed to check block status" }
+  }
+
+  return { blocked: !!data }
 }

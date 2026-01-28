@@ -197,6 +197,68 @@ export function FoodLoggerInput({
     }
   }, [isRecording, stopRecording, startRecording, handleSubmit, toast])
 
+  // Compress image to reduce memory usage on iPad
+  const compressImage = useCallback(async (file: File, maxWidth: number = 1200): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      const canvas = document.createElement("canvas")
+      const ctx = canvas.getContext("2d")
+
+      if (!ctx) {
+        reject(new Error("Canvas not supported"))
+        return
+      }
+
+      img.onload = () => {
+        try {
+          // Calculate new dimensions while maintaining aspect ratio
+          let { width, height } = img
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width)
+            width = maxWidth
+          }
+
+          // Also limit height for very tall images
+          const maxHeight = 1200
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height)
+            height = maxHeight
+          }
+
+          canvas.width = width
+          canvas.height = height
+
+          // Draw and compress
+          ctx.drawImage(img, 0, 0, width, height)
+
+          // Get compressed base64 (JPEG at 80% quality)
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.8)
+          const base64Data = dataUrl.split(",")[1]
+
+          if (!base64Data) {
+            reject(new Error("Failed to compress image"))
+            return
+          }
+
+          // Clean up
+          URL.revokeObjectURL(img.src)
+          resolve(base64Data)
+        } catch (err) {
+          URL.revokeObjectURL(img.src)
+          reject(err)
+        }
+      }
+
+      img.onerror = () => {
+        URL.revokeObjectURL(img.src)
+        reject(new Error("Failed to load image for compression"))
+      }
+
+      // Create object URL from file
+      img.src = URL.createObjectURL(file)
+    })
+  }, [])
+
   const handleImageCapture = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
@@ -217,51 +279,72 @@ export function FoodLoggerInput({
         return
       }
 
-      // Validate file size (max 10MB)
-      const maxSizeBytes = 10 * 1024 * 1024
+      // Validate file size (max 20MB before compression)
+      const maxSizeBytes = 20 * 1024 * 1024
       if (file.size > maxSizeBytes) {
         toast({
           title: "Image too large",
-          description: "Please select an image smaller than 10MB.",
+          description: "Please select an image smaller than 20MB.",
           variant: "destructive",
         })
         return
       }
 
-      // Convert to base64 with proper error handling
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => {
-          try {
-            const result = reader.result as string
-            if (!result || !result.includes(",")) {
-              reject(new Error("Invalid image data"))
-              return
+      // Compress image to prevent memory issues on iPad
+      let base64: string
+      try {
+        base64 = await compressImage(file)
+      } catch (compressionError) {
+        console.warn("[FoodLogger] Compression failed, trying direct read:", compressionError)
+
+        // Fallback to direct read if compression fails
+        base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => {
+            try {
+              const result = reader.result as string
+              if (!result || !result.includes(",")) {
+                reject(new Error("Invalid image data"))
+                return
+              }
+              const base64Data = result.split(",")[1]
+              if (!base64Data) {
+                reject(new Error("Failed to extract image data"))
+                return
+              }
+              resolve(base64Data)
+            } catch (err) {
+              reject(err)
             }
-            const base64Data = result.split(",")[1]
-            if (!base64Data) {
-              reject(new Error("Failed to extract image data"))
-              return
-            }
-            resolve(base64Data)
-          } catch (err) {
-            reject(err)
           }
-        }
-        reader.onerror = () => reject(new Error("Failed to read image file"))
-        reader.readAsDataURL(file)
-      })
+          reader.onerror = () => reject(new Error("Failed to read image file"))
+          reader.readAsDataURL(file)
+        })
+      }
 
       await handleSubmit("Analyze this food image", "image", base64)
     } catch (error) {
       console.error("[FoodLogger] Image error:", error)
+
+      // Provide user-friendly error messages
+      let errorMessage = "Failed to process image. Please try again."
+      if (error instanceof Error) {
+        if (error.message.includes("permission") || error.message.includes("denied")) {
+          errorMessage = "Camera access denied. Please allow camera access in your device settings."
+        } else if (error.message.includes("memory") || error.message.includes("quota")) {
+          errorMessage = "Image too large for processing. Please try a smaller image."
+        } else {
+          errorMessage = error.message
+        }
+      }
+
       toast({
         title: "Image error",
-        description: error instanceof Error ? error.message : "Failed to process image. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       })
     }
-  }, [handleSubmit, toast])
+  }, [handleSubmit, toast, compressImage])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -422,7 +505,18 @@ export function FoodLoggerInput({
             {/* Camera button */}
             <motion.button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => {
+                try {
+                  fileInputRef.current?.click()
+                } catch (error) {
+                  console.error("[FoodLogger] Camera button click error:", error)
+                  toast({
+                    title: "Camera unavailable",
+                    description: "Unable to access camera. Please try selecting an image from your photos.",
+                    variant: "destructive",
+                  })
+                }
+              }}
               disabled={isProcessing || disabled}
               whileTap={{ scale: 0.95 }}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-colors"
@@ -435,6 +529,10 @@ export function FoodLoggerInput({
               accept="image/*"
               capture="environment"
               onChange={handleImageCapture}
+              onClick={(e) => {
+                // Reset value on click to allow re-selecting the same file
+                (e.target as HTMLInputElement).value = ""
+              }}
               className="hidden"
             />
           </div>

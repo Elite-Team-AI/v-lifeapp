@@ -6,7 +6,7 @@ import { ButtonGlow } from "@/components/ui/button-glow"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { CreditCard, Check, Zap, Crown, Star, RefreshCw } from "lucide-react"
+import { CreditCard, Check, Zap, Crown, Star, RefreshCw, AlertCircle } from "lucide-react"
 import type { PurchasesPackage, CustomerInfo } from "@revenuecat/purchases-capacitor"
 
 interface ManageSubscriptionModalProps {
@@ -20,6 +20,7 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
   const [isNative, setIsNative] = useState(false)
   const [revenueCatPackages, setRevenueCatPackages] = useState<PurchasesPackage[]>([])
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [subscription, setSubscription] = useState<{
     plan: string
     status: string
@@ -31,32 +32,52 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
 
   useEffect(() => {
     if (!isOpen) return
-    
+
     const loadSubscriptionData = async () => {
       setLoading(true)
+      setLoadError(null)
+
       try {
         // Check if we're on a native platform
         const { isNativePlatform, getCurrentOffering, getCustomerInfo, getUserPlan, getExpirationDate, willRenew } = await import("@/lib/services/revenuecat")
         const native = isNativePlatform()
         setIsNative(native)
-        
+
         if (native) {
           // Load RevenueCat data on native platforms
-          const [packages, info] = await Promise.all([
-            getCurrentOffering(),
-            getCustomerInfo()
-          ])
-          
-          if (packages) {
-            setRevenueCatPackages(packages)
+          let packages: PurchasesPackage[] | null = null
+          let info: CustomerInfo | null = null
+
+          try {
+            [packages, info] = await Promise.all([
+              getCurrentOffering(),
+              getCustomerInfo()
+            ])
+          } catch (revenueCatError) {
+            console.error("[ManageSubscription] RevenueCat error:", revenueCatError)
+            setLoadError("Unable to load subscription options. Please check your internet connection and try again.")
+            // Still try to get customer info for current status
+            try {
+              info = await getCustomerInfo()
+            } catch {
+              // If we can't get customer info, show error
+            }
           }
-          
+
+          if (packages && packages.length > 0) {
+            setRevenueCatPackages(packages)
+          } else if (native && !loadError) {
+            // No packages available - might be a configuration issue
+            console.warn("[ManageSubscription] No packages available from RevenueCat")
+            setLoadError("Subscription options are currently unavailable. Please try again later.")
+          }
+
           if (info) {
             setCustomerInfo(info)
             const plan = getUserPlan(info)
             const expirationDate = getExpirationDate(info)
             const renews = willRenew(info)
-            
+
             // Map RevenueCat data to our subscription format
             setSubscription({
               plan,
@@ -85,15 +106,28 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
         }
       } catch (error) {
         console.error("[ManageSubscription] Error loading data:", error)
+        setLoadError("Failed to load subscription data. Please try again.")
         // Fallback to local subscription
-        const { getSubscription } = await import("@/lib/actions/subscription")
-        const record = await getSubscription()
-        setSubscription(record)
+        try {
+          const { getSubscription } = await import("@/lib/actions/subscription")
+          const record = await getSubscription()
+          setSubscription(record)
+        } catch {
+          // Set default free subscription if all else fails
+          setSubscription({
+            plan: "free",
+            status: "active",
+            billing_cycle: "monthly",
+            price: 0,
+            next_billing_date: null,
+            payment_method_last4: null,
+          })
+        }
       } finally {
         setLoading(false)
       }
     }
-    
+
     loadSubscriptionData()
   }, [isOpen])
 
@@ -138,16 +172,16 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
 
   const handleChangePlan = async (planId: string) => {
     setLoading(true)
-    
+
     try {
       if (isNative) {
         // Use RevenueCat for native purchases
-        const { purchaseProduct, getCustomerInfo, getUserPlan, getExpirationDate, willRenew, PRODUCTS } = await import("@/lib/services/revenuecat")
-        
+        const { purchaseProduct, getCustomerInfo, getUserPlan, getExpirationDate, willRenew, PRODUCTS, getCurrentOffering } = await import("@/lib/services/revenuecat")
+
         // Map plan ID to RevenueCat product ID
-        const productId = planId === "elite" ? PRODUCTS.ELITE_MONTHLY : 
+        const productId = planId === "elite" ? PRODUCTS.ELITE_MONTHLY :
                          planId === "pro" ? PRODUCTS.PRO_MONTHLY : null
-        
+
         if (!productId) {
           // Downgrading to free - user needs to cancel in App Store
           toast({
@@ -157,15 +191,65 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
           setLoading(false)
           return
         }
-        
-        const info = await purchaseProduct(productId)
-        
+
+        // Check if offerings are available before attempting purchase
+        if (revenueCatPackages.length === 0) {
+          // Try to reload offerings
+          const packages = await getCurrentOffering()
+          if (!packages || packages.length === 0) {
+            toast({
+              title: "Subscription unavailable",
+              description: "Unable to load subscription options. Please check your internet connection and try again.",
+              variant: "destructive",
+            })
+            setLoading(false)
+            return
+          }
+          setRevenueCatPackages(packages)
+        }
+
+        let info
+        try {
+          info = await purchaseProduct(productId)
+        } catch (purchaseError: unknown) {
+          console.error("[ManageSubscription] Purchase error:", purchaseError)
+
+          // Check for specific error types
+          const errorMessage = purchaseError instanceof Error ? purchaseError.message : String(purchaseError)
+
+          if (errorMessage.includes("cancelled") || errorMessage.includes("userCancelled")) {
+            // User cancelled - don't show error
+            setLoading(false)
+            return
+          } else if (errorMessage.includes("not found") || errorMessage.includes("No offerings")) {
+            toast({
+              title: "Product not available",
+              description: "This subscription is currently unavailable. Please try again later.",
+              variant: "destructive",
+            })
+          } else if (errorMessage.includes("network") || errorMessage.includes("internet")) {
+            toast({
+              title: "Connection error",
+              description: "Please check your internet connection and try again.",
+              variant: "destructive",
+            })
+          } else {
+            toast({
+              title: "Purchase failed",
+              description: "There was an error processing your purchase. Please try again.",
+              variant: "destructive",
+            })
+          }
+          setLoading(false)
+          return
+        }
+
         if (info) {
           setCustomerInfo(info)
           const plan = getUserPlan(info)
           const expirationDate = getExpirationDate(info)
           const renews = willRenew(info)
-          
+
           setSubscription({
             plan,
             status: renews ? "active" : "cancelled",
@@ -174,7 +258,7 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
             next_billing_date: expirationDate?.toISOString().split("T")[0] || null,
             payment_method_last4: null,
           })
-          
+
           toast({
             title: "Purchase successful!",
             description: `You're now on the ${plan} plan.`,
@@ -184,7 +268,7 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
         // Fallback to local subscription for web (development/testing only)
         const { changeSubscriptionPlan } = await import("@/lib/actions/subscription")
         const result = await changeSubscriptionPlan(planId as "free" | "pro" | "elite")
-        
+
         if (!result.success) {
           toast({
             title: "Unable to change plan",
@@ -193,12 +277,12 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
           })
           return
         }
-        
+
         toast({
           title: "Plan updated",
           description: `You're now on the ${planId} plan.`,
         })
-        
+
         const { getSubscription } = await import("@/lib/actions/subscription")
         const record = await getSubscription()
         setSubscription(record)
@@ -348,6 +432,51 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
               </div>
             </CardContent>
           </Card>
+
+          {/* Load Error Alert */}
+          {loadError && isNative && (
+            <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-yellow-400 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-medium text-yellow-400">Unable to load subscriptions</h4>
+                  <p className="text-sm text-white/70 mt-1">{loadError}</p>
+                  <ButtonGlow
+                    variant="outline-glow"
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => {
+                      // Trigger reload by toggling isOpen effect
+                      setLoading(true)
+                      setLoadError(null)
+                      // Re-run the load effect
+                      const loadData = async () => {
+                        try {
+                          const { getCurrentOffering, getCustomerInfo } = await import("@/lib/services/revenuecat")
+                          const [packages, info] = await Promise.all([
+                            getCurrentOffering(),
+                            getCustomerInfo()
+                          ])
+                          if (packages) setRevenueCatPackages(packages)
+                          if (info) setCustomerInfo(info)
+                          setLoadError(null)
+                        } catch (e) {
+                          setLoadError("Still unable to load. Please try again later.")
+                        } finally {
+                          setLoading(false)
+                        }
+                      }
+                      loadData()
+                    }}
+                    disabled={loading}
+                  >
+                    <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                    Retry
+                  </ButtonGlow>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Available Plans */}
           <div>
