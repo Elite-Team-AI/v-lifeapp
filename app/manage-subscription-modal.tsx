@@ -434,33 +434,50 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
           </Card>
 
           {/* Load Error Alert */}
-          {loadError && isNative && (
+          {isNative && (loadError || (!loading && revenueCatPackages.length === 0)) && (
             <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4">
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-yellow-400 shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <h4 className="font-medium text-yellow-400">Unable to load subscriptions</h4>
-                  <p className="text-sm text-white/70 mt-1">{loadError}</p>
+                  <h4 className="font-medium text-yellow-400">Subscription options unavailable</h4>
+                  <p className="text-sm text-white/70 mt-1">
+                    {loadError || "In-app purchases are not available right now. Please check your connection and try again."}
+                  </p>
                   <ButtonGlow
                     variant="outline-glow"
                     size="sm"
                     className="mt-3"
                     onClick={() => {
-                      // Trigger reload by toggling isOpen effect
                       setLoading(true)
                       setLoadError(null)
-                      // Re-run the load effect
                       const loadData = async () => {
                         try {
-                          const { getCurrentOffering, getCustomerInfo } = await import("@/lib/services/revenuecat")
+                          const { getCurrentOffering, getCustomerInfo, getUserPlan, getExpirationDate, willRenew } = await import("@/lib/services/revenuecat")
                           const [packages, info] = await Promise.all([
                             getCurrentOffering(),
                             getCustomerInfo()
                           ])
-                          if (packages) setRevenueCatPackages(packages)
-                          if (info) setCustomerInfo(info)
-                          setLoadError(null)
-                        } catch (e) {
+                          if (packages && packages.length > 0) {
+                            setRevenueCatPackages(packages)
+                            setLoadError(null)
+                          } else {
+                            setLoadError("Subscription options are still unavailable. Please try again later.")
+                          }
+                          if (info) {
+                            setCustomerInfo(info)
+                            const plan = getUserPlan(info)
+                            const expirationDate = getExpirationDate(info)
+                            const renews = willRenew(info)
+                            setSubscription({
+                              plan,
+                              status: renews ? "active" : "cancelled",
+                              billing_cycle: "monthly",
+                              price: plan === "elite" ? 49.99 : plan === "pro" ? 29.99 : 0,
+                              next_billing_date: expirationDate?.toISOString().split("T")[0] || null,
+                              payment_method_last4: null,
+                            })
+                          }
+                        } catch {
                           setLoadError("Still unable to load. Please try again later.")
                         } finally {
                           setLoading(false)
@@ -521,10 +538,12 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
                           variant={plan.popular ? "glow" : "outline-glow"}
                           className="w-full"
                           onClick={() => handleChangePlan(plan.id)}
-                          disabled={loading}
+                          disabled={loading || (isNative && plan.price > 0 && revenueCatPackages.length === 0)}
                         >
-                      {plan.price > currentPlan.price ? "Upgrade" : plan.price === 0 ? "Downgrade" : "Switch"} to{" "}
-                          {plan.name}
+                          {isNative && plan.price > 0 && revenueCatPackages.length === 0
+                            ? "Unavailable — Try Again Later"
+                            : `${plan.price > currentPlan.price ? "Upgrade" : plan.price === 0 ? "Downgrade" : "Switch"} to ${plan.name}`
+                          }
                         </ButtonGlow>
                       )}
                     </CardContent>
