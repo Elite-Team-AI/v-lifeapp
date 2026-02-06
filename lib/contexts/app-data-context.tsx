@@ -19,6 +19,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react"
 import type { AppData, UseAppDataReturn } from "@/lib/types/app-data"
+import { initRevenueCat } from "@/lib/services/revenuecat"
 
 const AppDataContext = createContext<UseAppDataReturn | null>(null)
 
@@ -88,6 +89,13 @@ export function AppDataProvider({ children }: AppDataProviderProps) {
         const data: AppData = await response.json()
         setAppData(data)
         setError(null)
+
+        // Initialize RevenueCat on first successful load
+        if (!isBackgroundRefresh && data.profile?.id) {
+          initRevenueCat(data.profile.id).catch((err) =>
+            console.error("[AppDataProvider] RevenueCat init failed:", err)
+          )
+        }
         
         const endTime = performance.now()
         const duration = Math.round(endTime - startTime)
