@@ -118,10 +118,18 @@ export async function getOfferings(): Promise<PurchasesOfferings | null> {
 
 /**
  * Get the current offering (default subscription options)
+ * Retries briefly if SDK just initialized and offerings aren't cached yet
  */
 export async function getCurrentOffering(): Promise<PurchasesPackage[] | null> {
   const offerings = await getOfferings();
-  return offerings?.current?.availablePackages ?? null;
+  const packages = offerings?.current?.availablePackages ?? null;
+
+  if (packages && packages.length > 0) return packages;
+
+  // SDK may still be fetching offerings after init — retry once after a short delay
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+  const retry = await getOfferings();
+  return retry?.current?.availablePackages ?? null;
 }
 
 /**
