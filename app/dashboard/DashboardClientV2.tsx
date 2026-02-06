@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { ArrowRight, Settings, Dumbbell } from "lucide-react"
+import { ArrowRight, Settings, Dumbbell, Zap } from "lucide-react"
 import { ButtonGlow } from "@/components/ui/button-glow"
 import { BottomNav } from "@/components/bottom-nav"
 import { AmbientBackground } from "@/components/ambient-background"
@@ -24,6 +24,7 @@ import {
 // Lazy load modals
 const UpdateProfileModal = lazy(() => import("@/app/update-profile-modal").then(m => ({ default: m.UpdateProfileModal })))
 const WeeklyReflectionModal = lazy(() => import("@/app/weekly-reflection-modal").then(m => ({ default: m.WeeklyReflectionModal })))
+const ManageSubscriptionModal = lazy(() => import("@/app/manage-subscription-modal").then(m => ({ default: m.ManageSubscriptionModal })))
 
 // Animation variants
 const containerVariants = {
@@ -55,6 +56,7 @@ function DashboardClientV2() {
   
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isWeeklyReflectionModalOpen, setIsWeeklyReflectionModalOpen] = useState(false)
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false)
   
   // Derived data
   const userName = useMemo(() => {
@@ -298,6 +300,27 @@ function DashboardClientV2() {
           </div>
         </motion.div>
 
+        {/* Upgrade Banner - Free users only */}
+        {appData?.subscription?.plan === "free" && (
+          <motion.div className="mb-6" variants={itemVariants}>
+            <motion.button
+              className="w-full flex items-center gap-3 rounded-xl border border-accent/20 bg-gradient-to-r from-accent/10 to-accent/5 px-4 py-3 text-left"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setIsUpgradeModalOpen(true)}
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/20">
+                <Zap className="h-5 w-5 text-accent" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white">Upgrade to Pro</p>
+                <p className="text-xs text-white/50">Unlock AI coaching, unlimited plans & more</p>
+              </div>
+              <ArrowRight className="h-4 w-4 shrink-0 text-accent/60" />
+            </motion.button>
+          </motion.div>
+        )}
+
         {/* Power Stats - Horizontal Row */}
         <motion.div className="mb-6" variants={itemVariants}>
           <PowerStats
@@ -344,6 +367,14 @@ function DashboardClientV2() {
           <WeeklyReflectionModal
             isOpen={isWeeklyReflectionModalOpen}
             onClose={() => setIsWeeklyReflectionModalOpen(false)}
+          />
+        </Suspense>
+      )}
+      {isUpgradeModalOpen && (
+        <Suspense fallback={null}>
+          <ManageSubscriptionModal
+            isOpen={isUpgradeModalOpen}
+            onClose={() => setIsUpgradeModalOpen(false)}
           />
         </Suspense>
       )}
