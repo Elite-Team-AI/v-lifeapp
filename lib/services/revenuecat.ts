@@ -108,7 +108,17 @@ export async function getOfferings(): Promise<PurchasesOfferings | null> {
   }
 
   try {
-    const { offerings } = await Purchases.getOfferings();
+    const result = await Purchases.getOfferings();
+    console.log("[RevenueCat] getOfferings result keys:", Object.keys(result));
+    console.log("[RevenueCat] has 'offerings' key:", "offerings" in result);
+    console.log("[RevenueCat] has 'current' key:", "current" in result);
+
+    // The Capacitor plugin may return offerings directly or wrapped
+    const offerings = (result as any).offerings ?? result;
+    console.log("[RevenueCat] offerings keys:", Object.keys(offerings));
+    console.log("[RevenueCat] offerings.current:", offerings?.current ? "exists" : "null");
+    console.log("[RevenueCat] availablePackages count:", offerings?.current?.availablePackages?.length ?? 0);
+
     return offerings;
   } catch (error) {
     console.error("[RevenueCat] Failed to get offerings:", error);
