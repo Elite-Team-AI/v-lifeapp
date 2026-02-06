@@ -39,11 +39,14 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
 
       try {
         // Check if we're on a native platform
-        const { isNativePlatform, getCurrentOffering, getCustomerInfo, getUserPlan, getExpirationDate, willRenew } = await import("@/lib/services/revenuecat")
+        const { isNativePlatform, ensureInitialized, getCurrentOffering, getCustomerInfo, getUserPlan, getExpirationDate, willRenew } = await import("@/lib/services/revenuecat")
         const native = isNativePlatform()
         setIsNative(native)
 
         if (native) {
+          // Ensure RevenueCat is initialized before loading data
+          await ensureInitialized()
+
           // Load RevenueCat data on native platforms
           let packages: PurchasesPackage[] | null = null
           let info: CustomerInfo | null = null

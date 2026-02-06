@@ -11,6 +11,9 @@ import { Capacitor } from "@capacitor/core";
 const REVENUECAT_IOS_KEY = "appl_PpVZxhnVRIzIdWsYaVRUnRBigDm";
 const REVENUECAT_ANDROID_KEY = "goog_kkJoPPlOScqqaDCbeKwVhmrPluS";
 
+// Track initialization state
+let isInitialized = false;
+
 // Entitlement identifiers - must match RevenueCat dashboard
 export const ENTITLEMENTS = {
   PRO: "pro",
@@ -65,10 +68,33 @@ export async function initRevenueCat(userId: string): Promise<void> {
       await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
     }
 
+    isInitialized = true;
     console.log("[RevenueCat] Initialized successfully for user:", userId);
   } catch (error) {
     console.error("[RevenueCat] Failed to initialize:", error);
     throw error;
+  }
+}
+
+/**
+ * Ensure RevenueCat is initialized before use.
+ * Gets user ID from Supabase if needed. Safe to call multiple times.
+ */
+export async function ensureInitialized(): Promise<void> {
+  if (isInitialized || !isNativePlatform()) return;
+
+  try {
+    const { getSupabaseBrowserClient } = await import("@/lib/supabase/client");
+    const supabase = getSupabaseBrowserClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user?.id) {
+      await initRevenueCat(user.id);
+    } else {
+      console.warn("[RevenueCat] No user found for initialization");
+    }
+  } catch (error) {
+    console.error("[RevenueCat] ensureInitialized failed:", error);
   }
 }
 
