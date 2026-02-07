@@ -1,0 +1,56 @@
+# Universal Auto-Deploy Workflow
+# Copy this file to .github/workflows/deploy.yml in any repo
+# Then run setup-auto-deploy.sh to configure secrets and variables
+#
+# Supports: Vercel (frontend) and Railway (backend)
+# Only runs jobs for which DEPLOY_VERCEL or DEPLOY_RAILWAY variables are set to 'true'
+#
+# Build happens on Vercel/Railway servers (not GitHub runner) for max compatibility
+# with any package manager (npm, pnpm, yarn, bun)
+
+name: Auto Deploy
+
+on:
+  push:
+    branches: [main, master]
+
+jobs:
+  deploy-vercel:
+    if: vars.DEPLOY_VERCEL == 'true'
+    runs-on: ubuntu-latest
+    name: Deploy to Vercel
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
+      - name: Deploy to Production
+        run: |
+          url=$(vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "Deployed to: $url"
+
+  deploy-railway:
+    if: vars.DEPLOY_RAILWAY == 'true'
+    runs-on: ubuntu-latest
+    name: Deploy to Railway
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
+      - name: Deploy to Railway
+        run: railway up --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
