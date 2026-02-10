@@ -527,7 +527,6 @@ export function FoodLoggerInput({
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
               onChange={handleImageCapture}
               onClick={(e) => {
                 // Reset value on click to allow re-selecting the same file

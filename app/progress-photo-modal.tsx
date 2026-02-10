@@ -50,11 +50,20 @@ export function ProgressPhotoModal({ isOpen, onClose, onSuccess, recentPhotos, c
   ]
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const imageUrl = URL.createObjectURL(file)
-      setSelectedImage(imageUrl)
-      setSelectedFile(file)
+    try {
+      const file = event.target.files?.[0]
+      if (file) {
+        const imageUrl = URL.createObjectURL(file)
+        setSelectedImage(imageUrl)
+        setSelectedFile(file)
+      }
+    } catch (error) {
+      console.error("[ProgressPhoto] File select error:", error)
+      toast({
+        title: "Unable to select photo",
+        description: "Please try again or choose a different photo.",
+        variant: "destructive",
+      })
     }
   }
 

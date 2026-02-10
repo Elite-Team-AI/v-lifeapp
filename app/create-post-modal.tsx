@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useToast } from "@/hooks/use-toast"
 
 interface CreatePostModalProps {
   isOpen: boolean
@@ -70,6 +71,7 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [isPosting, setIsPosting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { toast } = useToast()
 
   const templates: Record<string, string[]> = {
     achievement: achievementTemplates,
@@ -79,10 +81,19 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
   }
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const imageUrl = URL.createObjectURL(file)
-      setSelectedImage(imageUrl)
+    try {
+      const file = event.target.files?.[0]
+      if (file) {
+        const imageUrl = URL.createObjectURL(file)
+        setSelectedImage(imageUrl)
+      }
+    } catch (error) {
+      console.error("[CreatePost] Image select error:", error)
+      toast({
+        title: "Unable to select image",
+        description: "Please try again or choose a different image.",
+        variant: "destructive",
+      })
     }
   }
 

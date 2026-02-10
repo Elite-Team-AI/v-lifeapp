@@ -613,6 +613,27 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
               {isNative ? "How to Cancel" : "Cancel Subscription"}
             </ButtonGlow>
           </div>
+
+          {/* Legal Footer */}
+          <div className="rounded-lg border border-white/10 bg-white/5 p-4 text-xs text-white/60 space-y-3">
+            <p>
+              By subscribing, you agree to our{" "}
+              <a href="/terms-of-service" className="text-accent underline" target="_blank" rel="noopener noreferrer">
+                Terms of Use
+              </a>{" "}
+              and{" "}
+              <a href="/privacy-policy" className="text-accent underline" target="_blank" rel="noopener noreferrer">
+                Privacy Policy
+              </a>.
+            </p>
+            <p>
+              Payment will be charged to your Apple ID account at confirmation of purchase.
+              Subscription automatically renews unless it is canceled at least 24 hours before
+              the end of the current period. Your account will be charged for renewal within
+              24 hours prior to the end of the current period. You can manage and cancel your
+              subscriptions by going to your account settings on the App Store after purchase.
+            </p>
+          </div>
         </div>
 
         <div className="flex gap-3">

@@ -335,9 +335,9 @@ export default function TermsOfService() {
             <section>
               <h2 className="text-xl font-bold text-white mb-3">13. Governing Law</h2>
               <p>
-                These Terms shall be governed by and construed in accordance with the laws of [Your State/Country],
+                These Terms shall be governed by and construed in accordance with the laws of the State of Delaware,
                 without regard to conflict of law principles. Any legal action must be brought in the courts located in
-                [Your Jurisdiction].
+                New Castle County, Delaware.
               </p>
             </section>
 
@@ -373,7 +373,7 @@ export default function TermsOfService() {
               <div className="bg-white/5 rounded-lg p-4">
                 <p className="font-semibold text-white">V-Life Legal Team</p>
                 <p>Email: legal@vlife.app</p>
-                <p>Address: [Your Company Address]</p>
+                <p>Address: Wilmington, DE 19801</p>
               </div>
             </section>
 
