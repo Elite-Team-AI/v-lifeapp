@@ -487,7 +487,7 @@ function VBotPageContent() {
       </div>
 
       {/* Messages */}
-      <div className="relative z-0 container mx-auto max-w-2xl flex-1 overflow-y-auto px-4 pt-6 pb-32 max-h-[calc(100vh-240px)]">
+      <div className="relative z-0 container mx-auto max-w-2xl flex-1 overflow-y-auto px-4 pt-6 pb-40 max-h-[calc(100vh-240px)]">
         {messages.length === 0 ? (
           <motion.div
             className="flex flex-col items-center text-center pt-8"
@@ -674,8 +674,8 @@ function VBotPageContent() {
         )}
       </div>
 
-      {/* Input - fixed above bottom nav */}
-      <div className="fixed bottom-20 left-0 right-0 z-40 bg-black/90 backdrop-blur-lg border-t border-white/5 flex-shrink-0">
+      {/* Input - fixed above bottom nav with safe area */}
+      <div className="fixed left-0 right-0 z-40 bg-black/90 backdrop-blur-lg border-t border-white/5 flex-shrink-0" style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px) + 0.5rem)' }}>
         <div className="container mx-auto max-w-2xl px-4 py-3">
           <form onSubmit={handleSubmit} className="relative flex items-center">
             <input
@@ -683,10 +683,20 @@ function VBotPageContent() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Message VBot..."
-              className="w-full rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 pr-14 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none transition-colors"
+              className="w-full rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 pr-24 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none transition-colors"
               disabled={isLoading}
             />
             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              {voicePrefs.voiceEnabled && (
+                <button
+                  type="button"
+                  onClick={() => setShowVoiceLiveModal(true)}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/20 text-green-400 transition-all hover:bg-green-500/30"
+                  title="Voice Chat"
+                >
+                  <Phone className="h-4 w-4" />
+                </button>
+              )}
               <button
                 type="submit"
                 disabled={!input.trim() || isLoading}
