@@ -6,7 +6,8 @@ import { ButtonGlow } from "@/components/ui/button-glow"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { CreditCard, Check, Zap, Crown, Star, RefreshCw, AlertCircle } from "lucide-react"
+import { CreditCard, Check, Zap, Crown, Star, RefreshCw, AlertCircle, ExternalLink } from "lucide-react"
+import Link from "next/link"
 import type { PurchasesPackage, CustomerInfo } from "@revenuecat/purchases-capacitor"
 
 interface ManageSubscriptionModalProps {
@@ -518,8 +519,7 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
                           <div>
                             <h4 className="font-bold text-white">{plan.name}</h4>
                             <p className="text-sm text-white/70">
-                              ${plan.price}
-                              {plan.price > 0 && "/month"}
+                              {plan.price > 0 ? `$${plan.price}/month · Auto-renewable` : "Free"}
                             </p>
                           </div>
                         </div>
@@ -633,6 +633,26 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
               24 hours prior to the end of the current period. You can manage and cancel your
               subscriptions by going to your account settings on the App Store after purchase.
             </p>
+          </div>
+        </div>
+
+        {/* Subscription Terms & Legal Links */}
+        <div className="rounded-lg border border-white/10 bg-white/5 p-4 space-y-3">
+          <h4 className="text-xs font-semibold text-white/50 uppercase tracking-wider">Subscription Terms</h4>
+          <ul className="text-xs text-white/60 space-y-1.5">
+            <li><span className="text-white/80 font-medium">V-Life Pro</span> — $29.99/month, auto-renews monthly</li>
+            <li><span className="text-white/80 font-medium">V-Life Elite</span> — $49.99/month, auto-renews monthly</li>
+            <li>Payment will be charged to your Apple ID account at confirmation of purchase.</li>
+            <li>Subscription automatically renews unless cancelled at least 24 hours before the end of the current period.</li>
+            <li>You can manage or cancel subscriptions in your device&apos;s Settings &gt; Subscriptions.</li>
+          </ul>
+          <div className="flex items-center gap-4 pt-1">
+            <Link href="/privacy-policy" className="text-xs text-accent hover:underline inline-flex items-center gap-1">
+              Privacy Policy <ExternalLink className="h-3 w-3" />
+            </Link>
+            <Link href="/terms-of-service" className="text-xs text-accent hover:underline inline-flex items-center gap-1">
+              Terms of Use <ExternalLink className="h-3 w-3" />
+            </Link>
           </div>
         </div>
 
