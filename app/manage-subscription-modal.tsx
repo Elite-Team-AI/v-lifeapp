@@ -19,6 +19,7 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [isNative, setIsNative] = useState(false)
+  const [platform, setPlatform] = useState<"ios" | "android" | "web">("web")
   const [revenueCatPackages, setRevenueCatPackages] = useState<PurchasesPackage[]>([])
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -40,9 +41,10 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
 
       try {
         // Check if we're on a native platform
-        const { isNativePlatform, ensureInitialized, getCurrentOffering, getCustomerInfo, getUserPlan, getExpirationDate, willRenew } = await import("@/lib/services/revenuecat")
+        const { isNativePlatform, ensureInitialized, getPlatform, getCurrentOffering, getCustomerInfo, getUserPlan, getExpirationDate, willRenew } = await import("@/lib/services/revenuecat")
         const native = isNativePlatform()
         setIsNative(native)
+        setPlatform(getPlatform())
 
         if (native) {
           // Ensure RevenueCat is initialized before loading data
@@ -642,9 +644,24 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
           <ul className="text-xs text-white/60 space-y-1.5">
             <li><span className="text-white/80 font-medium">V-Life Pro</span> — $29.99/month, auto-renews monthly</li>
             <li><span className="text-white/80 font-medium">V-Life Elite</span> — $49.99/month, auto-renews monthly</li>
-            <li>Payment will be charged to your Apple ID account at confirmation of purchase.</li>
-            <li>Subscription automatically renews unless cancelled at least 24 hours before the end of the current period.</li>
-            <li>You can manage or cancel subscriptions in your device&apos;s Settings &gt; Subscriptions.</li>
+            {platform === "ios" ? (
+              <>
+                <li>Payment will be charged to your Apple ID account at confirmation of purchase.</li>
+                <li>Subscription automatically renews unless cancelled at least 24 hours before the end of the current period.</li>
+                <li>You can manage or cancel subscriptions in your device&apos;s Settings &gt; Subscriptions.</li>
+              </>
+            ) : platform === "android" ? (
+              <>
+                <li>Payment will be charged to your Google Play account at confirmation of purchase.</li>
+                <li>Subscription automatically renews unless cancelled at least 24 hours before the end of the current period.</li>
+                <li>You can manage or cancel subscriptions in Google Play &gt; Payments &amp; subscriptions.</li>
+              </>
+            ) : (
+              <>
+                <li>Subscription automatically renews unless cancelled before the end of the current period.</li>
+                <li>You can manage or cancel your subscription from your account settings.</li>
+              </>
+            )}
           </ul>
           <div className="flex items-center gap-4 pt-1">
             <Link href="/privacy-policy" className="text-xs text-accent hover:underline inline-flex items-center gap-1">
