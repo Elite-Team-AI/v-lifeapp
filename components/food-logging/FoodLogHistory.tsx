@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, ChevronRight, CalendarDays, Plus, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { FoodLogCard } from "./FoodLogCard"
 import { FoodLoggerInput } from "./FoodLoggerInput"
 import { FoodParseConfirmModal } from "./FoodParseConfirmModal"
@@ -38,16 +39,79 @@ export function FoodLogHistory({
   const [pendingParseResult, setPendingParseResult] = useState<FoodParseResult | null>(null)
   const [pendingInput, setPendingInput] = useState<{ text: string; type: "text" | "voice" | "image" } | null>(null)
 
-  // Fetch logs for selected date
+  // Fetch logs for selected date using client-side Supabase
+  // (avoids Next.js server action serialization which blocks behind slow meal plan AI calls)
   const fetchLogs = useCallback(async () => {
     setIsLoading(true)
     try {
-      const { getFoodLogsForDate } = await import("@/lib/actions/food-logging")
-      const result = await getFoodLogsForDate(selectedDate)
-      setLogs(result.logs)
-      setSummary(result.summary)
+      const supabase = getSupabaseBrowserClient()
+      const { data, error } = await supabase
+        .from("food_logs")
+        .select("*")
+        .eq("logged_date", selectedDate)
+        .order("logged_at", { ascending: true })
+
+      if (error) {
+        console.error("[FoodLogHistory] Query error:", error)
+        setLogs([])
+        setSummary(null)
+        return
+      }
+
+      const entries: FoodLogEntry[] = (data || []).map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        quantity: Number(row.quantity) || 1,
+        unit: row.unit || "serving",
+        calories: Number(row.calories) || 0,
+        protein: Number(row.protein) || 0,
+        carbs: Number(row.carbs) || 0,
+        fat: Number(row.fat) || 0,
+        fiber: Number(row.fiber) || 0,
+        sugar: Number(row.sugar) || 0,
+        sodium: Number(row.sodium) || 0,
+        mealType: row.meal_type,
+        loggedDate: row.logged_date,
+        loggedAt: row.logged_at,
+        originalInput: row.original_input,
+        inputType: row.input_type || "text",
+        imageUrl: row.image_url,
+        aiConfidence: row.ai_confidence ? Number(row.ai_confidence) : null,
+        isEdited: Boolean(row.is_edited),
+      }))
+
+      setLogs(entries)
+
+      // Build summary
+      if (entries.length > 0) {
+        const mealBreakdown = { Breakfast: 0, Lunch: 0, Dinner: 0, Snack: 0 }
+        let totalCalories = 0, totalProtein = 0, totalCarbs = 0, totalFat = 0
+        for (const log of entries) {
+          totalCalories += log.calories
+          totalProtein += log.protein
+          totalCarbs += log.carbs
+          totalFat += log.fat
+          if (log.mealType in mealBreakdown) {
+            (mealBreakdown as any)[log.mealType] += log.calories
+          }
+        }
+        setSummary({
+          date: selectedDate,
+          totalCalories,
+          totalProtein: Math.round(totalProtein * 10) / 10,
+          totalCarbs: Math.round(totalCarbs * 10) / 10,
+          totalFat: Math.round(totalFat * 10) / 10,
+          entries,
+          mealBreakdown,
+        })
+      } else {
+        setSummary(null)
+      }
     } catch (error) {
       console.error("[FoodLogHistory] Fetch error:", error)
+      setLogs([])
+      setSummary(null)
     } finally {
       setIsLoading(false)
     }
