@@ -9,10 +9,11 @@ import { CircularProgress } from "@/components/ui/circular-progress"
 import { AmbientBackground } from "@/components/ambient-background"
 import { VitalFlowDailyHabits } from "@/components/vitalflow-daily-habits"
 import { useState, lazy, Suspense, useEffect, useMemo, memo } from "react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { useTimezoneSync } from "@/lib/hooks/use-timezone"
 import { useAppData } from "@/lib/contexts/app-data-context"
 import type { ProfileFormData } from "@/lib/types"
+import { AIConsentDialog, useAIConsent } from "@/components/ai-consent-dialog"
 
 // Lazy load modals - they're only needed when opened
 const UpdateProfileModal = lazy(() => import("@/app/update-profile-modal").then(m => ({ default: m.UpdateProfileModal })))
@@ -41,13 +42,16 @@ const itemVariants = {
 
 function DashboardClient() {
   const router = useRouter()
-  
+
   // Get cached app data from global context (includes daily insight, vitalflow, etc.)
   const { appData, isLoading: appDataLoading, refresh } = useAppData()
-  
+
   // Sync user's browser timezone with profile
   useTimezoneSync()
-  
+
+  // AI consent check - show dialog on first dashboard visit if not consented
+  const { hasConsent: aiConsent, needsPrompt: needsAIPrompt, grantConsent: grantAIConsent, declineConsent: declineAIConsent } = useAIConsent()
+
   // UI states
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isWeeklyReflectionModalOpen, setIsWeeklyReflectionModalOpen] = useState(false)
@@ -224,31 +228,47 @@ function DashboardClient() {
           <VitalFlowDailyHabits initialSuggestions={appData?.vitalFlowSuggestions} />
         </motion.div>
 
-        {/* AI Tip of the Day */}
-        <motion.div className="mb-6" variants={itemVariants}>
-          <Card className="glass-card overflow-hidden relative">
-            {/* Decorative gradient accent */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-accent/20 to-transparent rounded-bl-full" />
-            
-            <CardContent className="p-5 relative">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+        {/* AI Tip of the Day - only show if AI consent is granted */}
+        {aiConsent ? (
+          <motion.div className="mb-6" variants={itemVariants}>
+            <Card className="glass-card overflow-hidden relative">
+              {/* Decorative gradient accent */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-accent/20 to-transparent rounded-bl-full" />
+
+              <CardContent className="p-5 relative">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-accent" />
+                    AI Insight
+                  </h2>
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                  >
+                    <Zap className="h-5 w-5 text-accent-warm" />
+                  </motion.div>
+                </div>
+                <p className="text-foreground/70 leading-relaxed">
+                  {dailyInsight}
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ) : aiConsent === false ? (
+          <motion.div className="mb-6" variants={itemVariants}>
+            <Card className="glass-card overflow-hidden relative border-accent/20">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-2 mb-2">
                   <Sparkles className="h-5 w-5 text-accent" />
-                  AI Insight
-                </h2>
-                <motion.div
-                  animate={{ rotate: [0, 10, -10, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-                >
-                  <Zap className="h-5 w-5 text-accent-warm" />
-                </motion.div>
-              </div>
-              <p className="text-foreground/70 leading-relaxed">
-                {dailyInsight}
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
+                  <h2 className="text-lg font-bold text-foreground">AI Insight</h2>
+                </div>
+                <p className="text-foreground/50 text-sm">
+                  Enable AI features to get personalized daily insights based on your progress.
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ) : null}
 
         {/* CTA Button */}
         <motion.div variants={itemVariants}>
@@ -261,7 +281,17 @@ function DashboardClient() {
       </motion.div>
 
       <BottomNav />
-      
+
+      {/* AI Data Consent Dialog - shown on first visit if never asked */}
+      <AnimatePresence>
+        {needsAIPrompt && (
+          <AIConsentDialog
+            onConsent={grantAIConsent}
+            onDecline={declineAIConsent}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Lazy-loaded modals with Suspense */}
       {isProfileModalOpen && (
         <Suspense fallback={null}>

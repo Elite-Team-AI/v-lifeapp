@@ -63,6 +63,9 @@ COMMUNITY
 
 Whether you're just starting your fitness journey or looking to take your health to the next level, v-life provides the tools, insights, and motivation you need to succeed.
 
+IMPORTANT HEALTH DISCLAIMER
+v-life is designed for informational and educational purposes only. It is not intended to provide medical advice, diagnosis, or treatment. The AI coaching, nutrition calculations, workout recommendations, and wellness insights provided by this app are not a substitute for professional medical advice from a qualified healthcare provider. Always consult your physician or other qualified healthcare professional before starting any new exercise program, making significant dietary changes, taking supplements, or if you have questions about a medical condition. Never disregard professional medical advice or delay seeking it because of information provided by this app. If you experience pain, discomfort, dizziness, or any other symptoms during exercise, stop immediately and seek medical attention.
+
 Download v-life today and transform your health with the power of AI!
 ```
 

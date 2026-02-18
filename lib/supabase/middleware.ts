@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { env } from "@/lib/env"
 
 // Public routes that don't require authentication
-const PUBLIC_ROUTES = ["/auth", "/privacy", "/privacy-policy", "/terms-of-service", "/help-support"]
+const PUBLIC_ROUTES = ["/auth", "/privacy", "/privacy-policy", "/terms-of-service", "/help-support", "/health-sources"]
 
 // Protected routes within the app (for checking referer)
 const PROTECTED_ROUTES = ["/dashboard", "/fitness", "/nutrition", "/community", "/settings", "/vbot", "/workout", "/ai-coach", "/tools", "/grocery-list", "/delete"]

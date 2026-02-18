@@ -19,6 +19,7 @@ import { Skeleton, MealsListSkeleton } from "@/components/ui/skeleton-loaders"
 import { FoodLogHistory } from "@/components/food-logging"
 import type { DailyMeal } from "@/lib/actions/nutrition"
 import { cn } from "@/lib/utils"
+import { hasAIConsent } from "@/components/ai-consent-dialog"
 
 interface MealOption {
   id: string
@@ -63,8 +64,18 @@ export function NutritionClient() {
 
   const handleRefreshPlan = async () => {
     if (isRefreshing) return
+
+    if (!hasAIConsent()) {
+      toast({
+        title: "AI consent required",
+        description: "Enable AI data sharing in Settings > Privacy & Data to generate AI meal plans.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsRefreshing(true)
-    
+
     try {
       const { regenerateMealPlan } = await import("@/lib/actions/nutrition")
       const result = await regenerateMealPlan()
@@ -280,8 +291,13 @@ export function NutritionClient() {
         <motion.div className="mb-6 animate-in fade-in slide-in-from-bottom-2 duration-200 delay-75">
           <Card className="border-white/10 bg-black/50 backdrop-blur-sm">
             <CardContent className="p-4">
-              <h2 className="mb-3 text-lg font-bold text-white">Macros Summary</h2>
-              <p className="mb-3 text-xs text-white/60">Based on eaten meals</p>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-bold text-white">Macros Summary</h2>
+                <a href="/health-sources" className="text-[10px] text-accent/70 hover:text-accent transition-colors">
+                  View sources
+                </a>
+              </div>
+              <p className="mb-3 text-xs text-white/60">Based on eaten meals. Targets derived from ISSN and AMDR guidelines.</p>
 
               {isLoading ? (
                 <div className="space-y-3">
@@ -318,7 +334,7 @@ export function NutritionClient() {
                               </button>
                             </TooltipTrigger>
                             <TooltipContent side="top" className="max-w-[200px] text-center">
-                              <p className="text-xs">Based on your goal weight and primary goal. Update in Profile Settings.</p>
+                              <p className="text-xs">Based on your goal weight and primary goal (ISSN/AMDR guidelines). Update in Profile Settings.</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>

@@ -9,9 +9,9 @@ const config: CapacitorConfig = {
 
   server: {
     // Load the remote web app URL
-    url: "https://v-life.app",
+    url: "https://www.v-life.app/",
     // Allow navigation to the app domain and Supabase
-    allowNavigation: ["v-life.app", "*.v-life.app", "*.supabase.co"],
+    allowNavigation: ["v-life.app", "*.v-life.app", "www.v-life.app", "*.supabase.co"],
     // HTTPS only - no cleartext
     cleartext: false,
     // Error page for offline/connection issues

@@ -14,6 +14,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { VoicePlayback, VoiceLiveModal } from "@/components/voice"
 import type { VoicePreferences, GeminiVoiceName } from "@/lib/types"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { AIConsentDialog, useAIConsent } from "@/components/ai-consent-dialog"
 
 interface Message {
   id: string
@@ -38,7 +39,8 @@ function VBotPageContent() {
   const searchParams = useSearchParams()
   const initialPrompt = searchParams.get("prompt")
   const hasAutoSentRef = useRef(false)
-  
+  const { hasConsent, needsPrompt, grantConsent, declineConsent } = useAIConsent()
+
   const [input, setInput] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -771,10 +773,13 @@ function VBotPageContent() {
                 </div>
               </div>
             </div>
-            <div className="pt-3 border-t border-white/10">
+            <div className="pt-3 border-t border-white/10 space-y-2">
               <p className="text-xs text-white/50">
-                <strong className="text-white/70">Note:</strong> VBot is not medical advice. Consult your physician before starting any fitness program.
+                <strong className="text-white/70">Note:</strong> VBot is powered by OpenAI and uses your fitness profile, workout history, nutrition data, and habits to provide personalized responses. VBot is not medical advice. Consult your physician before starting any fitness program.
               </p>
+              <a href="/health-sources" className="text-xs text-accent underline">
+                View health information sources & citations
+              </a>
             </div>
           </div>
         </DialogContent>
@@ -786,6 +791,30 @@ function VBotPageContent() {
         onClose={() => setShowVoiceLiveModal(false)}
         voice={voicePrefs.selectedVoice}
       />
+
+      {/* AI Data Consent Dialog - shown if user hasn't consented */}
+      <AnimatePresence>
+        {!hasConsent && needsPrompt && (
+          <AIConsentDialog
+            onConsent={grantConsent}
+            onDecline={() => {
+              declineConsent()
+              window.history.back()
+            }}
+          />
+        )}
+      </AnimatePresence>
+      {/* Block VBot if consent was declined */}
+      {hasConsent === false && !needsPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 px-4">
+          <div className="text-center max-w-sm">
+            <p className="text-white/80 mb-4">AI data sharing consent is required to use VBot. You can enable it in Settings &gt; Privacy &amp; Data.</p>
+            <ButtonGlow variant="outline-glow" onClick={() => window.history.back()}>
+              Go Back
+            </ButtonGlow>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

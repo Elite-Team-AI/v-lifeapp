@@ -107,23 +107,57 @@ export default function PrivacyPolicy() {
             <section>
               <h2 className="text-xl font-bold text-white mb-3">4. AI-Powered Features and Data Processing</h2>
               <p className="mb-3">
-                Our Service uses artificial intelligence to provide personalized coaching and recommendations. Your
+                Our Service uses artificial intelligence to provide personalized coaching and recommendations. Before using AI-powered features, you will be asked to provide explicit consent for data sharing. Your
                 health and fitness data may be processed by AI models to:
               </p>
               <ul className="list-disc pl-6 space-y-1 mb-3">
                 <li>Generate customized workout plans</li>
-                <li>Provide nutrition recommendations</li>
+                <li>Provide nutrition recommendations and meal planning</li>
                 <li>Analyze your progress and suggest adjustments</li>
-                <li>Answer your fitness and nutrition questions</li>
+                <li>Answer your fitness and nutrition questions via AI coaching (VBot)</li>
+                <li>Generate daily personalized insights</li>
+                <li>Parse food descriptions and images for nutrition logging</li>
               </ul>
+
+              <h3 className="text-lg font-semibold text-white mb-2">4.1 OpenAI (Chat & Planning)</h3>
+              <p className="mb-3">
+                We share the following data with OpenAI to power AI coaching (VBot), meal planning, daily insights, and food logging:
+              </p>
+              <ul className="list-disc pl-6 space-y-1 mb-3">
+                <li>Profile information (name, age, gender, height, weight, fitness goals, activity level)</li>
+                <li>Workout history (exercises, sets, reps, duration)</li>
+                <li>Meal and nutrition logs (meal type, calories, macronutrients)</li>
+                <li>Habit tracking data (categories, streaks, completion status)</li>
+                <li>Weight entries and progress data</li>
+                <li>Messages and prompts you send to the AI coach</li>
+                <li>Food descriptions or images submitted for nutritional analysis</li>
+              </ul>
+
+              <h3 className="text-lg font-semibold text-white mb-2">4.2 Google (Voice Features)</h3>
+              <p className="mb-3">
+                If you enable voice features, we share the following data with Google (Gemini API):
+              </p>
+              <ul className="list-disc pl-6 space-y-1 mb-3">
+                <li>Voice audio recordings (for speech-to-text transcription)</li>
+                <li>AI response text (for text-to-speech audio playback)</li>
+                <li>Conversational context during live voice sessions</li>
+              </ul>
+
+              <h3 className="text-lg font-semibold text-white mb-2">4.3 Your Control</h3>
+              <p className="mb-3">
+                You can revoke your consent for AI data sharing at any time in Settings. Core features (workout tracking, meal logging, habit tracking, community) work without AI. You can view the sources and citations for our health recommendations at any time on the Health Information Sources page.
+              </p>
+
               <p className="mb-3">
                 <strong className="text-white">Important:</strong> AI-generated content is for informational purposes
                 only and should not be considered medical, nutritional, or professional advice. Always consult with
                 qualified healthcare professionals before making significant changes to your diet or exercise routine.
               </p>
               <p>
-                We use third-party AI services (such as OpenAI) to power our coaching features. Your data is processed
-                in accordance with our agreements with these providers and their privacy policies.
+                Data is processed in accordance with our agreements with these providers and their respective privacy policies
+                (<a href="https://openai.com/policies/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-accent underline">OpenAI Privacy Policy</a>,
+                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-accent underline ml-1">Google Privacy Policy</a>).
+                These providers offer the same or equivalent level of data protection as described in this policy.
               </p>
             </section>
 

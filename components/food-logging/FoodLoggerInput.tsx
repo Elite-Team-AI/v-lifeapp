@@ -6,6 +6,7 @@ import { Mic, MicOff, Camera, Send, Loader2, X, Sparkles, ChevronDown } from "lu
 import { useAudioRecorder } from "@/hooks/use-audio-recorder"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
+import { hasAIConsent } from "@/components/ai-consent-dialog"
 import type { ParsedFood, FoodParseResult } from "@/lib/actions/food-logging"
 
 interface FoodLoggerInputProps {
@@ -57,6 +58,15 @@ export function FoodLoggerInput({
     imageData?: string
   ) => {
     if (!inputText.trim() && !imageData) return
+
+    if (!hasAIConsent()) {
+      toast({
+        title: "AI consent required",
+        description: "Enable AI data sharing in Settings > Privacy & Data to use AI food parsing.",
+        variant: "destructive",
+      })
+      return
+    }
 
     setIsParsing(true)
     onParseStart?.()

@@ -681,7 +681,10 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                             </span>
                           </div>
                           <p className="text-xs text-white/50 mt-1">
-                            Based on your goal weight ({profile.goalWeight || 170} lbs) and primary goal
+                            Based on your goal weight ({profile.goalWeight || 170} lbs) and primary goal.{" "}
+                            <a href="/health-sources" className="text-accent/70 hover:text-accent underline">
+                              View sources (ISSN)
+                            </a>
                           </p>
                         </div>
 
