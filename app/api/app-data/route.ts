@@ -53,8 +53,9 @@ export async function GET() {
     const supabase = await createClient()
     const userId = user.id
 
-    // Verify the Supabase client has auth session
+    // Get session for edge function calls and verification
     const { data: { session } } = await supabase.auth.getSession()
+    const accessToken = session?.access_token || ""
     console.log("[AppData API] Session exists:", !!session)
 
     // Step 1: Get profile first to extract timezone (needed by other queries)
@@ -67,10 +68,6 @@ export async function GET() {
       timezone: timezone,
       profileKeys: profile ? Object.keys(profile) : null,
     })
-
-    // Get session for edge function calls
-    const { data: { session } } = await supabase.auth.getSession()
-    const accessToken = session?.access_token || ""
 
     // Step 2: Fetch ALL data in parallel using internal functions
     // These don't re-check auth - they use the userId and supabase we pass
