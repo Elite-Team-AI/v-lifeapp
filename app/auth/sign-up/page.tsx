@@ -54,8 +54,9 @@ export default function SignUpPage() {
         email,
         password,
         options: {
-          emailRedirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/onboarding/profile`,
+          // Use auth callback route for both web and mobile deep linking
+          // This allows Universal Links (iOS) and App Links (Android) to open the app
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding/profile`,
           data: {
             email: email,
           },

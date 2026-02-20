@@ -6,6 +6,7 @@ import { motion } from "framer-motion"
 import { CheckCircle, Loader2 } from "lucide-react"
 import { ButtonGlow } from "@/components/ui/button-glow"
 import { useOnboarding } from "@/lib/contexts/onboarding-context"
+import { useAppData } from "@/lib/contexts/app-data-context"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { isNetworkError } from "@/lib/utils/retry"
@@ -13,6 +14,7 @@ import { isNetworkError } from "@/lib/utils/retry"
 export default function Confirmation() {
   const router = useRouter()
   const { data, clearData } = useOnboarding()
+  const { refresh } = useAppData()
   const { toast } = useToast()
   const [isSaving, setIsSaving] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -79,6 +81,11 @@ export default function Confirmation() {
         title: "Profile saved!",
         description: "Your personalized plan is ready.",
       })
+
+      // Refresh app data to load new profile information
+      console.log("[Onboarding] Refreshing app data after profile save...")
+      await refresh()
+      console.log("[Onboarding] App data refreshed successfully")
 
       // Navigate to dashboard - clearData will happen on unmount
       router.push("/dashboard")

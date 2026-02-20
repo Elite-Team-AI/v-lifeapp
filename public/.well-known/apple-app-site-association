@@ -1,0 +1,21 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "YOUR_APPLE_TEAM_ID.app.vlife.ios",
+        "paths": [
+          "/auth/*",
+          "/onboarding/*",
+          "/dashboard",
+          "/settings"
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "YOUR_APPLE_TEAM_ID.app.vlife.ios"
+    ]
+  }
+}
