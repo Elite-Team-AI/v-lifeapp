@@ -93,37 +93,50 @@ Available types:
 
 To use these emails with Supabase authentication, you have two options:
 
-### Option 1: Supabase Email Templates (Recommended)
+### Option 1: Supabase Edge Functions with Auth Hooks (Recommended)
+
+**Full Resend integration with automatic email sending**
+
+We've created Supabase Edge Functions that integrate with Auth Hooks to automatically send V-Life branded emails via Resend during authentication flows.
+
+**Benefits:**
+- ✅ Professional email delivery via Resend API
+- ✅ Full brand control (golden yellow and charcoal design)
+- ✅ Automatic sending on auth events (no manual triggers)
+- ✅ Better deliverability with Resend infrastructure
+
+**Quick Deploy:**
+```bash
+# Set your Resend API key and deploy all functions
+RESEND_API_KEY=re_V4FSzp3Q_J354XSYGZ7cXDVB9iLWxA3N6 ./scripts/deploy-email-functions.sh
+```
+
+**📚 Complete Guide:** See [docs/EMAIL_EDGE_FUNCTIONS.md](./EMAIL_EDGE_FUNCTIONS.md) for:
+- Step-by-step deployment instructions
+- Auth Hooks configuration guide
+- Template upload options
+- Testing and monitoring
+- Troubleshooting tips
+
+### Option 2: Supabase Email Templates (Simple)
+
+**Basic setup without Edge Functions**
 
 1. Go to Supabase Dashboard → Authentication → Email Templates
 2. Copy the HTML from each template file in `/email-templates/`
 3. Paste into the corresponding Supabase email template
 4. Supabase will automatically populate `{{ .ConfirmationURL }}` variables
 
-### Option 2: Custom Email Hooks (Advanced)
+**Benefits:**
+- ✅ Simpler setup (no Edge Functions)
+- ✅ No external dependencies
 
-For more control, use Supabase Auth Hooks to intercept email sending:
+**Trade-offs:**
+- ❌ Uses Supabase's email infrastructure (less control over deliverability)
+- ❌ No Resend integration
+- ❌ Limited customization options
 
-1. Create Edge Functions for each email type
-2. Call Resend API from Edge Functions with custom templates
-3. Configure hooks in Supabase Dashboard → Authentication → Hooks
-
-Example Edge Function structure:
-```typescript
-// supabase/functions/send-signup-email/index.ts
-import { sendSignupConfirmationEmail } from '../_shared/email.ts'
-
-Deno.serve(async (req) => {
-  const { user, email_data } = await req.json()
-
-  await sendSignupConfirmationEmail(
-    user.email,
-    email_data.confirmation_url
-  )
-
-  return new Response('OK')
-})
-```
+**Recommendation:** Use Option 1 (Edge Functions) for production for better email deliverability and full brand control.
 
 ## Email Design
 
