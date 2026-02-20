@@ -80,9 +80,13 @@ export default function Confirmation() {
         description: "Your personalized plan is ready.",
       })
 
-      clearData()
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      // Navigate to dashboard - clearData will happen on unmount
       router.push("/dashboard")
+
+      // Clear onboarding data after navigation starts
+      setTimeout(() => {
+        clearData()
+      }, 100)
     } catch (error: unknown) {
       console.error("[v0] Error saving profile:", error)
 
