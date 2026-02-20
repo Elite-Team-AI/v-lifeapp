@@ -74,10 +74,12 @@ export async function updateSession(request: NextRequest) {
   try {
     const pathname = request.nextUrl.pathname
 
-    // Fast path: Skip auth check entirely for public routes
+    // Fast path: Skip auth check entirely for public routes and API routes
+    // API routes handle their own authentication and should not redirect
     const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname.startsWith(route)) || pathname === "/"
-    
-    if (!isPublicRoute) {
+    const isApiRoute = pathname.startsWith("/api/")
+
+    if (!isPublicRoute && !isApiRoute) {
       // OPTIMIZATION 1: Skip prefetch requests entirely if session cookie exists
       // This allows instant prefetching for authenticated users
       if (isPrefetchRequest(request) && hasSessionCookie(request)) {
