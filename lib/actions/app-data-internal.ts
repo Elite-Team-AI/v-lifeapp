@@ -30,6 +30,19 @@ export async function getProfileInternal(
   userId: string,
   supabase: SupabaseClient
 ): Promise<Profile | null> {
+  console.log("[getProfileInternal] Fetching profile for userId:", userId)
+
+  // First, check if profile exists at all (count query doesn't require RLS)
+  const { count, error: countError } = await supabase
+    .from("profiles")
+    .select("*", { count: "exact", head: true })
+    .eq("id", userId)
+
+  console.log("[getProfileInternal] Profile count check:", {
+    count,
+    countError: countError?.message,
+  })
+
   const { data: profile, error } = await supabase
     .from("profiles")
     .select("*")
@@ -38,7 +51,29 @@ export async function getProfileInternal(
 
   if (error) {
     console.error("[getProfileInternal] Database error:", error)
+    console.error("[getProfileInternal] Error code:", error.code)
+    console.error("[getProfileInternal] Error message:", error.message)
+    console.error("[getProfileInternal] Error details:", error.details)
+    console.error("[getProfileInternal] Error hint:", error.hint)
     return null
+  }
+
+  console.log("[getProfileInternal] Profile fetched successfully:", profile ? "YES" : "NO")
+  if (profile) {
+    console.log("[getProfileInternal] Profile keys:", Object.keys(profile))
+    console.log("[getProfileInternal] Profile sample data:", {
+      id: profile.id,
+      name: profile.name,
+      age: profile.age,
+      gender: profile.gender,
+      primary_goal: profile.primary_goal,
+      height_feet: profile.height_feet,
+      height_inches: profile.height_inches,
+      weight: profile.weight,
+      goal_weight: profile.goal_weight,
+    })
+  } else {
+    console.warn("[getProfileInternal] Profile is null despite no error - this suggests RLS blocking the query")
   }
 
   return profile

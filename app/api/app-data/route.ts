@@ -37,18 +37,36 @@ export async function GET() {
     // SINGLE auth check for the entire request
     const { user, error: authError } = await getAuthUser()
     if (authError || !user) {
+      console.error("[AppData API] Auth error:", authError)
       return NextResponse.json(
         { error: "Not authenticated" },
         { status: 401 }
       )
     }
 
+    console.log("[AppData API] Authenticated user:", {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    })
+
     const supabase = await createClient()
     const userId = user.id
+
+    // Verify the Supabase client has auth session
+    const { data: { session } } = await supabase.auth.getSession()
+    console.log("[AppData API] Session exists:", !!session)
 
     // Step 1: Get profile first to extract timezone (needed by other queries)
     const profile = await getProfileInternal(userId, supabase)
     const timezone = profile?.timezone || DEFAULT_TIMEZONE
+
+    console.log("[AppData API] Profile result:", {
+      exists: !!profile,
+      userId: userId,
+      timezone: timezone,
+      profileKeys: profile ? Object.keys(profile) : null,
+    })
 
     // Get session for edge function calls
     const { data: { session } } = await supabase.auth.getSession()
