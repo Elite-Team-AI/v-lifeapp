@@ -7,25 +7,43 @@
  * - Magic link login (type=magiclink)
  * - Email change confirmation (type=email_change)
  *
- * This route works for both web and mobile (iOS/Android) deep linking.
- * Mobile apps will open this URL via Universal Links/App Links and exchange
- * the token for a session, then redirect to the appropriate page in the app.
+ * BEHAVIOR:
+ * - Mobile App: Redirects to appropriate in-app page
+ * - Web Browser: Shows confirmation page and asks user to return to app
+ *
+ * This prevents issues where deep linking doesn't work (app not installed,
+ * browser settings, etc.) and provides a better user experience.
  */
 
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
+/**
+ * Check if request is from Capacitor mobile app
+ */
+function isCapacitorApp(request: NextRequest): boolean {
+  const userAgent = request.headers.get("user-agent") || ""
+
+  // Capacitor apps include specific user agent strings
+  return userAgent.includes("Capacitor") ||
+         userAgent.includes("CapacitorWebView") ||
+         userAgent.includes("wv") // WebView indicator
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const token_hash = searchParams.get("token_hash")
   const type = searchParams.get("type")
   const next = searchParams.get("next") || "/dashboard"
+  const fromMobileApp = isCapacitorApp(request)
 
   console.log("[Auth Callback] Processing auth callback:", {
     type,
     hasToken: !!token_hash,
-    next
+    next,
+    fromMobileApp,
+    userAgent: request.headers.get("user-agent")
   })
 
   // Validate required parameters
@@ -51,7 +69,19 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log("[Auth Callback] ✅ Token verified successfully, redirecting to:", next)
+    console.log("[Auth Callback] ✅ Token verified successfully")
+
+    // Check if accessed from web browser vs mobile app
+    if (!fromMobileApp) {
+      // User clicked link in web browser - show simple confirmation page
+      console.log("[Auth Callback] Detected web browser, redirecting to confirmation page")
+      return NextResponse.redirect(
+        new URL(`/auth/confirmed?type=${type}`, request.url)
+      )
+    }
+
+    // User is in mobile app - continue with in-app navigation
+    console.log("[Auth Callback] Detected mobile app, continuing with in-app navigation to:", next)
 
     // Determine redirect based on auth type
     let redirectPath = next
