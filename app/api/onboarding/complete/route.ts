@@ -61,9 +61,10 @@ export async function POST(req: Request) {
     }
 
     // Revalidate cached data
-    revalidateTag("profile", "max")
+    revalidateTag("profile")
     revalidatePath("/settings")
     revalidatePath("/dashboard")
+    revalidatePath("/onboarding")
 
     console.log("[API] Profile saved successfully")
     return NextResponse.json({ success: true })
