@@ -3,7 +3,7 @@
     "apps": [],
     "details": [
       {
-        "appID": "YOUR_APPLE_TEAM_ID.app.vlife.ios",
+        "appID": "4BX779XKAL.app.vlife.ios",
         "paths": [
           "/auth/*",
           "/onboarding/*",
@@ -15,7 +15,7 @@
   },
   "webcredentials": {
     "apps": [
-      "YOUR_APPLE_TEAM_ID.app.vlife.ios"
+      "4BX779XKAL.app.vlife.ios"
     ]
   }
 }
