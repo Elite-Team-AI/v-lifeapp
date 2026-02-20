@@ -32,10 +32,13 @@ const DEFAULT_TIMEZONE = "America/New_York"
 
 export async function GET() {
   const startTime = performance.now()
-  
+
   try {
-    // SINGLE auth check for the entire request
-    const { user, error: authError } = await getAuthUser()
+    // Create Supabase client ONCE and use it for everything
+    const supabase = await createClient()
+
+    // SINGLE auth check for the entire request using the same client
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       console.error("[AppData API] Auth error:", authError)
       return NextResponse.json(
@@ -50,13 +53,13 @@ export async function GET() {
       role: user.role,
     })
 
-    const supabase = await createClient()
     const userId = user.id
 
     // Get session for edge function calls and verification
     const { data: { session } } = await supabase.auth.getSession()
     const accessToken = session?.access_token || ""
     console.log("[AppData API] Session exists:", !!session)
+    console.log("[AppData API] Auth UID matches user ID:", user.id === userId)
 
     // Step 1: Get profile first to extract timezone (needed by other queries)
     const profile = await getProfileInternal(userId, supabase)
