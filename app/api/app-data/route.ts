@@ -1,13 +1,19 @@
 /**
  * Bootstrap API Endpoint - OPTIMIZED
- * 
+ *
  * Fetches all core application data in a single parallel request.
- * 
+ *
  * PERFORMANCE OPTIMIZATIONS:
  * - Single auth check (was 9+ before)
  * - Single profile query shared across all data types
  * - Parallel database queries with shared context
  * - Batched dashboard data (daily insight, weekly reflection, vitalflow)
+ *
+ * CRITICAL: This endpoint MUST use a single Supabase client instance for all operations.
+ * Creating multiple clients breaks Row-Level Security (RLS) because auth.uid() requires
+ * the auth context from the same client that performed the initial authentication.
+ * Previous bug: getAuthUser() created one client, then createClient() created another,
+ * causing RLS policies to fail with 401 errors even for authenticated users.
  */
 
 import { NextResponse } from "next/server"
