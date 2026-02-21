@@ -82,18 +82,18 @@ export default function LandingPage() {
             transition={{ delay: 0.2 }}
             className="text-center"
           >
-            <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
+            <h1 className="mb-6 text-4xl font-bold tracking-tight font-heading sm:text-5xl md:text-6xl lg:text-7xl">
               Transform Your Body.{" "}
               <span className="bg-gradient-to-r from-[#FFD700] to-[#FFA500] bg-clip-text text-transparent">
                 Master Your Life.
               </span>
             </h1>
 
-            <p className="mx-auto mb-4 max-w-2xl text-lg text-gray-300 sm:text-xl md:text-2xl">
+            <p className="mx-auto mb-4 max-w-2xl text-lg text-gray-300 sm:text-xl md:text-2xl leading-relaxed">
               Your AI-powered fitness companion that adapts to YOUR lifestyle
             </p>
 
-            <p className="mx-auto mb-8 max-w-xl text-base text-gray-400 sm:text-lg">
+            <p className="mx-auto mb-8 max-w-xl text-base text-gray-400 sm:text-lg leading-relaxed">
               Join thousands who've transformed their health with personalized workouts, nutrition plans, and 24/7 AI coaching
             </p>
 
@@ -179,13 +179,13 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="text-center"
           >
-            <h2 className="mb-6 text-3xl font-bold sm:text-4xl md:text-5xl">
+            <h2 className="mb-6 text-3xl font-bold tracking-tight font-heading sm:text-4xl md:text-5xl">
               Tired of{" "}
               <span className="bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
                 Generic Fitness Apps?
               </span>
             </h2>
-            <p className="mx-auto max-w-3xl text-lg text-gray-300 sm:text-xl">
+            <p className="mx-auto max-w-3xl text-lg text-gray-300 sm:text-xl leading-relaxed">
               Most fitness apps give you cookie-cutter plans that don't fit your life. They don't know if you're a busy parent, a shift worker, or someone who travels constantly.
             </p>
           </motion.div>
@@ -218,8 +218,8 @@ export default function LandingPage() {
                 <Card className="h-full border-red-900/30 bg-red-950/20">
                   <CardContent className="p-6">
                     <div className="mb-4 text-4xl">{item.icon}</div>
-                    <h3 className="mb-2 text-xl font-semibold text-white">{item.title}</h3>
-                    <p className="text-gray-400">{item.description}</p>
+                    <h3 className="mb-2 text-xl font-semibold tracking-tight font-heading text-white">{item.title}</h3>
+                    <p className="text-gray-400 leading-relaxed">{item.description}</p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -240,13 +240,13 @@ export default function LandingPage() {
             <div className="mb-4 flex justify-center">
               <Sparkles className="h-12 w-12 text-[#FFD700]" />
             </div>
-            <h2 className="mb-6 text-3xl font-bold sm:text-4xl md:text-5xl">
+            <h2 className="mb-6 text-3xl font-bold tracking-tight font-heading sm:text-4xl md:text-5xl">
               Meet{" "}
               <span className="bg-gradient-to-r from-[#FFD700] to-[#FFA500] bg-clip-text text-transparent">
                 V-Life
               </span>
             </h2>
-            <p className="mx-auto max-w-3xl text-lg text-gray-300 sm:text-xl">
+            <p className="mx-auto max-w-3xl text-lg text-gray-300 sm:text-xl leading-relaxed">
               The only fitness app powered by AI that truly understands YOU. Your schedule. Your preferences. Your goals.
             </p>
           </motion.div>
@@ -294,8 +294,8 @@ export default function LandingPage() {
                 <Card className="h-full border-[#FFD700]/20 bg-gradient-to-br from-gray-800 to-gray-900 transition-all hover:border-[#FFD700]/50 hover:shadow-lg hover:shadow-[#FFD700]/20">
                   <CardContent className="p-6">
                     <div className="mb-4 text-[#FFD700]">{feature.icon}</div>
-                    <h3 className="mb-2 text-xl font-semibold text-white">{feature.title}</h3>
-                    <p className="text-gray-400">{feature.description}</p>
+                    <h3 className="mb-2 text-xl font-semibold tracking-tight font-heading text-white">{feature.title}</h3>
+                    <p className="text-gray-400 leading-relaxed">{feature.description}</p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -313,13 +313,13 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="text-center"
           >
-            <h2 className="mb-4 text-3xl font-bold sm:text-4xl md:text-5xl">
+            <h2 className="mb-4 text-3xl font-bold tracking-tight font-heading sm:text-4xl md:text-5xl">
               Real People.{" "}
               <span className="bg-gradient-to-r from-[#FFD700] to-[#FFA500] bg-clip-text text-transparent">
                 Real Results.
               </span>
             </h2>
-            <p className="mx-auto mb-12 max-w-2xl text-lg text-gray-300">
+            <p className="mx-auto mb-12 max-w-2xl text-lg text-gray-300 leading-relaxed">
               Don't just take our word for it. Here's what V-Life members are saying:
             </p>
           </motion.div>
@@ -359,7 +359,7 @@ export default function LandingPage() {
                         <Star key={i} className="h-5 w-5 fill-[#FFD700] text-[#FFD700]" />
                       ))}
                     </div>
-                    <p className="mb-4 text-gray-300 italic">"{testimonial.quote}"</p>
+                    <p className="mb-4 text-gray-300 italic leading-relaxed">"{testimonial.quote}"</p>
                     <div className="border-t border-gray-700 pt-4">
                       <p className="font-semibold text-white">{testimonial.name}</p>
                       <p className="text-sm text-gray-400">{testimonial.role}</p>
@@ -381,13 +381,13 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="text-center"
           >
-            <h2 className="mb-6 text-3xl font-bold sm:text-4xl md:text-5xl">
+            <h2 className="mb-6 text-3xl font-bold tracking-tight font-heading sm:text-4xl md:text-5xl">
               Start Your Transformation{" "}
               <span className="bg-gradient-to-r from-[#FFD700] to-[#FFA500] bg-clip-text text-transparent">
                 Today
               </span>
             </h2>
-            <p className="mx-auto mb-12 max-w-2xl text-lg text-gray-300 sm:text-xl">
+            <p className="mx-auto mb-12 max-w-2xl text-lg text-gray-300 sm:text-xl leading-relaxed">
               Download V-Life now and get instant access to your AI coach, personalized plans, and a community of 10,000+ members
             </p>
           </motion.div>
@@ -425,7 +425,7 @@ export default function LandingPage() {
                   ].map((feature, i) => (
                     <div key={i} className="flex items-start gap-3">
                       <CheckCircle2 className="mt-0.5 h-6 w-6 flex-shrink-0 text-[#FFD700]" />
-                      <span className="text-gray-300">{feature}</span>
+                      <span className="text-gray-300 leading-relaxed">{feature}</span>
                     </div>
                   ))}
                 </div>
@@ -489,13 +489,13 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="mb-12 text-center"
           >
-            <h2 className="mb-4 text-3xl font-bold sm:text-4xl md:text-5xl">
+            <h2 className="mb-4 text-3xl font-bold tracking-tight font-heading sm:text-4xl md:text-5xl">
               Frequently Asked{" "}
               <span className="bg-gradient-to-r from-[#FFD700] to-[#FFA500] bg-clip-text text-transparent">
                 Questions
               </span>
             </h2>
-            <p className="text-lg text-gray-300">
+            <p className="text-lg text-gray-300 leading-relaxed">
               Got questions? We've got answers.
             </p>
           </motion.div>
@@ -540,7 +540,7 @@ export default function LandingPage() {
                       onClick={() => setOpenFaq(openFaq === i ? null : i)}
                       className="flex w-full items-center justify-between p-6 text-left transition-colors hover:bg-gray-750"
                     >
-                      <span className="pr-4 text-lg font-semibold text-white">{faq.question}</span>
+                      <span className="pr-4 text-lg font-semibold tracking-tight font-heading text-white">{faq.question}</span>
                       <ChevronDown
                         className={`h-5 w-5 flex-shrink-0 text-[#FFD700] transition-transform ${
                           openFaq === i ? 'rotate-180' : ''
@@ -549,7 +549,7 @@ export default function LandingPage() {
                     </button>
                     {openFaq === i && (
                       <div className="border-t border-gray-700 p-6 pt-4">
-                        <p className="text-gray-300">{faq.answer}</p>
+                        <p className="text-gray-300 leading-relaxed">{faq.answer}</p>
                       </div>
                     )}
                   </CardContent>
@@ -568,13 +568,13 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="mb-6 text-3xl font-bold sm:text-4xl md:text-5xl">
+            <h2 className="mb-6 text-3xl font-bold tracking-tight font-heading sm:text-4xl md:text-5xl">
               Your Transformation Starts{" "}
               <span className="bg-gradient-to-r from-[#FFD700] to-[#FFA500] bg-clip-text text-transparent">
                 Right Now
               </span>
             </h2>
-            <p className="mx-auto mb-8 max-w-2xl text-lg text-gray-300 sm:text-xl">
+            <p className="mx-auto mb-8 max-w-2xl text-lg text-gray-300 sm:text-xl leading-relaxed">
               Don't wait another day to become the person you've always wanted to be. Download V-Life and start your 7-day free trial today.
             </p>
 

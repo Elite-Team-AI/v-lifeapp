@@ -200,7 +200,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 leading-tight"
+            className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight font-heading text-white mb-6 leading-tight"
           >
             Transform Your
             <span className="block bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]">
@@ -226,21 +226,24 @@ export default function LandingPage() {
             transition={{ delay: 0.5 }}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16"
           >
-            <ButtonGlow
-              variant="accent-glow"
-              size="lg"
-              onClick={() => router.push("/auth/sign-up")}
-              className="text-lg font-semibold px-8 py-6 group"
-            >
-              Start Your Journey
-              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </ButtonGlow>
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
+              <ButtonGlow
+                variant="accent-glow"
+                size="lg"
+                onClick={() => router.push("/auth/sign-up")}
+                className="text-lg font-semibold tracking-wide px-8 py-6 group relative"
+              >
+                Start Your Journey
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </ButtonGlow>
+            </div>
 
             <ButtonGlow
               variant="outline-glow"
               size="lg"
               onClick={() => router.push("/auth/login")}
-              className="text-lg font-semibold px-8 py-6"
+              className="text-lg font-semibold tracking-wide px-8 py-6 backdrop-blur-xl"
             >
               Sign In
             </ButtonGlow>
@@ -279,10 +282,10 @@ export default function LandingPage() {
             transition={{ duration: 0.5 }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight font-heading text-white mb-4">
               Everything You Need to Succeed
             </h2>
-            <p className="text-xl text-white/60">
+            <p className="text-xl text-white/60 leading-relaxed">
               Powerful features designed to help you reach your goals
             </p>
           </motion.div>
@@ -305,7 +308,7 @@ export default function LandingPage() {
                     <feature.icon className="h-6 w-6 text-accent" />
                   </div>
 
-                  <h3 className="text-2xl font-bold text-white mb-3">
+                  <h3 className="text-2xl font-bold tracking-tight font-heading text-white mb-3">
                     {feature.title}
                   </h3>
 
@@ -328,10 +331,10 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight font-heading text-white mb-4">
               Why Choose V-Life?
             </h2>
-            <p className="text-xl text-white/60">
+            <p className="text-xl text-white/60 leading-relaxed">
               Join thousands who are transforming their lives
             </p>
           </motion.div>
@@ -349,7 +352,7 @@ export default function LandingPage() {
                 <div className="flex-shrink-0 w-6 h-6 rounded-full bg-accent/20 border border-accent flex items-center justify-center mt-0.5">
                   <Check className="h-4 w-4 text-accent" />
                 </div>
-                <p className="text-white/80">{benefit}</p>
+                <p className="text-white/80 leading-relaxed">{benefit}</p>
               </motion.div>
             ))}
           </div>
@@ -369,23 +372,26 @@ export default function LandingPage() {
           <div className="relative bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-3xl p-12 backdrop-blur-xl">
             <Star className="h-16 w-16 text-accent mx-auto mb-6 animate-pulse" />
 
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight font-heading text-white mb-6">
               Ready to Transform?
             </h2>
 
-            <p className="text-xl text-white/70 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-white/70 mb-8 max-w-2xl mx-auto leading-relaxed">
               Join V-Life today and start your journey to a healthier, stronger you.
             </p>
 
-            <ButtonGlow
-              variant="accent-glow"
-              size="lg"
-              onClick={() => router.push("/auth/sign-up")}
-              className="text-lg font-semibold px-12 py-6 group"
-            >
-              Get Started Free
-              <Zap className="ml-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-            </ButtonGlow>
+            <div className="relative group inline-block">
+              <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
+              <ButtonGlow
+                variant="accent-glow"
+                size="lg"
+                onClick={() => router.push("/auth/sign-up")}
+                className="text-lg font-semibold tracking-wide px-12 py-6 group relative"
+              >
+                Get Started Free
+                <Zap className="ml-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+              </ButtonGlow>
+            </div>
           </div>
         </motion.div>
       </div>

@@ -25,8 +25,8 @@ export default function PrivacyPolicy() {
           <div className="flex items-center gap-2">
             <Shield className="h-6 w-6 text-accent" />
             <div>
-              <h1 className="text-2xl font-bold text-white">Privacy Policy</h1>
-              <p className="text-sm text-white/70">Last updated: October 31, 2025</p>
+              <h1 className="text-2xl font-bold tracking-tight font-heading text-white">Privacy Policy</h1>
+              <p className="text-sm text-white/70 leading-relaxed">Last updated: October 31, 2025</p>
             </div>
           </div>
         </motion.div>
@@ -34,24 +34,24 @@ export default function PrivacyPolicy() {
         <Card className="border-white/10 bg-black/50 backdrop-blur-sm">
           <CardContent className="p-6 space-y-6 text-white/80">
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">1. Introduction</h2>
-              <p className="mb-3">
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">1. Introduction</h2>
+              <p className="mb-3 leading-relaxed">
                 Welcome to V-Life ("we," "our," or "us"). We are committed to protecting your privacy and personal
                 information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information
                 when you use our fitness and nutrition tracking application with AI-powered personalized coaching (the
                 "Service").
               </p>
-              <p>
+              <p class="leading-relaxed">
                 By using our Service, you agree to the collection and use of information in accordance with this policy.
                 If you do not agree with our policies and practices, please do not use our Service.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">2. Information We Collect</h2>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">2. Information We Collect</h2>
 
-              <h3 className="text-lg font-semibold text-white mb-2">2.1 Personal Information</h3>
-              <p className="mb-3">We collect information that you provide directly to us, including:</p>
+              <h3 className="text-lg font-semibold tracking-tight font-heading text-white mb-2">2.1 Personal Information</h3>
+              <p className="mb-3 leading-relaxed">We collect information that you provide directly to us, including:</p>
               <ul className="list-disc pl-6 space-y-1 mb-3">
                 <li>Account information (name, email address, password)</li>
                 <li>Profile information (age, gender, height, weight, fitness goals)</li>
@@ -59,8 +59,8 @@ export default function PrivacyPolicy() {
                 <li>Payment information (processed securely through third-party payment processors)</li>
               </ul>
 
-              <h3 className="text-lg font-semibold text-white mb-2">2.2 Health and Fitness Data</h3>
-              <p className="mb-3">We collect health and fitness-related information, including:</p>
+              <h3 className="text-lg font-semibold tracking-tight font-heading text-white mb-2">2.2 Health and Fitness Data</h3>
+              <p className="mb-3 leading-relaxed">We collect health and fitness-related information, including:</p>
               <ul className="list-disc pl-6 space-y-1 mb-3">
                 <li>Workout data (exercises, sets, reps, weight lifted, duration)</li>
                 <li>Nutrition data (meals, calories, macronutrients, dietary restrictions, allergies)</li>
@@ -70,8 +70,8 @@ export default function PrivacyPolicy() {
                 <li>Habit tracking data (daily habits, streaks, completion rates)</li>
               </ul>
 
-              <h3 className="text-lg font-semibold text-white mb-2">2.3 Usage Information</h3>
-              <p className="mb-3">We automatically collect certain information about your device and usage:</p>
+              <h3 className="text-lg font-semibold tracking-tight font-heading text-white mb-2">2.3 Usage Information</h3>
+              <p className="mb-3 leading-relaxed">We automatically collect certain information about your device and usage:</p>
               <ul className="list-disc pl-6 space-y-1 mb-3">
                 <li>Device information (device type, operating system, browser type)</li>
                 <li>Log data (IP address, access times, pages viewed)</li>
@@ -79,8 +79,8 @@ export default function PrivacyPolicy() {
                 <li>Location data (timezone for habit reset timing)</li>
               </ul>
 
-              <h3 className="text-lg font-semibold text-white mb-2">2.4 AI Interaction Data</h3>
-              <p className="mb-3">When you interact with our AI-powered coaching features, we collect:</p>
+              <h3 className="text-lg font-semibold tracking-tight font-heading text-white mb-2">2.4 AI Interaction Data</h3>
+              <p className="mb-3 leading-relaxed">When you interact with our AI-powered coaching features, we collect:</p>
               <ul className="list-disc pl-6 space-y-1">
                 <li>Questions and prompts you submit to the AI coach</li>
                 <li>AI-generated responses and recommendations</li>
@@ -89,8 +89,8 @@ export default function PrivacyPolicy() {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">3. How We Use Your Information</h2>
-              <p className="mb-3">We use the information we collect to:</p>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">3. How We Use Your Information</h2>
+              <p className="mb-3 leading-relaxed">We use the information we collect to:</p>
               <ul className="list-disc pl-6 space-y-1">
                 <li>Provide, maintain, and improve our Service</li>
                 <li>Generate personalized workout and nutrition plans using AI</li>
@@ -105,8 +105,8 @@ export default function PrivacyPolicy() {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">4. AI-Powered Features and Data Processing</h2>
-              <p className="mb-3">
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">4. AI-Powered Features and Data Processing</h2>
+              <p className="mb-3 leading-relaxed">
                 Our Service uses artificial intelligence to provide personalized coaching and recommendations. Before using AI-powered features, you will be asked to provide explicit consent for data sharing. Your
                 health and fitness data may be processed by AI models to:
               </p>
@@ -119,8 +119,8 @@ export default function PrivacyPolicy() {
                 <li>Parse food descriptions and images for nutrition logging</li>
               </ul>
 
-              <h3 className="text-lg font-semibold text-white mb-2">4.1 OpenAI (Chat & Planning)</h3>
-              <p className="mb-3">
+              <h3 className="text-lg font-semibold tracking-tight font-heading text-white mb-2">4.1 OpenAI (Chat & Planning)</h3>
+              <p className="mb-3 leading-relaxed">
                 We share the following data with OpenAI to power AI coaching (VBot), meal planning, daily insights, and food logging:
               </p>
               <ul className="list-disc pl-6 space-y-1 mb-3">
@@ -133,8 +133,8 @@ export default function PrivacyPolicy() {
                 <li>Food descriptions or images submitted for nutritional analysis</li>
               </ul>
 
-              <h3 className="text-lg font-semibold text-white mb-2">4.2 Google (Voice Features)</h3>
-              <p className="mb-3">
+              <h3 className="text-lg font-semibold tracking-tight font-heading text-white mb-2">4.2 Google (Voice Features)</h3>
+              <p className="mb-3 leading-relaxed">
                 If you enable voice features, we share the following data with Google (Gemini API):
               </p>
               <ul className="list-disc pl-6 space-y-1 mb-3">
@@ -143,17 +143,17 @@ export default function PrivacyPolicy() {
                 <li>Conversational context during live voice sessions</li>
               </ul>
 
-              <h3 className="text-lg font-semibold text-white mb-2">4.3 Your Control</h3>
-              <p className="mb-3">
+              <h3 className="text-lg font-semibold tracking-tight font-heading text-white mb-2">4.3 Your Control</h3>
+              <p className="mb-3 leading-relaxed">
                 You can revoke your consent for AI data sharing at any time in Settings. Core features (workout tracking, meal logging, habit tracking, community) work without AI. You can view the sources and citations for our health recommendations at any time on the Health Information Sources page.
               </p>
 
-              <p className="mb-3">
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">Important:</strong> AI-generated content is for informational purposes
                 only and should not be considered medical, nutritional, or professional advice. Always consult with
                 qualified healthcare professionals before making significant changes to your diet or exercise routine.
               </p>
-              <p>
+              <p class="leading-relaxed">
                 Data is processed in accordance with our agreements with these providers and their respective privacy policies
                 (<a href="https://openai.com/policies/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-accent underline">OpenAI Privacy Policy</a>,
                 <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-accent underline ml-1">Google Privacy Policy</a>).
@@ -162,11 +162,11 @@ export default function PrivacyPolicy() {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">5. Data Sharing and Disclosure</h2>
-              <p className="mb-3">We do not sell your personal information. We may share your information with:</p>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">5. Data Sharing and Disclosure</h2>
+              <p className="mb-3 leading-relaxed">We do not sell your personal information. We may share your information with:</p>
 
-              <h3 className="text-lg font-semibold text-white mb-2">5.1 Service Providers</h3>
-              <p className="mb-3">
+              <h3 className="text-lg font-semibold tracking-tight font-heading text-white mb-2">5.1 Service Providers</h3>
+              <p className="mb-3 leading-relaxed">
                 We share information with third-party service providers who perform services on our behalf:
               </p>
               <ul className="list-disc pl-6 space-y-1 mb-3">
@@ -177,8 +177,8 @@ export default function PrivacyPolicy() {
                 <li>Customer support tools</li>
               </ul>
 
-              <h3 className="text-lg font-semibold text-white mb-2">5.2 Legal Requirements</h3>
-              <p className="mb-3">We may disclose your information if required to do so by law or in response to:</p>
+              <h3 className="text-lg font-semibold tracking-tight font-heading text-white mb-2">5.2 Legal Requirements</h3>
+              <p className="mb-3 leading-relaxed">We may disclose your information if required to do so by law or in response to:</p>
               <ul className="list-disc pl-6 space-y-1 mb-3">
                 <li>Valid legal processes (subpoenas, court orders)</li>
                 <li>Requests from law enforcement or government agencies</li>
@@ -186,16 +186,16 @@ export default function PrivacyPolicy() {
                 <li>Emergency situations involving potential harm</li>
               </ul>
 
-              <h3 className="text-lg font-semibold text-white mb-2">5.3 Business Transfers</h3>
-              <p>
+              <h3 className="text-lg font-semibold tracking-tight font-heading text-white mb-2">5.3 Business Transfers</h3>
+              <p class="leading-relaxed">
                 If we are involved in a merger, acquisition, or sale of assets, your information may be transferred as
                 part of that transaction. We will notify you of any such change.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">6. Data Security</h2>
-              <p className="mb-3">
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">6. Data Security</h2>
+              <p className="mb-3 leading-relaxed">
                 We implement appropriate technical and organizational measures to protect your information:
               </p>
               <ul className="list-disc pl-6 space-y-1 mb-3">
@@ -205,49 +205,49 @@ export default function PrivacyPolicy() {
                 <li>Employee training on data protection</li>
                 <li>Incident response procedures</li>
               </ul>
-              <p>
+              <p class="leading-relaxed">
                 However, no method of transmission over the Internet or electronic storage is 100% secure. While we
                 strive to protect your information, we cannot guarantee absolute security.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">7. Your Rights and Choices</h2>
-              <p className="mb-3">You have the following rights regarding your personal information:</p>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">7. Your Rights and Choices</h2>
+              <p className="mb-3 leading-relaxed">You have the following rights regarding your personal information:</p>
 
-              <h3 className="text-lg font-semibold text-white mb-2">7.1 Access and Portability</h3>
-              <p className="mb-3">
+              <h3 className="text-lg font-semibold tracking-tight font-heading text-white mb-2">7.1 Access and Portability</h3>
+              <p className="mb-3 leading-relaxed">
                 You can access and export your personal data at any time through the "Export My Data" feature in
                 Settings.
               </p>
 
-              <h3 className="text-lg font-semibold text-white mb-2">7.2 Correction</h3>
-              <p className="mb-3">You can update your profile information at any time through the app settings.</p>
+              <h3 className="text-lg font-semibold tracking-tight font-heading text-white mb-2">7.2 Correction</h3>
+              <p className="mb-3 leading-relaxed">You can update your profile information at any time through the app settings.</p>
 
-              <h3 className="text-lg font-semibold text-white mb-2">7.3 Deletion</h3>
-              <p className="mb-3">
+              <h3 className="text-lg font-semibold tracking-tight font-heading text-white mb-2">7.3 Deletion</h3>
+              <p className="mb-3 leading-relaxed">
                 You can request deletion of your account and associated data through the "Delete Account" option in
                 Settings. Note that some information may be retained for legal or legitimate business purposes.
               </p>
 
-              <h3 className="text-lg font-semibold text-white mb-2">7.4 Opt-Out</h3>
-              <p className="mb-3">You can opt out of:</p>
+              <h3 className="text-lg font-semibold tracking-tight font-heading text-white mb-2">7.4 Opt-Out</h3>
+              <p className="mb-3 leading-relaxed">You can opt out of:</p>
               <ul className="list-disc pl-6 space-y-1 mb-3">
                 <li>Push notifications (through device settings or app settings)</li>
                 <li>Marketing communications (via unsubscribe links)</li>
                 <li>Certain data collection (through app settings)</li>
               </ul>
 
-              <h3 className="text-lg font-semibold text-white mb-2">7.5 GDPR Rights (EU Users)</h3>
-              <p className="mb-3">If you are in the European Economic Area, you have additional rights:</p>
+              <h3 className="text-lg font-semibold tracking-tight font-heading text-white mb-2">7.5 GDPR Rights (EU Users)</h3>
+              <p className="mb-3 leading-relaxed">If you are in the European Economic Area, you have additional rights:</p>
               <ul className="list-disc pl-6 space-y-1 mb-3">
                 <li>Right to object to processing</li>
                 <li>Right to restrict processing</li>
                 <li>Right to lodge a complaint with a supervisory authority</li>
               </ul>
 
-              <h3 className="text-lg font-semibold text-white mb-2">7.6 CCPA Rights (California Users)</h3>
-              <p className="mb-3">California residents have the right to:</p>
+              <h3 className="text-lg font-semibold tracking-tight font-heading text-white mb-2">7.6 CCPA Rights (California Users)</h3>
+              <p className="mb-3 leading-relaxed">California residents have the right to:</p>
               <ul className="list-disc pl-6 space-y-1">
                 <li>Know what personal information is collected</li>
                 <li>Know whether personal information is sold or disclosed</li>
@@ -258,23 +258,23 @@ export default function PrivacyPolicy() {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">8. Data Retention</h2>
-              <p className="mb-3">We retain your information for as long as necessary to:</p>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">8. Data Retention</h2>
+              <p className="mb-3 leading-relaxed">We retain your information for as long as necessary to:</p>
               <ul className="list-disc pl-6 space-y-1 mb-3">
                 <li>Provide our Service to you</li>
                 <li>Comply with legal obligations</li>
                 <li>Resolve disputes</li>
                 <li>Enforce our agreements</li>
               </ul>
-              <p>
+              <p class="leading-relaxed">
                 When you delete your account, we will delete or anonymize your personal information within 30 days,
                 except where retention is required by law.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">9. Children's Privacy</h2>
-              <p>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">9. Children's Privacy</h2>
+              <p class="leading-relaxed">
                 Our Service is not intended for children under 13 years of age (or 16 in the EU). We do not knowingly
                 collect personal information from children. If you are a parent or guardian and believe your child has
                 provided us with personal information, please contact us, and we will delete such information.
@@ -282,8 +282,8 @@ export default function PrivacyPolicy() {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">10. International Data Transfers</h2>
-              <p>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">10. International Data Transfers</h2>
+              <p class="leading-relaxed">
                 Your information may be transferred to and processed in countries other than your country of residence.
                 These countries may have different data protection laws. We ensure appropriate safeguards are in place
                 to protect your information in accordance with this Privacy Policy.
@@ -291,19 +291,19 @@ export default function PrivacyPolicy() {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">11. Cookies and Tracking Technologies</h2>
-              <p className="mb-3">We use cookies and similar tracking technologies to:</p>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">11. Cookies and Tracking Technologies</h2>
+              <p className="mb-3 leading-relaxed">We use cookies and similar tracking technologies to:</p>
               <ul className="list-disc pl-6 space-y-1 mb-3">
                 <li>Maintain your session and preferences</li>
                 <li>Analyze usage patterns and improve our Service</li>
                 <li>Provide personalized content</li>
               </ul>
-              <p>You can control cookies through your browser settings.</p>
+              <p class="leading-relaxed">You can control cookies through your browser settings.</p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">12. Changes to This Privacy Policy</h2>
-              <p>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">12. Changes to This Privacy Policy</h2>
+              <p class="leading-relaxed">
                 We may update this Privacy Policy from time to time. We will notify you of any material changes by
                 posting the new Privacy Policy on this page and updating the "Last updated" date. Your continued use of
                 the Service after changes constitutes acceptance of the updated policy.
@@ -311,14 +311,14 @@ export default function PrivacyPolicy() {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">13. Contact Us</h2>
-              <p className="mb-3">
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">13. Contact Us</h2>
+              <p className="mb-3 leading-relaxed">
                 If you have questions about this Privacy Policy or our privacy practices, please contact us at:
               </p>
               <div className="bg-white/5 rounded-lg p-4">
                 <p className="font-semibold text-white">V-Life Privacy Team</p>
-                <p>Email: privacy@vlife.app</p>
-                <p>Address: [Your Company Address]</p>
+                <p class="leading-relaxed">Email: privacy@vlife.app</p>
+                <p class="leading-relaxed">Address: [Your Company Address]</p>
               </div>
             </section>
 

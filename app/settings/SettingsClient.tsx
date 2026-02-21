@@ -547,7 +547,7 @@ export default function SettingsClient() {
               <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
               <ButtonGlow
                 variant="accent-glow"
-                className="w-full relative"
+                className="w-full relative tracking-wide"
                 onClick={() => router.push("/admin")}
               >
                 <Shield className="h-4 w-4 mr-2" />
@@ -642,11 +642,11 @@ export default function SettingsClient() {
       <Dialog open={affiliateModalOpen} onOpenChange={setAffiliateModalOpen}>
         <DialogContent className="backdrop-blur-xl bg-black/95 border-accent/30 shadow-[0_0_30px_rgba(255,215,0,0.2)]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]">
+            <DialogTitle className="flex items-center gap-2 tracking-tight font-heading bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]">
               <Briefcase className="h-5 w-5 text-accent" />
               Become an Affiliate
             </DialogTitle>
-            <DialogDescription className="text-white/70">
+            <DialogDescription className="text-white/70 leading-relaxed">
               Fill out the form below and we&apos;ll review your application within 2-3 business days.
             </DialogDescription>
           </DialogHeader>

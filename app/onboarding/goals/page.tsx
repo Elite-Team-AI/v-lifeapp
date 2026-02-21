@@ -74,7 +74,7 @@ export default function GoalSelection() {
       >
         <div className="mb-8 text-center">
           <motion.h1
-            className="text-4xl font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
+            className="text-4xl font-bold tracking-tight font-heading bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2 }}
@@ -82,7 +82,7 @@ export default function GoalSelection() {
             Select Your Goal
           </motion.h1>
           <motion.p
-            className="mt-2 text-white/70"
+            className="mt-2 text-white/70 leading-relaxed"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
@@ -121,7 +121,7 @@ export default function GoalSelection() {
                     >
                       {goal.title}
                     </h3>
-                    <p className="relative mt-2 text-sm text-white/70">{goal.description}</p>
+                    <p className="relative mt-2 text-sm text-white/70 leading-relaxed">{goal.description}</p>
                   </Card>
                 </motion.div>
               ))}
@@ -137,11 +137,11 @@ export default function GoalSelection() {
             >
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-accent/10 to-purple-500/10 rounded-lg blur-xl" />
-                <h2 className="relative text-xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+                <h2 className="relative text-xl font-bold tracking-tight font-heading bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
                   What This Choice Unlocks
                 </h2>
               </div>
-              <p className="text-sm text-white/70">
+              <p className="text-sm text-white/70 leading-relaxed">
                 Your primary goal sets the tone for coaching, nutrition targets, and how V-Life celebrates your wins.
               </p>
 
@@ -156,7 +156,7 @@ export default function GoalSelection() {
                     whileHover={{ x: 4 }}
                   >
                     <p className="text-sm font-semibold text-accent">{area.title}</p>
-                    <p className="text-xs text-white/70 mt-1">{area.description}</p>
+                    <p className="text-xs text-white/70 mt-1 leading-relaxed">{area.description}</p>
                   </motion.div>
                 ))}
               </div>
@@ -171,7 +171,7 @@ export default function GoalSelection() {
             >
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
-                <ButtonGlow variant="accent-glow" className="w-full h-12 text-base font-semibold relative" onClick={handleContinue}>
+                <ButtonGlow variant="accent-glow" className="w-full h-12 text-base font-semibold tracking-wide relative" onClick={handleContinue}>
                   Continue
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </ButtonGlow>

@@ -168,7 +168,7 @@ export default function HelpSupport() {
           </motion.div>
           <div>
             <motion.h1
-              className="text-2xl font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
+              className="text-2xl font-bold tracking-tight font-heading bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
@@ -176,7 +176,7 @@ export default function HelpSupport() {
               Help & Support
             </motion.h1>
             <motion.p
-              className="text-white/70"
+              className="text-white/70 leading-relaxed"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
@@ -223,7 +223,7 @@ export default function HelpSupport() {
                 <Mail className="mx-auto mb-3 h-10 w-10 text-accent drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]" />
               </motion.div>
               <motion.h3
-                className="mb-1 text-base font-bold text-white"
+                className="mb-1 text-base font-bold tracking-tight font-heading text-white"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
@@ -231,7 +231,7 @@ export default function HelpSupport() {
                 Email Us
               </motion.h3>
               <motion.p
-                className="mb-4 text-sm text-white/60"
+                className="mb-4 text-sm text-white/60 leading-relaxed"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7 }}
@@ -278,7 +278,7 @@ export default function HelpSupport() {
                 transition={{ delay: 1.0 }}
               >
                 <Video className="h-5 w-5 text-accent drop-shadow-[0_0_10px_rgba(255,215,0,0.3)]" />
-                <h3 className="font-bold text-white">Video Tutorials</h3>
+                <h3 className="font-bold tracking-tight font-heading text-white">Video Tutorials</h3>
               </motion.div>
               <div className="space-y-2">
                 <motion.div
@@ -326,7 +326,7 @@ export default function HelpSupport() {
           transition={{ duration: 0.5, delay: 1.25 }}
         >
           <motion.h2
-            className="mb-4 text-xl font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent"
+            className="mb-4 text-xl font-bold tracking-tight font-heading bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent"
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 1.3 }}
@@ -349,8 +349,8 @@ export default function HelpSupport() {
                   >
                     <Search className="mx-auto mb-3 h-12 w-12 text-white/30" />
                   </motion.div>
-                  <p className="text-white/60">No results found for "{searchQuery}"</p>
-                  <p className="mt-2 text-sm text-white/40">Try different keywords or browse all categories</p>
+                  <p className="text-white/60 leading-relaxed">No results found for "{searchQuery}"</p>
+                  <p className="mt-2 text-sm text-white/40 leading-relaxed">Try different keywords or browse all categories</p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -372,7 +372,7 @@ export default function HelpSupport() {
                       <AccordionTrigger className="px-4 hover:no-underline">
                         <div className="flex items-center gap-2">
                           <Icon className="h-5 w-5 text-accent drop-shadow-[0_0_10px_rgba(255,215,0,0.3)]" />
-                          <span className="font-bold text-white">{category.category}</span>
+                          <span className="font-bold tracking-tight font-heading text-white">{category.category}</span>
                           <Badge variant="secondary" className="ml-2 backdrop-blur-xl bg-accent/20 border border-accent/30 text-accent">
                             {category.questions.length}
                           </Badge>
@@ -387,9 +387,9 @@ export default function HelpSupport() {
                               className="rounded border-white/10 backdrop-blur-xl bg-white/5 transition-all hover:border-accent/20 hover:bg-white/10"
                             >
                               <AccordionTrigger className="px-3 py-2 text-left text-sm hover:no-underline">
-                                <span className="text-white">{faq.q}</span>
+                                <span className="text-white tracking-tight font-heading">{faq.q}</span>
                               </AccordionTrigger>
-                              <AccordionContent className="px-3 pb-3 text-sm text-white/70">{faq.a}</AccordionContent>
+                              <AccordionContent className="px-3 pb-3 text-sm text-white/70 leading-relaxed">{faq.a}</AccordionContent>
                             </AccordionItem>
                           ))}
                         </Accordion>
@@ -420,7 +420,7 @@ export default function HelpSupport() {
                 <HelpCircle className="mx-auto mb-3 h-12 w-12 text-accent drop-shadow-[0_0_20px_rgba(255,215,0,0.6)]" />
               </motion.div>
               <motion.h3
-                className="mb-2 text-lg font-bold text-white"
+                className="mb-2 text-lg font-bold tracking-tight font-heading text-white"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.6 + filteredFaqs.length * 0.05 }}
@@ -428,7 +428,7 @@ export default function HelpSupport() {
                 Still Need Help?
               </motion.h3>
               <motion.p
-                className="mb-5 text-sm text-white/70"
+                className="mb-5 text-sm text-white/70 leading-relaxed"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.65 + filteredFaqs.length * 0.05 }}

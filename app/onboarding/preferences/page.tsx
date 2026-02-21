@@ -88,7 +88,7 @@ export default function Preferences() {
       >
         <div className="mb-8 text-center">
           <motion.h1
-            className="text-4xl font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
+            className="text-4xl font-bold tracking-tight font-heading bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2 }}
@@ -96,7 +96,7 @@ export default function Preferences() {
             Training & Preferences
           </motion.h1>
           <motion.p
-            className="mt-2 text-white/70"
+            className="mt-2 text-white/70 leading-relaxed"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
@@ -118,7 +118,7 @@ export default function Preferences() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <h2 className="text-lg font-medium text-white/90 flex items-center gap-2">
+            <h2 className="text-lg font-medium tracking-tight font-heading text-white/90 flex items-center gap-2">
               <Dumbbell className="h-5 w-5 text-accent" />
               Fitness Program
             </h2>
@@ -150,7 +150,7 @@ export default function Preferences() {
                     >
                       {style.label}
                     </p>
-                    <p className="relative text-xs text-white/60 mt-1">{style.description}</p>
+                    <p className="relative text-xs text-white/60 mt-1 leading-relaxed">{style.description}</p>
                   </Card>
                 </motion.div>
               ))}
@@ -178,7 +178,7 @@ export default function Preferences() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.9 }}
           >
-            <h2 className="text-lg font-medium text-white/90 flex items-center gap-2">
+            <h2 className="text-lg font-medium tracking-tight font-heading text-white/90 flex items-center gap-2">
               <Clock className="h-5 w-5 text-accent" />
               Available Workout Time
             </h2>
@@ -211,7 +211,7 @@ export default function Preferences() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 1.1 }}
           >
-            <h2 className="text-lg font-medium text-white/90 flex items-center gap-2">
+            <h2 className="text-lg font-medium tracking-tight font-heading text-white/90 flex items-center gap-2">
               <Calendar className="h-5 w-5 text-accent" />
               Days Per Week
             </h2>
@@ -243,7 +243,7 @@ export default function Preferences() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 1.3 }}
           >
-            <h2 className="text-lg font-medium text-white/90">Food Allergies</h2>
+            <h2 className="text-lg font-medium tracking-tight font-heading text-white/90">Food Allergies</h2>
             <div className="flex flex-wrap gap-2">
               {allergies.map((allergy, index) => (
                 <motion.button
@@ -272,7 +272,7 @@ export default function Preferences() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 1.6 }}
           >
-            <h2 className="text-lg font-medium text-white/90">Custom Restrictions</h2>
+            <h2 className="text-lg font-medium tracking-tight font-heading text-white/90">Custom Restrictions</h2>
             <div className="flex gap-2">
               <Input
                 value={customRestriction}
@@ -325,7 +325,7 @@ export default function Preferences() {
               <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
               <ButtonGlow
                 variant="accent-glow"
-                className="w-full h-12 text-base font-semibold relative"
+                className="w-full h-12 text-base font-semibold tracking-wide relative"
                 onClick={handleContinue}
               >
                 Continue

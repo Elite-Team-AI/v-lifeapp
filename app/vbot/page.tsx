@@ -372,7 +372,7 @@ function VBotPageContent() {
             >
               <ChevronLeft className="h-5 w-5 text-white" />
             </button>
-            <h2 className="text-lg font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]">
+            <h2 className="text-lg font-bold tracking-tight font-heading bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]">
               Chat History
             </h2>
           </div>
@@ -467,7 +467,7 @@ function VBotPageContent() {
                 <MessageSquare className="h-5 w-5 text-white/70 transition-colors group-hover:text-white" />
               </button>
               <div>
-                <h1 className="text-lg font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto] flex items-center gap-2">
+                <h1 className="text-lg font-bold tracking-tight font-heading bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto] flex items-center gap-2">
                   VBot
                   <button
                     onClick={() => setShowInfoModal(true)}
@@ -488,10 +488,10 @@ function VBotPageContent() {
                     </button>
                   )}
                 </h1>
-                <p className="text-xs text-white/50">
+                <p className="text-xs text-white/50 leading-relaxed">
                   {conversationId ? "Continuing conversation" : "Your AI Fitness Coach"}
                 </p>
-                <p className="text-[10px] text-white/30 mt-1">
+                <p className="text-[10px] text-white/30 mt-1 leading-relaxed">
                   Not medical advice. Consult your physician before starting any fitness program.
                 </p>
               </div>

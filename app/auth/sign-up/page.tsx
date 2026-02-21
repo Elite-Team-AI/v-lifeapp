@@ -135,7 +135,7 @@ export default function SignUpPage() {
             transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
           />
           <motion.p
-            className="mt-2 text-white/70"
+            className="mt-2 text-white/70 leading-relaxed"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
@@ -156,7 +156,7 @@ export default function SignUpPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5 }}
               >
-                <CardTitle className="text-2xl bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
+                <CardTitle className="text-2xl tracking-tight font-heading bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
                   Sign up
                 </CardTitle>
               </motion.div>
@@ -165,7 +165,7 @@ export default function SignUpPage() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
               >
-                <CardDescription className="text-white/60">Create a new account</CardDescription>
+                <CardDescription className="text-white/60 leading-relaxed">Create a new account</CardDescription>
               </motion.div>
             </CardHeader>
             <CardContent>
@@ -286,7 +286,7 @@ export default function SignUpPage() {
                     <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
                     <Button
                       type="submit"
-                      className="relative w-full bg-accent text-black font-semibold hover:bg-accent/90 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transition-all duration-300"
+                      className="relative w-full bg-accent text-black font-semibold tracking-wide hover:bg-accent/90 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transition-all duration-300"
                       disabled={isLoading}
                     >
                       {isLoading ? "Creating account..." : "Sign up"}
@@ -294,7 +294,7 @@ export default function SignUpPage() {
                   </motion.div>
                 </div>
                 <motion.div
-                  className="mt-4 text-center text-sm text-white/60"
+                  className="mt-4 text-center text-sm text-white/60 leading-relaxed"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 1.1 }}

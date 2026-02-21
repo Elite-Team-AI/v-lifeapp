@@ -94,7 +94,7 @@ export default function ForgotPasswordPage() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.5 }}
                 >
-                  <CardTitle className="text-2xl bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
+                  <CardTitle className="text-2xl tracking-tight font-heading bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
                     Check your email
                   </CardTitle>
                 </motion.div>
@@ -103,7 +103,7 @@ export default function ForgotPasswordPage() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.6 }}
                 >
-                  <CardDescription className="text-white/60">
+                  <CardDescription className="text-white/60 leading-relaxed">
                     We've sent a password reset link to {email}
                   </CardDescription>
                 </motion.div>
@@ -116,13 +116,13 @@ export default function ForgotPasswordPage() {
                 >
                   <Alert className="border-green-500/30 backdrop-blur-xl bg-green-500/10 mb-4">
                     <CheckCircle2 className="h-4 w-4 text-green-500 drop-shadow-[0_0_5px_rgba(34,197,94,0.5)]" />
-                    <AlertDescription className="text-green-400">
+                    <AlertDescription className="text-green-400 leading-relaxed">
                       Password reset email sent successfully!
                     </AlertDescription>
                   </Alert>
                 </motion.div>
                 <motion.p
-                  className="text-sm text-white/60 mb-4"
+                  className="text-sm text-white/60 leading-relaxed mb-4"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.8 }}
@@ -139,7 +139,7 @@ export default function ForgotPasswordPage() {
                   <Link href="/auth/login">
                     <Button
                       variant="outline"
-                      className="w-full border-white/10 backdrop-blur-xl bg-white/5 text-white hover:bg-white/10 hover:border-accent/50 transition-all"
+                      className="w-full border-white/10 backdrop-blur-xl bg-white/5 text-white tracking-wide hover:bg-white/10 hover:border-accent/50 transition-all"
                     >
                       <ArrowLeft className="mr-2 h-4 w-4" />
                       Back to login
@@ -182,7 +182,7 @@ export default function ForgotPasswordPage() {
             transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
           />
           <motion.p
-            className="mt-2 text-white/70"
+            className="mt-2 text-white/70 leading-relaxed"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
@@ -203,7 +203,7 @@ export default function ForgotPasswordPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5 }}
               >
-                <CardTitle className="text-2xl bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
+                <CardTitle className="text-2xl tracking-tight font-heading bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent">
                   Forgot password?
                 </CardTitle>
               </motion.div>
@@ -212,7 +212,7 @@ export default function ForgotPasswordPage() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
               >
-                <CardDescription className="text-white/60">
+                <CardDescription className="text-white/60 leading-relaxed">
                   Enter your email address and we'll send you a reset link
                 </CardDescription>
               </motion.div>
@@ -264,7 +264,7 @@ export default function ForgotPasswordPage() {
                     <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
                     <Button
                       type="submit"
-                      className="relative w-full bg-accent text-black font-semibold hover:bg-accent/90 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transition-all duration-300"
+                      className="relative w-full bg-accent text-black font-semibold tracking-wide hover:bg-accent/90 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transition-all duration-300"
                       disabled={isLoading}
                     >
                       {isLoading ? "Sending..." : "Send reset link"}
@@ -280,7 +280,7 @@ export default function ForgotPasswordPage() {
                     <Link href="/auth/login">
                       <Button
                         variant="ghost"
-                        className="w-full text-white/60 hover:text-white hover:bg-white/5 transition-all"
+                        className="w-full text-white/60 tracking-wide hover:text-white hover:bg-white/5 transition-all"
                         type="button"
                       >
                         <ArrowLeft className="mr-2 h-4 w-4" />

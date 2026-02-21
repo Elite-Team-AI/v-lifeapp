@@ -25,8 +25,8 @@ export default function TermsOfService() {
           <div className="flex items-center gap-2">
             <FileText className="h-6 w-6 text-accent" />
             <div>
-              <h1 className="text-2xl font-bold text-white">Terms of Service</h1>
-              <p className="text-sm text-white/70">Last updated: October 31, 2025</p>
+              <h1 className="text-2xl font-bold tracking-tight font-heading text-white">Terms of Service</h1>
+              <p className="text-sm text-white/70 leading-relaxed">Last updated: October 31, 2025</p>
             </div>
           </div>
         </motion.div>
@@ -34,13 +34,13 @@ export default function TermsOfService() {
         <Card className="border-white/10 bg-black/50 backdrop-blur-sm">
           <CardContent className="p-6 space-y-6 text-white/80">
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">1. Acceptance of Terms</h2>
-              <p className="mb-3">
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">1. Acceptance of Terms</h2>
+              <p className="mb-3 leading-relaxed">
                 Welcome to V-Life. By accessing or using our fitness and nutrition tracking application with AI-powered
                 personalized coaching (the "Service"), you agree to be bound by these Terms of Service ("Terms"). If you
                 do not agree to these Terms, do not use the Service.
               </p>
-              <p>
+              <p class="leading-relaxed">
                 These Terms constitute a legally binding agreement between you and V-Life ("we," "us," or "our"). We
                 reserve the right to modify these Terms at any time, and your continued use of the Service constitutes
                 acceptance of any changes.
@@ -48,11 +48,11 @@ export default function TermsOfService() {
             </section>
 
             <section className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-              <h2 className="text-xl font-bold text-red-400 mb-3">2. Medical Disclaimer - IMPORTANT</h2>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-red-400 mb-3">2. Medical Disclaimer - IMPORTANT</h2>
               <p className="mb-3 font-semibold text-white">
                 THE SERVICE IS NOT INTENDED TO PROVIDE MEDICAL, NUTRITIONAL, OR PROFESSIONAL HEALTH ADVICE.
               </p>
-              <p className="mb-3">
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">You acknowledge and agree that:</strong>
               </p>
               <ul className="list-disc pl-6 space-y-2 mb-3">
@@ -92,11 +92,11 @@ export default function TermsOfService() {
             </section>
 
             <section className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
-              <h2 className="text-xl font-bold text-yellow-400 mb-3">3. AI-Generated Content Disclaimer</h2>
-              <p className="mb-3">
+              <h2 className="text-xl font-bold tracking-tight font-heading text-yellow-400 mb-3">3. AI-Generated Content Disclaimer</h2>
+              <p className="mb-3 leading-relaxed">
                 Our Service uses artificial intelligence to provide personalized coaching and recommendations.
               </p>
-              <p className="mb-3">
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">You acknowledge and agree that:</strong>
               </p>
               <ul className="list-disc pl-6 space-y-2">
@@ -113,13 +113,13 @@ export default function TermsOfService() {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">4. User Eligibility and Account</h2>
-              <p className="mb-3">
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">4. User Eligibility and Account</h2>
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">4.1 Age Requirement:</strong> You must be at least 18 years old (or the
                 age of majority in your jurisdiction) to use the Service. If you are between 13 and 18, you may only use
                 the Service with parental or guardian consent and supervision.
               </p>
-              <p className="mb-3">
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">4.2 Account Security:</strong> You are responsible for:
               </p>
               <ul className="list-disc pl-6 space-y-1 mb-3">
@@ -127,15 +127,15 @@ export default function TermsOfService() {
                 <li>All activities that occur under your account</li>
                 <li>Notifying us immediately of any unauthorized access</li>
               </ul>
-              <p>
+              <p class="leading-relaxed">
                 <strong className="text-white">4.3 Accurate Information:</strong> You agree to provide accurate,
                 current, and complete information and to update it as necessary.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">5. User Responsibilities and Conduct</h2>
-              <p className="mb-3">You agree to:</p>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">5. User Responsibilities and Conduct</h2>
+              <p className="mb-3 leading-relaxed">You agree to:</p>
               <ul className="list-disc pl-6 space-y-1 mb-3">
                 <li>Use the Service in compliance with all applicable laws and regulations</li>
                 <li>Exercise safely and within your physical capabilities</li>
@@ -149,8 +149,8 @@ export default function TermsOfService() {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">6. Prohibited Uses</h2>
-              <p className="mb-3">You may NOT use the Service to:</p>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">6. Prohibited Uses</h2>
+              <p className="mb-3 leading-relaxed">You may NOT use the Service to:</p>
               <ul className="list-disc pl-6 space-y-1">
                 <li>Provide medical advice or services to others</li>
                 <li>Impersonate any person or entity</li>
@@ -166,7 +166,7 @@ export default function TermsOfService() {
 
             <section className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
               <h2 className="text-xl font-bold text-purple-400 mb-3">6.5 Community Guidelines and User-Generated Content</h2>
-              <p className="mb-3">
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">Zero Tolerance Policy:</strong> We maintain a zero-tolerance policy for objectionable content and abusive behavior. The following content is strictly prohibited:
               </p>
               <ul className="list-disc pl-6 space-y-1 mb-3">
@@ -182,65 +182,65 @@ export default function TermsOfService() {
               <p className="mb-3 font-semibold text-purple-400">
                 Violations will result in immediate content removal and account suspension or termination.
               </p>
-              <p className="mb-3">
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">Reporting:</strong> Users can report objectionable content using the Report feature available on all community posts. We commit to reviewing all reports within 24 hours and taking appropriate action, including content removal and account suspension where warranted.
               </p>
-              <p className="mb-3">
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">Blocking:</strong> Users can block other users at any time. When you block a user, their content will be immediately hidden from your feed and they will not be able to interact with your posts.
               </p>
-              <p>
+              <p class="leading-relaxed">
                 <strong className="text-white">Content Moderation:</strong> We employ both automated filtering and human moderation to identify and remove objectionable content. Users who repeatedly violate these guidelines will have their accounts permanently terminated.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">7. Subscription and Payment</h2>
-              <p className="mb-3">
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">7. Subscription and Payment</h2>
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">7.1 Subscription Plans:</strong> The Service may offer various
                 subscription plans with different features and pricing.
               </p>
-              <p className="mb-3">
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">7.2 Billing:</strong> By subscribing, you authorize us to charge your
                 payment method on a recurring basis according to your chosen plan.
               </p>
-              <p className="mb-3">
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">7.3 Cancellation:</strong> You may cancel your subscription at any time
                 through the app settings. Cancellation will take effect at the end of your current billing period.
               </p>
-              <p className="mb-3">
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">7.4 Refunds:</strong> Refunds are provided at our discretion and in
                 accordance with applicable law. Generally, payments are non-refundable except where required by law.
               </p>
-              <p>
+              <p class="leading-relaxed">
                 <strong className="text-white">7.5 Price Changes:</strong> We reserve the right to change subscription
                 prices with 30 days' notice.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">8. Intellectual Property</h2>
-              <p className="mb-3">
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">8. Intellectual Property</h2>
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">8.1 Our Content:</strong> The Service, including all content, features,
                 functionality, software, text, graphics, logos, and AI-generated content, is owned by V-Life and
                 protected by copyright, trademark, and other intellectual property laws.
               </p>
-              <p className="mb-3">
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">8.2 Limited License:</strong> We grant you a limited, non-exclusive,
                 non-transferable license to access and use the Service for personal, non-commercial purposes.
               </p>
-              <p className="mb-3">
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">8.3 Your Content:</strong> You retain ownership of content you submit
                 (photos, data, etc.). By submitting content, you grant us a worldwide, royalty-free license to use,
                 store, and process it to provide the Service.
               </p>
-              <p>
+              <p class="leading-relaxed">
                 <strong className="text-white">8.4 Feedback:</strong> Any feedback, suggestions, or ideas you provide
                 become our property, and we may use them without compensation or attribution.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">9. Limitation of Liability</h2>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">9. Limitation of Liability</h2>
               <p className="mb-3 font-semibold text-white">TO THE MAXIMUM EXTENT PERMITTED BY LAW:</p>
               <ul className="list-disc pl-6 space-y-2 mb-3">
                 <li>
@@ -275,8 +275,8 @@ export default function TermsOfService() {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">10. Indemnification</h2>
-              <p>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">10. Indemnification</h2>
+              <p class="leading-relaxed">
                 You agree to indemnify, defend, and hold harmless V-Life, its officers, directors, employees, and agents
                 from any claims, damages, losses, liabilities, and expenses (including legal fees) arising from:
               </p>
@@ -290,33 +290,33 @@ export default function TermsOfService() {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">11. Dispute Resolution and Arbitration</h2>
-              <p className="mb-3">
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">11. Dispute Resolution and Arbitration</h2>
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">11.1 Informal Resolution:</strong> Before filing a claim, you agree to
                 contact us to attempt to resolve the dispute informally.
               </p>
-              <p className="mb-3">
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">11.2 Binding Arbitration:</strong> Any disputes that cannot be resolved
                 informally shall be resolved through binding arbitration in accordance with the rules of the American
                 Arbitration Association.
               </p>
-              <p className="mb-3">
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">11.3 Class Action Waiver:</strong> You agree to resolve disputes on an
                 individual basis and waive the right to participate in class actions or class arbitrations.
               </p>
-              <p>
+              <p class="leading-relaxed">
                 <strong className="text-white">11.4 Exceptions:</strong> Either party may seek injunctive relief in
                 court for intellectual property infringement or unauthorized access.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">12. Termination</h2>
-              <p className="mb-3">
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">12. Termination</h2>
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">12.1 By You:</strong> You may terminate your account at any time through
                 the app settings.
               </p>
-              <p className="mb-3">
+              <p className="mb-3 leading-relaxed">
                 <strong className="text-white">12.2 By Us:</strong> We may suspend or terminate your access to the
                 Service at any time, with or without notice, for:
               </p>
@@ -326,15 +326,15 @@ export default function TermsOfService() {
                 <li>Non-payment of fees</li>
                 <li>Any reason at our discretion</li>
               </ul>
-              <p>
+              <p class="leading-relaxed">
                 <strong className="text-white">12.3 Effect of Termination:</strong> Upon termination, your right to use
                 the Service ceases immediately. We may delete your data in accordance with our Privacy Policy.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">13. Governing Law</h2>
-              <p>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">13. Governing Law</h2>
+              <p class="leading-relaxed">
                 These Terms shall be governed by and construed in accordance with the laws of the State of Delaware,
                 without regard to conflict of law principles. Any legal action must be brought in the courts located in
                 New Castle County, Delaware.
@@ -342,8 +342,8 @@ export default function TermsOfService() {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">14. Changes to Terms</h2>
-              <p>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">14. Changes to Terms</h2>
+              <p class="leading-relaxed">
                 We reserve the right to modify these Terms at any time. We will notify you of material changes by
                 posting the updated Terms and updating the "Last updated" date. Your continued use of the Service after
                 changes constitutes acceptance of the modified Terms.
@@ -351,8 +351,8 @@ export default function TermsOfService() {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">15. Severability</h2>
-              <p>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">15. Severability</h2>
+              <p class="leading-relaxed">
                 If any provision of these Terms is found to be unenforceable or invalid, that provision shall be limited
                 or eliminated to the minimum extent necessary, and the remaining provisions shall remain in full force
                 and effect.
@@ -360,20 +360,20 @@ export default function TermsOfService() {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">16. Entire Agreement</h2>
-              <p>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">16. Entire Agreement</h2>
+              <p class="leading-relaxed">
                 These Terms, together with our Privacy Policy, constitute the entire agreement between you and V-Life
                 regarding the Service and supersede all prior agreements and understandings.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">17. Contact Information</h2>
-              <p className="mb-3">If you have questions about these Terms, please contact us at:</p>
+              <h2 className="text-xl font-bold tracking-tight font-heading text-white mb-3">17. Contact Information</h2>
+              <p className="mb-3 leading-relaxed">If you have questions about these Terms, please contact us at:</p>
               <div className="bg-white/5 rounded-lg p-4">
                 <p className="font-semibold text-white">V-Life Legal Team</p>
-                <p>Email: legal@vlife.app</p>
-                <p>Address: Wilmington, DE 19801</p>
+                <p class="leading-relaxed">Email: legal@vlife.app</p>
+                <p class="leading-relaxed">Address: Wilmington, DE 19801</p>
               </div>
             </section>
 

@@ -44,7 +44,7 @@ export default function HealthSourcesPage() {
             </motion.div>
             <div>
               <motion.h1
-                className="text-2xl font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
+                className="text-2xl font-bold tracking-tight font-heading bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 }}
@@ -52,7 +52,7 @@ export default function HealthSourcesPage() {
                 Health Information Sources
               </motion.h1>
               <motion.p
-                className="text-sm text-white/70"
+                className="text-sm text-white/70 leading-relaxed"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 }}
@@ -73,7 +73,7 @@ export default function HealthSourcesPage() {
           <Card className="border-amber-500/30 backdrop-blur-xl bg-gradient-to-br from-amber-500/15 to-amber-500/5 shadow-[0_0_20px_rgba(251,191,36,0.15)] mb-6">
             <CardContent className="p-4">
               <motion.p
-                className="text-sm text-amber-200/90 font-medium mb-1"
+                className="text-sm text-amber-200/90 font-medium tracking-tight font-heading mb-1"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 }}
@@ -81,7 +81,7 @@ export default function HealthSourcesPage() {
                 Medical Disclaimer
               </motion.p>
               <motion.p
-                className="text-xs text-amber-200/70"
+                className="text-xs text-amber-200/70 leading-relaxed"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5 }}
@@ -107,7 +107,7 @@ export default function HealthSourcesPage() {
               transition={{ delay: 0.7 }}
             >
               <motion.h2
-                className="text-lg font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent mb-3"
+                className="text-lg font-bold tracking-tight font-heading bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent mb-3"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.75 }}
@@ -115,7 +115,7 @@ export default function HealthSourcesPage() {
                 Calorie & Macronutrient Calculations
               </motion.h2>
               <motion.p
-                className="text-sm mb-3"
+                className="text-sm mb-3 leading-relaxed"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.8 }}
@@ -161,7 +161,7 @@ export default function HealthSourcesPage() {
               transition={{ delay: 1.05 }}
             >
               <motion.h2
-                className="text-lg font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent mb-3"
+                className="text-lg font-bold tracking-tight font-heading bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent mb-3"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1.1 }}
@@ -169,7 +169,7 @@ export default function HealthSourcesPage() {
                 Exercise & Workout Programming
               </motion.h2>
               <motion.p
-                className="text-sm mb-3"
+                className="text-sm mb-3 leading-relaxed"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1.15 }}
@@ -208,7 +208,7 @@ export default function HealthSourcesPage() {
               transition={{ delay: 1.35 }}
             >
               <motion.h2
-                className="text-lg font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent mb-3"
+                className="text-lg font-bold tracking-tight font-heading bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent mb-3"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1.4 }}
@@ -216,7 +216,7 @@ export default function HealthSourcesPage() {
                 Habit Building & Behavior Change
               </motion.h2>
               <motion.p
-                className="text-sm mb-3"
+                className="text-sm mb-3 leading-relaxed"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1.45 }}
@@ -248,7 +248,7 @@ export default function HealthSourcesPage() {
               transition={{ delay: 1.6 }}
             >
               <motion.h2
-                className="text-lg font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent mb-3"
+                className="text-lg font-bold tracking-tight font-heading bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent mb-3"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1.65 }}
@@ -256,7 +256,7 @@ export default function HealthSourcesPage() {
                 AI-Powered Coaching
               </motion.h2>
               <motion.p
-                className="text-sm mb-3"
+                className="text-sm mb-3 leading-relaxed"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1.7 }}
@@ -270,7 +270,7 @@ export default function HealthSourcesPage() {
                 transition={{ delay: 1.75 }}
                 whileHover={{ scale: 1.01, y: -2 }}
               >
-                <p className="text-xs text-white/70">
+                <p className="text-xs text-white/70 leading-relaxed">
                   <strong className="text-white/90">Important:</strong> AI-generated recommendations are for informational purposes only. They are not reviewed by medical professionals and should not replace advice from a qualified healthcare provider, registered dietitian, or certified fitness professional. Always verify AI suggestions with authoritative sources and consult your doctor before making significant health changes.
                 </p>
               </motion.div>
@@ -283,7 +283,7 @@ export default function HealthSourcesPage() {
               transition={{ delay: 1.8 }}
             >
               <motion.h2
-                className="text-lg font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent mb-3"
+                className="text-lg font-bold tracking-tight font-heading bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent mb-3"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1.85 }}
@@ -291,7 +291,7 @@ export default function HealthSourcesPage() {
                 Authoritative Health Resources
               </motion.h2>
               <motion.p
-                className="text-sm mb-3"
+                className="text-sm mb-3 leading-relaxed"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1.9 }}
@@ -329,7 +329,7 @@ export default function HealthSourcesPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 2.1 }}
             >
-              <p className="text-xs text-white/50">
+              <p className="text-xs text-white/50 leading-relaxed">
                 This page provides citations and references for the health and fitness information used within V-Life.
                 The formulas and recommendations in this app are based on established exercise science and nutrition research.
                 Individual results may vary. Last updated: February 2026.
@@ -370,9 +370,9 @@ function SourceItem({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-white mb-0.5">{title}</p>
+          <p className="text-sm font-medium tracking-tight font-heading text-white mb-0.5">{title}</p>
           <p className="text-xs text-accent drop-shadow-[0_0_10px_rgba(255,215,0,0.3)] mb-1">{source}</p>
-          <p className="text-xs text-white/60">{description}</p>
+          <p className="text-xs text-white/60 leading-relaxed">{description}</p>
         </div>
         <ExternalLink className="h-4 w-4 text-white/30 flex-shrink-0 mt-0.5 group-hover:text-accent transition-colors" />
       </div>

@@ -79,7 +79,7 @@ export default function ProfileSetup() {
       >
         <div className="mb-8 text-center">
           <motion.h1
-            className="text-4xl font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
+            className="text-4xl font-bold tracking-tight font-heading bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2 }}
@@ -87,7 +87,7 @@ export default function ProfileSetup() {
             Profile Setup
           </motion.h1>
           <motion.p
-            className="mt-2 text-white/70"
+            className="mt-2 text-white/70 leading-relaxed"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
@@ -525,7 +525,7 @@ export default function ProfileSetup() {
               <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
               <ButtonGlow
                 variant="accent-glow"
-                className="w-full h-12 text-base font-semibold relative"
+                className="w-full h-12 text-base font-semibold tracking-wide relative"
                 onClick={handleContinue}
                 disabled={!name.trim()}
               >

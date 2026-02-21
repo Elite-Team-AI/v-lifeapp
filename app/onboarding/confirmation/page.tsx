@@ -141,7 +141,7 @@ export default function Confirmation() {
             <Loader2 className="h-12 w-12 animate-spin text-accent drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]" />
           </motion.div>
           <motion.p
-            className="mt-4 text-white/70"
+            className="mt-4 text-white/70 leading-relaxed"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -193,7 +193,7 @@ export default function Confirmation() {
         </motion.div>
 
         <motion.h1
-          className="mb-4 text-4xl font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
+          className="mb-4 text-4xl font-bold tracking-tight font-heading bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.4 }}
@@ -227,7 +227,7 @@ export default function Confirmation() {
                 size="lg"
                 onClick={saveProfile}
                 disabled={isSaving}
-                className="w-full h-12 text-base font-semibold relative"
+                className="w-full h-12 text-base font-semibold tracking-wide relative"
               >
                 {isSaving ? (
                   <>
@@ -243,7 +243,7 @@ export default function Confirmation() {
                 variant="accent-glow"
                 size="lg"
                 onClick={() => router.push("/onboarding/profile")}
-                className="w-full h-12 text-base font-semibold relative"
+                className="w-full h-12 text-base font-semibold tracking-wide relative"
               >
                 Go Back to Profile
               </ButtonGlow>
