@@ -59,20 +59,52 @@ export default function LandingPage() {
       <div className="min-h-screen bg-black text-white">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-black via-gray-900 to-black">
+        {/* Animated background elements */}
         <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-20" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#FFD700]/20 rounded-full blur-[128px] animate-blob" />
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[128px] animate-blob animation-delay-2000" />
+        <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-blue-500/10 rounded-full blur-[128px] animate-blob animation-delay-4000" />
+
+        {/* Floating particles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(15)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-1 bg-[#FFD700]/40 rounded-full"
+              animate={{
+                y: [0, -100, 0],
+                x: [0, Math.random() * 100 - 50, 0],
+                opacity: [0, 1, 0],
+              }}
+              transition={{
+                duration: 3 + Math.random() * 2,
+                repeat: Infinity,
+                delay: Math.random() * 2,
+              }}
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+            />
+          ))}
+        </div>
 
         <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
           {/* Logo */}
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: -20, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
             className="mb-8 text-center"
           >
-            <img
-              src="https://xiezvibwxvsulfiooknp.supabase.co/storage/v1/object/public/Public-assets/white-vlife-logo.png"
-              alt="V-Life Logo"
-              className="mx-auto h-24 w-auto sm:h-32"
-            />
+            <div className="relative inline-block">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#FFD700] to-[#FFA500] rounded-full blur-2xl opacity-30 animate-glow-pulse" />
+              <img
+                src="https://xiezvibwxvsulfiooknp.supabase.co/storage/v1/object/public/Public-assets/white-vlife-logo.png"
+                alt="V-Life Logo"
+                className="relative mx-auto h-24 w-auto sm:h-32 drop-shadow-2xl"
+              />
+            </div>
           </motion.div>
 
           {/* Hero Content */}
@@ -82,12 +114,30 @@ export default function LandingPage() {
             transition={{ delay: 0.2 }}
             className="text-center"
           >
-            <h1 className="mb-6 text-4xl font-bold tracking-tight font-heading sm:text-5xl md:text-6xl lg:text-7xl">
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3, type: "spring" }}
+              className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FFD700]/10 to-[#FFA500]/10 border border-[#FFD700]/20 backdrop-blur-xl"
+            >
+              <Sparkles className="h-4 w-4 text-[#FFD700] animate-pulse" />
+              <span className="text-sm font-semibold bg-gradient-to-r from-[#FFD700] to-[#FFA500] bg-clip-text text-transparent">
+                AI-Powered Fitness Revolution
+              </span>
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="mb-6 text-4xl font-bold tracking-tight font-heading sm:text-5xl md:text-6xl lg:text-7xl"
+            >
               Transform Your Body.{" "}
-              <span className="bg-gradient-to-r from-[#FFD700] to-[#FFA500] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#FFD700] via-[#FFA500] to-[#FFD700] bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]">
                 Master Your Life.
               </span>
-            </h1>
+            </motion.h1>
 
             <p className="mx-auto mb-4 max-w-2xl text-lg text-gray-300 sm:text-xl md:text-2xl leading-relaxed">
               Your AI-powered fitness companion that adapts to YOUR lifestyle
@@ -98,38 +148,49 @@ export default function LandingPage() {
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link
-                href="https://apps.apple.com/in/app/v-life-fitness/id6757983194"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto"
-              >
-                <Button
-                  size="lg"
-                  className="w-full bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black hover:from-[#FFA500] hover:to-[#FFD700] font-semibold text-base sm:text-lg px-8 py-6 shadow-lg shadow-[#FFD700]/50"
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="flex flex-col items-center justify-center gap-4 sm:flex-row"
+            >
+              <div className="relative group w-full sm:w-auto">
+                <div className="absolute inset-0 bg-gradient-to-r from-[#FFD700] to-[#FFA500] rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-all duration-300 animate-pulse" />
+                <Link
+                  href="https://apps.apple.com/in/app/v-life-fitness/id6757983194"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative block w-full sm:w-auto"
                 >
-                  <Apple className="mr-2 h-6 w-6" />
-                  Download for iPhone
-                </Button>
-              </Link>
+                  <Button
+                    size="lg"
+                    className="relative w-full bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black hover:from-[#FFA500] hover:to-[#FFD700] font-semibold text-base sm:text-lg px-8 py-7 shadow-2xl shadow-[#FFD700]/50 group-hover:scale-105 transition-transform duration-300"
+                  >
+                    <Apple className="mr-2 h-6 w-6" />
+                    Download for iPhone
+                  </Button>
+                </Link>
+              </div>
 
-              <Link
-                href="https://play.google.com/store/apps/details?id=app.vlife.fitness&hl=en_US"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto"
-              >
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="w-full border-2 border-[#FFD700] bg-transparent text-white hover:bg-[#FFD700]/10 font-semibold text-base sm:text-lg px-8 py-6"
+              <div className="relative group w-full sm:w-auto">
+                <div className="absolute inset-0 bg-[#FFD700]/30 rounded-xl blur-md opacity-0 group-hover:opacity-50 transition-all duration-300" />
+                <Link
+                  href="https://play.google.com/store/apps/details?id=app.vlife.fitness&hl=en_US"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative block w-full sm:w-auto"
                 >
-                  <Smartphone className="mr-2 h-6 w-6" />
-                  Download for Android
-                </Button>
-              </Link>
-            </div>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="relative w-full border-2 border-[#FFD700] bg-black/50 backdrop-blur-xl text-white hover:bg-[#FFD700]/20 font-semibold text-base sm:text-lg px-8 py-7 group-hover:scale-105 transition-all duration-300"
+                  >
+                    <Smartphone className="mr-2 h-6 w-6" />
+                    Download for Android
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
 
             {/* Trust Indicators */}
             <motion.div
@@ -214,12 +275,19 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
+                whileHover={{ y: -8, transition: { duration: 0.2 } }}
               >
-                <Card className="h-full border-red-900/30 bg-red-950/20">
+                <Card className="group h-full border-red-900/30 bg-gradient-to-br from-red-950/40 to-red-900/20 backdrop-blur-xl hover:border-red-500/40 transition-all duration-300 shadow-lg hover:shadow-red-500/20">
                   <CardContent className="p-6">
-                    <div className="mb-4 text-4xl">{item.icon}</div>
-                    <h3 className="mb-2 text-xl font-semibold tracking-tight font-heading text-white">{item.title}</h3>
-                    <p className="text-gray-400 leading-relaxed">{item.description}</p>
+                    <motion.div
+                      className="mb-4 text-5xl"
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                    >
+                      {item.icon}
+                    </motion.div>
+                    <h3 className="mb-3 text-xl font-semibold tracking-tight font-heading text-white group-hover:text-red-400 transition-colors">{item.title}</h3>
+                    <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">{item.description}</p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -290,12 +358,27 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
+                whileHover={{ y: -12, transition: { duration: 0.2 } }}
               >
-                <Card className="h-full border-[#FFD700]/20 bg-gradient-to-br from-gray-800 to-gray-900 transition-all hover:border-[#FFD700]/50 hover:shadow-lg hover:shadow-[#FFD700]/20">
-                  <CardContent className="p-6">
-                    <div className="mb-4 text-[#FFD700]">{feature.icon}</div>
-                    <h3 className="mb-2 text-xl font-semibold tracking-tight font-heading text-white">{feature.title}</h3>
-                    <p className="text-gray-400 leading-relaxed">{feature.description}</p>
+                <Card className="group h-full relative border-[#FFD700]/20 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl transition-all duration-300 hover:border-[#FFD700]/60 hover:shadow-2xl hover:shadow-[#FFD700]/30 overflow-hidden">
+                  {/* Animated gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#FFD700]/0 via-[#FFD700]/0 to-[#FFA500]/0 opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
+
+                  {/* Glow effect */}
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#FFD700] to-transparent" />
+                  </div>
+
+                  <CardContent className="relative p-6">
+                    <motion.div
+                      className="mb-4 inline-flex p-3 rounded-xl bg-[#FFD700]/10 border border-[#FFD700]/20 text-[#FFD700]"
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                    >
+                      {feature.icon}
+                    </motion.div>
+                    <h3 className="mb-3 text-xl font-semibold tracking-tight font-heading text-white group-hover:text-[#FFD700] transition-colors">{feature.title}</h3>
+                    <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">{feature.description}</p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -351,18 +434,27 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
+                whileHover={{ y: -8, scale: 1.02, transition: { duration: 0.2 } }}
               >
-                <Card className="h-full border-[#FFD700]/20 bg-gray-800">
+                <Card className="group h-full border-[#FFD700]/20 bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-xl hover:border-[#FFD700]/40 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-[#FFD700]/20">
                   <CardContent className="p-6">
-                    <div className="mb-4 flex">
+                    <div className="mb-4 flex gap-1">
                       {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="h-5 w-5 fill-[#FFD700] text-[#FFD700]" />
+                        <motion.div
+                          key={i}
+                          initial={{ scale: 0, rotate: -180 }}
+                          whileInView={{ scale: 1, rotate: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: 0.1 + i * 0.05, type: "spring" }}
+                        >
+                          <Star className="h-5 w-5 fill-[#FFD700] text-[#FFD700] drop-shadow-lg" />
+                        </motion.div>
                       ))}
                     </div>
-                    <p className="mb-4 text-gray-300 italic leading-relaxed">"{testimonial.quote}"</p>
-                    <div className="border-t border-gray-700 pt-4">
+                    <p className="mb-4 text-gray-300 italic leading-relaxed group-hover:text-white transition-colors">"{testimonial.quote}"</p>
+                    <div className="border-t border-gray-700/50 pt-4">
                       <p className="font-semibold text-white">{testimonial.name}</p>
-                      <p className="text-sm text-gray-400">{testimonial.role}</p>
+                      <p className="text-sm text-[#FFD700]/80">{testimonial.role}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -396,21 +488,48 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="mx-auto max-w-4xl"
+            className="relative mx-auto max-w-4xl group"
           >
-            <Card className="border-2 border-[#FFD700] bg-gradient-to-br from-gray-900 to-black shadow-2xl shadow-[#FFD700]/20">
-              <CardContent className="p-8 sm:p-12">
+            {/* Outer glow */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#FFD700]/30 to-[#FFA500]/30 rounded-3xl blur-2xl opacity-50 group-hover:opacity-75 transition-opacity duration-500 animate-pulse" />
+
+            <Card className="relative border-2 border-[#FFD700]/60 bg-gradient-to-br from-gray-900/80 to-black/80 backdrop-blur-2xl shadow-2xl shadow-[#FFD700]/30 overflow-hidden">
+              {/* Animated gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-[#FFD700]/5 via-transparent to-[#FFA500]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+              {/* Top border shine */}
+              <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#FFD700] to-transparent" />
+
+              <CardContent className="relative p-8 sm:p-12">
                 <div className="mb-8 text-center">
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#FFD700]/10 px-4 py-2">
-                    <Sparkles className="h-5 w-5 text-[#FFD700]" />
-                    <span className="text-sm font-semibold text-[#FFD700]">LIMITED TIME OFFER</span>
-                  </div>
-                  <h3 className="mb-4 text-4xl font-bold text-white sm:text-5xl">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    whileInView={{ scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ type: "spring", stiffness: 200 }}
+                    className="mb-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/20 border border-[#FFD700]/40 backdrop-blur-xl px-4 py-2"
+                  >
+                    <Sparkles className="h-5 w-5 text-[#FFD700] animate-pulse" />
+                    <span className="text-sm font-semibold bg-gradient-to-r from-[#FFD700] to-[#FFA500] bg-clip-text text-transparent">LIMITED TIME OFFER</span>
+                  </motion.div>
+                  <motion.h3
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.1 }}
+                    className="mb-4 text-4xl font-bold tracking-tight font-heading text-white sm:text-5xl"
+                  >
                     7-Day Free Trial
-                  </h3>
-                  <p className="text-xl text-gray-300">
-                    Then just <span className="font-bold text-[#FFD700]">$9.99/month</span>
-                  </p>
+                  </motion.h3>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.2 }}
+                    className="text-xl text-gray-300"
+                  >
+                    Then just <span className="font-bold bg-gradient-to-r from-[#FFD700] to-[#FFA500] bg-clip-text text-transparent">$9.99/month</span>
+                  </motion.p>
                   <p className="mt-2 text-sm text-gray-400">Cancel anytime. No commitment.</p>
                 </div>
 
@@ -423,41 +542,54 @@ export default function LandingPage() {
                     "Access to premium community features",
                     "New features added monthly"
                   ].map((feature, i) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-6 w-6 flex-shrink-0 text-[#FFD700]" />
-                      <span className="text-gray-300 leading-relaxed">{feature}</span>
-                    </div>
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.3 + i * 0.05 }}
+                      className="group flex items-start gap-3 hover:translate-x-2 transition-transform duration-200"
+                    >
+                      <CheckCircle2 className="mt-0.5 h-6 w-6 flex-shrink-0 text-[#FFD700] group-hover:scale-110 transition-transform" />
+                      <span className="text-gray-300 leading-relaxed group-hover:text-white transition-colors">{feature}</span>
+                    </motion.div>
                   ))}
                 </div>
 
                 <div className="space-y-4">
-                  <Link
-                    href="https://apps.apple.com/in/app/v-life-fitness/id6757983194"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Button
-                      size="lg"
-                      className="w-full bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black hover:from-[#FFA500] hover:to-[#FFD700] font-bold text-lg py-7 shadow-lg shadow-[#FFD700]/50"
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#FFD700] to-[#FFA500] rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-all duration-300 animate-pulse" />
+                    <Link
+                      href="https://apps.apple.com/in/app/v-life-fitness/id6757983194"
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
-                      <Apple className="mr-2 h-7 w-7" />
-                      Start Free Trial on iPhone
-                    </Button>
-                  </Link>
+                      <Button
+                        size="lg"
+                        className="relative w-full bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black hover:from-[#FFA500] hover:to-[#FFD700] font-bold text-lg py-7 shadow-2xl shadow-[#FFD700]/50 group-hover:scale-105 transition-transform duration-300"
+                      >
+                        <Apple className="mr-2 h-7 w-7" />
+                        Start Free Trial on iPhone
+                      </Button>
+                    </Link>
+                  </div>
 
-                  <Link
-                    href="https://play.google.com/store/apps/details?id=app.vlife.fitness&hl=en_US"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Button
-                      size="lg"
-                      className="w-full bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black hover:from-[#FFA500] hover:to-[#FFD700] font-bold text-lg py-7 shadow-lg shadow-[#FFD700]/50"
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#FFD700] to-[#FFA500] rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-all duration-300 animate-pulse" />
+                    <Link
+                      href="https://play.google.com/store/apps/details?id=app.vlife.fitness&hl=en_US"
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
-                      <Smartphone className="mr-2 h-7 w-7" />
-                      Start Free Trial on Android
-                    </Button>
-                  </Link>
+                      <Button
+                        size="lg"
+                        className="relative w-full bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black hover:from-[#FFA500] hover:to-[#FFD700] font-bold text-lg py-7 shadow-2xl shadow-[#FFD700]/50 group-hover:scale-105 transition-transform duration-300"
+                      >
+                        <Smartphone className="mr-2 h-7 w-7" />
+                        Start Free Trial on Android
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
 
                 <p className="mt-6 text-center text-sm text-gray-400">
@@ -534,23 +666,29 @@ export default function LandingPage() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05 }}
               >
-                <Card className="border-gray-700 bg-gray-800">
+                <Card className="group border-gray-700/50 bg-gradient-to-br from-gray-800/60 to-gray-900/60 backdrop-blur-xl hover:border-[#FFD700]/30 transition-all duration-300 shadow-lg hover:shadow-xl">
                   <CardContent className="p-0">
                     <button
                       onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                      className="flex w-full items-center justify-between p-6 text-left transition-colors hover:bg-gray-750"
+                      className="flex w-full items-center justify-between p-6 text-left transition-colors hover:bg-white/5 rounded-t-xl"
                     >
-                      <span className="pr-4 text-lg font-semibold tracking-tight font-heading text-white">{faq.question}</span>
+                      <span className="pr-4 text-lg font-semibold tracking-tight font-heading text-white group-hover:text-[#FFD700] transition-colors">{faq.question}</span>
                       <ChevronDown
-                        className={`h-5 w-5 flex-shrink-0 text-[#FFD700] transition-transform ${
+                        className={`h-5 w-5 flex-shrink-0 text-[#FFD700] transition-transform duration-300 ${
                           openFaq === i ? 'rotate-180' : ''
                         }`}
                       />
                     </button>
                     {openFaq === i && (
-                      <div className="border-t border-gray-700 p-6 pt-4">
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="border-t border-gray-700/50 p-6 pt-4 overflow-hidden"
+                      >
                         <p className="text-gray-300 leading-relaxed">{faq.answer}</p>
-                      </div>
+                      </motion.div>
                     )}
                   </CardContent>
                 </Card>
@@ -578,38 +716,50 @@ export default function LandingPage() {
               Don't wait another day to become the person you've always wanted to be. Download V-Life and start your 7-day free trial today.
             </p>
 
-            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link
-                href="https://apps.apple.com/in/app/v-life-fitness/id6757983194"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto"
-              >
-                <Button
-                  size="lg"
-                  className="w-full bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black hover:from-[#FFA500] hover:to-[#FFD700] font-semibold text-base sm:text-lg px-8 py-6 shadow-lg shadow-[#FFD700]/50"
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="flex flex-col items-center justify-center gap-4 sm:flex-row"
+            >
+              <div className="relative group w-full sm:w-auto">
+                <div className="absolute inset-0 bg-gradient-to-r from-[#FFD700] to-[#FFA500] rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-all duration-300 animate-pulse" />
+                <Link
+                  href="https://apps.apple.com/in/app/v-life-fitness/id6757983194"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative block w-full sm:w-auto"
                 >
-                  <Apple className="mr-2 h-6 w-6" />
-                  Download for iPhone
-                </Button>
-              </Link>
+                  <Button
+                    size="lg"
+                    className="relative w-full bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black hover:from-[#FFA500] hover:to-[#FFD700] font-semibold text-base sm:text-lg px-8 py-7 shadow-2xl shadow-[#FFD700]/50 group-hover:scale-105 transition-transform duration-300"
+                  >
+                    <Apple className="mr-2 h-6 w-6" />
+                    Download for iPhone
+                  </Button>
+                </Link>
+              </div>
 
-              <Link
-                href="https://play.google.com/store/apps/details?id=app.vlife.fitness&hl=en_US"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto"
-              >
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="w-full border-2 border-[#FFD700] bg-transparent text-white hover:bg-[#FFD700]/10 font-semibold text-base sm:text-lg px-8 py-6"
+              <div className="relative group w-full sm:w-auto">
+                <div className="absolute inset-0 bg-[#FFD700]/30 rounded-xl blur-md opacity-0 group-hover:opacity-50 transition-all duration-300" />
+                <Link
+                  href="https://play.google.com/store/apps/details?id=app.vlife.fitness&hl=en_US"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative block w-full sm:w-auto"
                 >
-                  <Smartphone className="mr-2 h-6 w-6" />
-                  Download for Android
-                </Button>
-              </Link>
-            </div>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="relative w-full border-2 border-[#FFD700] bg-black/50 backdrop-blur-xl text-white hover:bg-[#FFD700]/20 font-semibold text-base sm:text-lg px-8 py-7 group-hover:scale-105 transition-all duration-300"
+                  >
+                    <Smartphone className="mr-2 h-6 w-6" />
+                    Download for Android
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
 
             <p className="mt-6 text-sm text-gray-400">
               💪 10,000+ members • ⭐ 4.8/5 rating • 🏆 Featured by Apple
