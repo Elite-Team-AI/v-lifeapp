@@ -3,8 +3,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckCircle2 } from "lucide-react"
 import { useSearchParams } from "next/navigation"
+import { Suspense } from "react"
 
-export default function AuthConfirmedPage() {
+function ConfirmedContent() {
   const searchParams = useSearchParams()
   const type = searchParams.get("type") || "signup"
 
@@ -80,5 +81,17 @@ export default function AuthConfirmedPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function AuthConfirmedPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen w-full items-center justify-center bg-black p-6">
+        <div className="text-white">Loading...</div>
+      </div>
+    }>
+      <ConfirmedContent />
+    </Suspense>
   )
 }
