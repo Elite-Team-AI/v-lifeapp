@@ -47,7 +47,7 @@ export default function DownloadPage() {
 
                 {/* Google Play Store Button */}
                 <Link
-                  href="https://play.google.com/store/apps/details?id=app.vlife.android"
+                  href="https://play.google.com/store/apps/details?id=app.vlife.fitness&hl=en_US"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block"
