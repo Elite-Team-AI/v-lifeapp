@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CheckCircle2 } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import { Suspense } from "react"
+import { motion } from "framer-motion"
 
 function ConfirmedContent() {
   const searchParams = useSearchParams()

@@ -242,7 +242,7 @@ export function NutritionClient() {
           <div className="flex items-center justify-between">
             <div>
               <motion.h1
-                className="text-2xl font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
+                className="text-2xl font-bold tracking-tight font-heading bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 }}
@@ -250,7 +250,7 @@ export function NutritionClient() {
                 Nutrition
               </motion.h1>
               <motion.p
-                className="text-white/70"
+                className="text-white/70 leading-relaxed"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
@@ -286,7 +286,7 @@ export function NutritionClient() {
               type="button"
               onClick={() => setActiveTab("log")}
               className={cn(
-                "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all",
+                "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium tracking-wide transition-all",
                 activeTab === "log"
                   ? "bg-accent text-black shadow-[0_0_15px_rgba(255,215,0,0.3)]"
                   : "text-white/60 hover:text-white hover:bg-white/5"
@@ -301,7 +301,7 @@ export function NutritionClient() {
               type="button"
               onClick={() => setActiveTab("plan")}
               className={cn(
-                "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all",
+                "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium tracking-wide transition-all",
                 activeTab === "plan"
                   ? "bg-accent text-black shadow-[0_0_15px_rgba(255,215,0,0.3)]"
                   : "text-white/60 hover:text-white hover:bg-white/5"
@@ -346,7 +346,7 @@ export function NutritionClient() {
               <div className="absolute inset-0 bg-gradient-to-br from-accent/10 to-transparent rounded-lg" />
               <div className="relative flex items-center justify-between mb-3">
                 <motion.h2
-                  className="text-lg font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent"
+                  className="text-lg font-bold tracking-tight font-heading bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent"
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.6 }}
@@ -365,7 +365,7 @@ export function NutritionClient() {
                 </motion.a>
               </div>
               <motion.p
-                className="relative mb-3 text-xs text-white/60"
+                className="relative mb-3 text-xs text-white/60 leading-relaxed"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.65 }}

@@ -350,19 +350,31 @@ function VBotPageContent() {
       animate={{ x: 0 }}
       exit={{ x: "-100%" }}
       transition={{ type: "spring", damping: 25, stiffness: 200 }}
-      className="fixed inset-0 z-50 bg-black"
+      className="fixed inset-0 z-50 bg-black overflow-hidden"
     >
-      <div className="flex h-full flex-col">
+      {/* Animated gradient background for sidebar */}
+      <div className="fixed inset-0 opacity-20">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/30 rounded-full blur-[128px] animate-blob" />
+        <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[128px] animate-blob animation-delay-2000" />
+        <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] animate-blob animation-delay-4000" />
+      </div>
+
+      {/* Grid pattern overlay */}
+      <div className="fixed inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
+
+      <div className="relative z-10 flex h-full flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
+        <div className="flex items-center justify-between border-b border-white/10 backdrop-blur-xl bg-black/60 px-4 py-4">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowHistory(false)}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10"
+              className="flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
             >
               <ChevronLeft className="h-5 w-5 text-white" />
             </button>
-            <h2 className="text-lg font-bold text-white">Chat History</h2>
+            <h2 className="text-lg font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]">
+              Chat History
+            </h2>
           </div>
           <ButtonGlow
             variant="accent-glow"
@@ -375,10 +387,10 @@ function VBotPageContent() {
         </div>
 
         {/* Conversations list */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="relative z-10 flex-1 overflow-y-auto p-4">
           {loadingConversations ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-accent" />
+              <Loader2 className="h-6 w-6 animate-spin text-accent drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]" />
             </div>
           ) : conversations.length === 0 ? (
             <div className="py-8 text-center text-white/60">
@@ -387,16 +399,21 @@ function VBotPageContent() {
             </div>
           ) : (
             <div className="space-y-2">
-              {conversations.map((conv) => (
+              {conversations.map((conv, index) => (
                 <motion.div
                   key={conv.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
                   className={cn(
-                    "group flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 transition-colors hover:bg-white/10",
-                    conversationId === conv.id && "border-accent bg-accent/10"
+                    "group flex cursor-pointer items-center justify-between rounded-xl backdrop-blur-xl border p-3 transition-all",
+                    conversationId === conv.id
+                      ? "border-accent/30 bg-accent/10 shadow-[0_0_15px_rgba(255,215,0,0.2)]"
+                      : "border-white/10 bg-white/5 hover:bg-white/10 hover:border-accent/30"
                   )}
                   onClick={() => loadConversation(conv.id)}
+                  whileHover={{ scale: 1.02, x: 4 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <div className="flex-1 min-w-0">
                     <p className="truncate text-sm font-medium text-white">
@@ -422,12 +439,16 @@ function VBotPageContent() {
   )
 
   return (
-    <div className="relative flex h-screen max-h-screen flex-col bg-gradient-to-b from-black via-zinc-900 to-black noise-overlay overflow-hidden pb-20">
-      {/* Background effects */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-[25%] -top-[25%] h-[50%] w-[50%] rounded-full bg-accent/5 blur-[120px]" />
-        <div className="absolute -bottom-[25%] -right-[25%] h-[50%] w-[50%] rounded-full bg-accent/5 blur-[120px]" />
+    <div className="relative flex h-screen max-h-screen flex-col bg-black overflow-hidden pb-20">
+      {/* Animated gradient background */}
+      <div className="fixed inset-0 opacity-20">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/30 rounded-full blur-[128px] animate-blob" />
+        <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[128px] animate-blob animation-delay-2000" />
+        <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] animate-blob animation-delay-4000" />
       </div>
+
+      {/* Grid pattern overlay */}
+      <div className="fixed inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
 
       {/* History sidebar */}
       <AnimatePresence>
@@ -435,19 +456,19 @@ function VBotPageContent() {
       </AnimatePresence>
 
       {/* Header */}
-      <div className="sticky top-0 z-10 border-b border-white/5 bg-black/60 backdrop-blur-xl">
+      <div className="sticky top-0 z-10 border-b border-white/10 backdrop-blur-xl bg-black/60">
         <div className="container mx-auto max-w-md px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowHistory(true)}
-                className="group flex h-10 w-10 items-center justify-center rounded-full bg-white/5 transition-all hover:bg-white/10 hover:scale-105"
+                className="group flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-xl bg-white/5 border border-white/10 transition-all hover:bg-white/10 hover:scale-105"
               >
                 <MessageSquare className="h-5 w-5 text-white/70 transition-colors group-hover:text-white" />
               </button>
               <div>
-                <h1 className="text-lg font-bold text-white flex items-center gap-2">
-                  VBot 
+                <h1 className="text-lg font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto] flex items-center gap-2">
+                  VBot
                   <button
                     onClick={() => setShowInfoModal(true)}
                     className="group flex h-5 w-5 items-center justify-center rounded-full text-white/40 hover:text-accent transition-colors"
@@ -479,7 +500,7 @@ function VBotPageContent() {
               variant="outline-glow"
               size="sm"
               onClick={startNewConversation}
-              className="h-8 border-white/10 bg-white/5 hover:bg-white/10"
+              className="h-8 backdrop-blur-xl border-white/10 bg-white/5 hover:bg-white/10"
             >
               <Plus className="mr-1 h-3 w-3" />
               New Chat
@@ -531,7 +552,12 @@ function VBotPageContent() {
             </p>
             
             {/* How to use VBot */}
-            <div className="w-full max-w-sm mb-6 p-4 rounded-xl bg-white/5 border border-white/10">
+            <motion.div
+              className="w-full max-w-sm mb-6 p-4 rounded-xl backdrop-blur-xl bg-white/5 border border-white/10"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
               <p className="text-xs font-medium text-accent mb-2 uppercase tracking-wider">How to use VBot</p>
               <ul className="space-y-1.5 text-sm text-white/70">
                 <li className="flex items-start gap-2">
@@ -547,7 +573,7 @@ function VBotPageContent() {
                   <span><strong className="text-white/90">On-demand Q&A</strong> - fitness, nutrition, recovery questions</span>
                 </li>
               </ul>
-            </div>
+            </motion.div>
 
             <div className="w-full max-w-sm space-y-3">
               <p className="text-xs font-medium text-white/40 uppercase tracking-wider mb-3">
@@ -563,7 +589,9 @@ function VBotPageContent() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.1 + 0.2 }}
-                  className="group relative flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-5 py-4 text-left text-sm text-white/80 transition-all hover:border-accent/30 hover:bg-white/10 hover:text-white active:scale-[0.98]"
+                  whileHover={{ scale: 1.02, x: 4 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="group relative flex w-full items-center justify-between rounded-xl backdrop-blur-xl border border-white/10 bg-white/5 px-5 py-4 text-left text-sm text-white/80 transition-all hover:border-accent/30 hover:bg-white/10 hover:text-white"
                   onClick={() => setInput(text)}
                 >
                   <span>{text}</span>
@@ -587,7 +615,9 @@ function VBotPageContent() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.5 + (i * 0.1) }}
-                      className="group cursor-pointer rounded-lg border border-white/5 bg-white/[0.02] p-3 text-left transition-colors hover:bg-white/5 hover:border-white/10"
+                      whileHover={{ scale: 1.02, x: 4 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="group cursor-pointer rounded-lg backdrop-blur-xl border border-white/10 bg-white/5 p-3 text-left transition-all hover:bg-white/10 hover:border-accent/30"
                       onClick={() => loadConversation(conv.id)}
                     >
                       <p className="truncate text-sm text-white/70 group-hover:text-white transition-colors">{conv.title}</p>
@@ -619,8 +649,8 @@ function VBotPageContent() {
                   className={cn(
                     "max-w-[80%] rounded-2xl px-4 py-3",
                     message.role === "user"
-                      ? "bg-accent text-black"
-                      : "border border-white/10 bg-black/50 text-white backdrop-blur-sm",
+                      ? "bg-accent text-black shadow-[0_0_15px_rgba(255,215,0,0.3)]"
+                      : "backdrop-blur-xl border border-white/10 bg-white/5 text-white",
                   )}
                 >
                   {message.role === "assistant" ? (
@@ -665,8 +695,8 @@ function VBotPageContent() {
                 <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-accent">
                   <Bot className="h-5 w-5 text-black" />
                 </div>
-                <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/50 px-4 py-3 backdrop-blur-sm">
-                  <Loader2 className="h-4 w-4 animate-spin text-accent" />
+                <div className="flex items-center gap-2 rounded-2xl backdrop-blur-xl border border-white/10 bg-white/5 px-4 py-3">
+                  <Loader2 className="h-4 w-4 animate-spin text-accent drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]" />
                   <span className="text-sm text-white/70">Thinking...</span>
                 </div>
               </motion.div>
@@ -677,7 +707,7 @@ function VBotPageContent() {
       </div>
 
       {/* Input - fixed above bottom nav with safe area */}
-      <div className="fixed left-0 right-0 z-40 bg-black/90 backdrop-blur-lg border-t border-white/5 flex-shrink-0" style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px) + 0.5rem)' }}>
+      <div className="fixed left-0 right-0 z-40 backdrop-blur-xl bg-black/90 border-t border-white/10 flex-shrink-0" style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px) + 0.5rem)' }}>
         <div className="container mx-auto max-w-2xl px-4 py-3">
           <form onSubmit={handleSubmit} className="relative flex items-center">
             <input
@@ -685,7 +715,7 @@ function VBotPageContent() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Message VBot..."
-              className="w-full rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 pr-24 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none transition-colors"
+              className="w-full rounded-xl backdrop-blur-xl border border-white/10 bg-white/5 px-4 py-3 pr-24 text-sm text-white placeholder:text-white/40 focus:border-accent/50 focus:bg-white/10 focus:outline-none transition-all duration-300"
               disabled={isLoading}
             />
             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
@@ -716,9 +746,9 @@ function VBotPageContent() {
 
       {/* VBot Info Modal */}
       <Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
-        <DialogContent className="bg-black/95 border-white/10 text-white max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent className="backdrop-blur-xl bg-black/95 border-accent/30 shadow-[0_0_30px_rgba(255,215,0,0.2)] text-white max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
+            <DialogTitle className="bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto] flex items-center gap-2">
               <Bot className="h-5 w-5 text-accent" />
               How to Use VBot
             </DialogTitle>
@@ -726,62 +756,65 @@ function VBotPageContent() {
               Your AI Fitness Coach
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 mt-4">
+          <motion.div
+            className="space-y-4 mt-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
             <div>
               <p className="text-sm text-white/90 mb-3">
                 VBot is your <strong className="text-accent">digital fitness coach</strong> that provides personalized, on-demand guidance tailored to your fitness journey. Unlike static features, VBot understands your profile, progress, and goals to give you real-time coaching.
               </p>
             </div>
             <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 mt-0.5">
-                  <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
-                    <span className="text-accent text-sm font-bold">1</span>
+              {[
+                {
+                  title: "Situational Coaching",
+                  description: "Get personalized workout adjustments when traveling, sick, or with limited equipment. VBot adapts to your current situation."
+                },
+                {
+                  title: "Personalized Advice",
+                  description: "Uses your profile data, workout history, and progress to provide tailored recommendations. Every answer is customized to you."
+                },
+                {
+                  title: "On-Demand Q&A",
+                  description: "Ask anything about fitness, nutrition, recovery, or form. Get instant answers with context from your journey."
+                }
+              ].map((item, index) => (
+                <motion.div
+                  key={index}
+                  className="flex items-start gap-3"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <div className="flex-shrink-0 mt-0.5">
+                    <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
+                      <span className="text-accent text-sm font-bold">{index + 1}</span>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-white mb-1">Situational Coaching</h4>
-                  <p className="text-sm text-white/70">
-                    Get personalized workout adjustments when traveling, sick, or with limited equipment. VBot adapts to your current situation.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 mt-0.5">
-                  <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
-                    <span className="text-accent text-sm font-bold">2</span>
+                  <div>
+                    <h4 className="text-sm font-semibold text-white mb-1">{item.title}</h4>
+                    <p className="text-sm text-white/70">{item.description}</p>
                   </div>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-white mb-1">Personalized Advice</h4>
-                  <p className="text-sm text-white/70">
-                    Uses your profile data, workout history, and progress to provide tailored recommendations. Every answer is customized to you.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 mt-0.5">
-                  <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
-                    <span className="text-accent text-sm font-bold">3</span>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-white mb-1">On-Demand Q&A</h4>
-                  <p className="text-sm text-white/70">
-                    Ask anything about fitness, nutrition, recovery, or form. Get instant answers with context from your journey.
-                  </p>
-                </div>
-              </div>
+                </motion.div>
+              ))}
             </div>
-            <div className="pt-3 border-t border-white/10 space-y-2">
+            <motion.div
+              className="pt-3 border-t border-white/10 space-y-2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
               <p className="text-xs text-white/50">
                 <strong className="text-white/70">Note:</strong> VBot is powered by OpenAI and uses your fitness profile, workout history, nutrition data, and habits to provide personalized responses. VBot is not medical advice. Consult your physician before starting any fitness program.
               </p>
               <a href="/health-sources" className="text-xs text-accent underline">
                 View health information sources & citations
               </a>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </DialogContent>
       </Dialog>
 

@@ -490,7 +490,7 @@ export default function SettingsClient() {
         >
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-accent border-t-transparent drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]" />
           <motion.p
-            className="text-white/70"
+            className="text-white/70 leading-relaxed"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -526,10 +526,10 @@ export default function SettingsClient() {
             <ArrowLeft className="h-4 w-4" />
           </ButtonGlow>
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]">
+            <h1 className="text-2xl font-bold tracking-tight font-heading bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]">
               Settings
             </h1>
-            <p className="text-white/70">Manage your preferences</p>
+            <p className="text-white/70 leading-relaxed">Manage your preferences</p>
           </div>
         </motion.div>
 

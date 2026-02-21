@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { motion } from "framer-motion"
 import { ArrowLeft, X } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
@@ -148,24 +149,50 @@ export default function AICoach() {
   return (
     <div className="relative w-full h-screen bg-black">
       {/* Exit Button - Always visible overlay */}
-      <div className="fixed top-4 left-4 z-50 flex gap-2">
-        <button
-          onClick={handleExit}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/80 backdrop-blur-sm border border-white/20 text-white font-medium shadow-lg hover:bg-black/90 hover:border-white/30 transition-all"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="text-sm">Return to vLife</span>
-        </button>
-      </div>
-      
-      {/* Close button - top right */}
-      <button
-        onClick={handleExit}
-        className="fixed top-4 right-4 z-50 flex items-center justify-center w-10 h-10 rounded-full bg-black/80 backdrop-blur-sm border border-white/20 text-white shadow-lg hover:bg-red-500/80 hover:border-red-500/50 transition-all"
-        aria-label="Close AI Coach"
+      <motion.div
+        className="fixed top-4 left-4 z-50 flex gap-2"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <X className="h-5 w-5" />
-      </button>
+        <motion.div
+          className="relative group"
+          whileHover={{ scale: 1.05, x: -3 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-accent/20 to-accent/10 rounded-full blur-lg opacity-0 group-hover:opacity-75 transition-opacity duration-300" />
+          <button
+            onClick={handleExit}
+            className="relative flex items-center gap-2 px-4 py-2.5 rounded-full backdrop-blur-xl bg-white/10 border border-white/20 text-white font-medium shadow-[0_0_20px_rgba(255,215,0,0.1)] hover:bg-white/15 hover:border-accent/50 hover:shadow-[0_0_30px_rgba(255,215,0,0.2)] transition-all"
+          >
+            <ArrowLeft className="h-4 w-4 drop-shadow-[0_0_5px_rgba(255,215,0,0.3)]" />
+            <span className="text-sm">Return to vLife</span>
+          </button>
+        </motion.div>
+      </motion.div>
+
+      {/* Close button - top right */}
+      <motion.div
+        className="fixed top-4 right-4 z-50"
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
+        <motion.div
+          className="relative group"
+          whileHover={{ scale: 1.1, rotate: 90 }}
+          whileTap={{ scale: 0.9 }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-red-500/10 rounded-full blur-lg opacity-0 group-hover:opacity-75 transition-opacity duration-300" />
+          <button
+            onClick={handleExit}
+            className="relative flex items-center justify-center w-10 h-10 rounded-full backdrop-blur-xl bg-white/10 border border-white/20 text-white shadow-[0_0_20px_rgba(255,215,0,0.1)] hover:bg-red-500/20 hover:border-red-500/50 hover:shadow-[0_0_30px_rgba(239,68,68,0.3)] transition-all"
+            aria-label="Close AI Coach"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </motion.div>
+      </motion.div>
       
       <iframe
         ref={iframeRef}

@@ -50,3 +50,4 @@ ios/App/Pods/
 
 # Capacitor
 android/local.propertiestmpclaude-*
+.env*.local

@@ -216,10 +216,10 @@ function DashboardClientV2() {
             <div className="absolute inset-0 h-16 w-16 rounded-full border-2 border-accent/20 animate-ping" />
           </div>
           <div className="text-center">
-            <p className="text-xl font-semibold bg-gradient-to-r from-accent to-yellow-300 bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]">
+            <p className="text-xl font-semibold tracking-tight bg-gradient-to-r from-accent to-yellow-300 bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]">
               Loading your arena...
             </p>
-            <p className="text-sm text-white/50 mt-2">Preparing your journey</p>
+            <p className="text-sm text-white/50 mt-2 leading-relaxed">Preparing your journey</p>
           </div>
         </div>
       </div>
@@ -323,7 +323,7 @@ function DashboardClientV2() {
               <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
               <ButtonGlow
                 variant="accent-glow"
-                className="w-full h-14 text-base font-semibold relative"
+                className="w-full h-14 text-base font-semibold tracking-wide relative"
                 onClick={() => router.push("/fitness")}
               >
                 <Dumbbell className="mr-2 h-5 w-5" />
@@ -342,7 +342,7 @@ function DashboardClientV2() {
             >
               <ButtonGlow
                 variant="outline-glow"
-                className="w-full h-12 text-sm backdrop-blur-xl bg-white/5 border-white/10 hover:border-accent/30 hover:bg-white/10"
+                className="w-full h-12 text-sm font-medium tracking-wide backdrop-blur-xl bg-white/5 border-white/10 hover:border-accent/30 hover:bg-white/10"
                 onClick={() => router.push("/nutrition")}
               >
                 🥗 Nutrition
@@ -355,7 +355,7 @@ function DashboardClientV2() {
             >
               <ButtonGlow
                 variant="outline-glow"
-                className="w-full h-12 text-sm backdrop-blur-xl bg-white/5 border-white/10 hover:border-accent/30 hover:bg-white/10"
+                className="w-full h-12 text-sm font-medium tracking-wide backdrop-blur-xl bg-white/5 border-white/10 hover:border-accent/30 hover:bg-white/10"
                 onClick={() => router.push("/vbot")}
               >
                 🤖 VBot
@@ -383,8 +383,8 @@ function DashboardClientV2() {
                   <Zap className="h-5 w-5 text-accent animate-pulse" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white">Upgrade to Pro</p>
-                  <p className="text-xs text-white/60">Unlock AI coaching, unlimited plans & more</p>
+                  <p className="text-sm font-semibold tracking-wide text-white">Upgrade to Pro</p>
+                  <p className="text-xs text-white/60 leading-relaxed">Unlock AI coaching, unlimited plans & more</p>
                 </div>
                 <ArrowRight className="h-4 w-4 shrink-0 text-accent group-hover:translate-x-1 transition-transform" />
               </div>

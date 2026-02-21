@@ -160,27 +160,69 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-nav-safe">
-      <div className="container max-w-md px-4 py-6">
-        <motion.div className="mb-6" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-          <h1 className="text-2xl font-bold text-white">Tools</h1>
-          <p className="text-white/70">Track your progress</p>
+    <div className="min-h-screen bg-black pb-nav-safe overflow-hidden">
+      {/* Animated gradient background */}
+      <div className="fixed inset-0 opacity-20">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/30 rounded-full blur-[128px] animate-blob" />
+        <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[128px] animate-blob animation-delay-2000" />
+        <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] animate-blob animation-delay-4000" />
+      </div>
+
+      {/* Grid pattern overlay */}
+      <div className="fixed inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
+
+      <div className="relative z-10 container max-w-md px-4 py-6">
+        <motion.div
+          className="mb-6"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <motion.h1
+            className="text-3xl font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+          >
+            Tools
+          </motion.h1>
+          <motion.p
+            className="text-white/70 mt-1"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            Track your progress
+          </motion.p>
         </motion.div>
 
         <motion.div
           className="mb-6"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          whileHover={{ scale: 1.01, y: -2 }}
         >
-          <Card className="border-white/10 bg-black/50 backdrop-blur-sm">
+          <Card className="border-white/10 backdrop-blur-xl bg-white/5 shadow-[0_0_30px_rgba(255,215,0,0.1)]">
             <CardContent className="p-4">
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-white">Weight Trend</h2>
-                <div className="flex items-center text-accent">
-                  <LineChart className="h-5 w-5 mr-2" />
+                <motion.h2
+                  className="text-lg font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  Weight Trend
+                </motion.h2>
+                <motion.div
+                  className="flex items-center text-accent"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.45 }}
+                >
+                  <LineChart className="h-5 w-5 mr-2 drop-shadow-[0_0_10px_rgba(255,215,0,0.3)]" />
                   <span className="text-sm font-medium">{currentWeight ? `${currentWeight} lbs` : "Add entry"}</span>
-                </div>
+                </motion.div>
               </div>
 
               {chartData.length > 0 ? (
@@ -230,26 +272,58 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
             className="mb-6"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.15 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            whileHover={{ scale: 1.01, y: -2 }}
           >
-            <Card className="border-white/10 bg-black/50 backdrop-blur-sm">
+            <Card className="border-white/10 backdrop-blur-xl bg-white/5 shadow-[0_0_30px_rgba(255,215,0,0.1)]">
               <CardContent className="p-4">
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-white">Workout Analytics</h2>
-                  <Dumbbell className="h-5 w-5 text-accent" />
+                  <motion.h2
+                    className="text-lg font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.6 }}
+                  >
+                    Workout Analytics
+                  </motion.h2>
+                  <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ delay: 0.65, type: "spring", stiffness: 200, damping: 15 }}
+                  >
+                    <Dumbbell className="h-5 w-5 text-accent drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]" />
+                  </motion.div>
                 </div>
 
                 {/* Stats Summary */}
                 <div className="grid grid-cols-3 gap-3 mb-4">
-                  <div className="bg-black/30 rounded-lg p-3 text-center">
-                    <p className="text-2xl font-bold text-accent">{workoutOverview.totalWorkoutsThisMonth}</p>
+                  <motion.div
+                    className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-3 text-center"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.7 }}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                  >
+                    <p className="text-2xl font-bold text-accent drop-shadow-[0_0_10px_rgba(255,215,0,0.3)]">{workoutOverview.totalWorkoutsThisMonth}</p>
                     <p className="text-xs text-white/60">This Month</p>
-                  </div>
-                  <div className="bg-black/30 rounded-lg p-3 text-center">
+                  </motion.div>
+                  <motion.div
+                    className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-3 text-center"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.75 }}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                  >
                     <p className="text-2xl font-bold text-white">{workoutOverview.avgWorkoutsPerWeek}</p>
                     <p className="text-xs text-white/60">Avg/Week</p>
-                  </div>
-                  <div className="bg-black/30 rounded-lg p-3 text-center">
+                  </motion.div>
+                  <motion.div
+                    className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-3 text-center"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.8 }}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                  >
                     <div className="flex items-center justify-center gap-1">
                       {workoutOverview.volumeChange > 0 ? (
                         <TrendingUp className="h-4 w-4 text-green-400" />
@@ -261,7 +335,7 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
                       </p>
                     </div>
                     <p className="text-xs text-white/60">Volume</p>
-                  </div>
+                  </motion.div>
                 </div>
 
                 {/* Weekly Volume Chart */}
@@ -320,33 +394,57 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
           className="mb-6"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
+          transition={{ duration: 0.5, delay: 0.85 }}
         >
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white">Habit Builder</h2>
-            <ButtonGlow variant="outline-glow" size="sm" onClick={() => setAddHabitModalOpen(true)}>
-              <PlusCircle className="mr-1 h-4 w-4" /> Add
-            </ButtonGlow>
+            <motion.h2
+              className="text-lg font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.9 }}
+            >
+              Habit Builder
+            </motion.h2>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.95 }}
+            >
+              <ButtonGlow variant="outline-glow" size="sm" onClick={() => setAddHabitModalOpen(true)} className="backdrop-blur-xl">
+                <PlusCircle className="mr-1 h-4 w-4" /> Add
+              </ButtonGlow>
+            </motion.div>
           </div>
 
           <div className="space-y-3">
             {habitList.length === 0 ? (
-              <Card className="border-white/10 bg-black/50 backdrop-blur-sm p-4 text-center text-white/70">
+              <Card className="border-white/10 backdrop-blur-xl bg-white/5 p-4 text-center text-white/70">
                 No habits yet. Add one to get started.
               </Card>
             ) : (
-              habitList.map((habit) => (
-                <Card key={habit.id} className="border-white/10 bg-black/50 backdrop-blur-sm">
-                  <CardContent className="flex items-center justify-between p-3">
-                    <div>
-                      <span className="text-white font-medium">{habit.name}</span>
-                      <p className="text-xs text-white/50 capitalize">{habit.category}</p>
-                    </div>
-                    <div className="rounded bg-accent/20 px-2 py-1 text-xs font-medium text-accent">
-                      {habit.current_streak ?? 0} day streak
-                    </div>
-                  </CardContent>
-                </Card>
+              habitList.map((habit, index) => (
+                <motion.div
+                  key={habit.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.0 + index * 0.05 }}
+                  whileHover={{ scale: 1.02, x: 4 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Card className="border-white/10 backdrop-blur-xl bg-white/5 hover:bg-white/10 hover:border-accent/30 hover:shadow-[0_0_15px_rgba(255,215,0,0.15)] transition-all">
+                    <CardContent className="flex items-center justify-between p-3">
+                      <div>
+                        <span className="text-white font-medium">{habit.name}</span>
+                        <p className="text-xs text-white/50 capitalize">{habit.category}</p>
+                      </div>
+                      <div className="rounded backdrop-blur-xl bg-accent/20 border border-accent/30 px-2 py-1 text-xs font-medium text-accent drop-shadow-[0_0_10px_rgba(255,215,0,0.2)]">
+                        {habit.current_streak ?? 0} day streak
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))
             )}
           </div>
@@ -356,25 +454,44 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
           className="mb-6"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.3 }}
+          transition={{ duration: 0.5, delay: 1.2 }}
           ref={supplementsSectionRef}
         >
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white">Supplements</h2>
-            <Pill className="h-5 w-5 text-accent" />
+            <motion.h2
+              className="text-lg font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.25 }}
+            >
+              Supplements
+            </motion.h2>
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 1.3, type: "spring", stiffness: 200, damping: 15 }}
+            >
+              <Pill className="h-5 w-5 text-accent drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]" />
+            </motion.div>
           </div>
 
           {supplements.length === 0 ? (
-            <Card className="border-white/10 bg-black/50 p-4 text-sm text-white/70">No supplement guidance yet.</Card>
+            <Card className="border-white/10 backdrop-blur-xl bg-white/5 p-4 text-sm text-white/70">No supplement guidance yet.</Card>
           ) : (
             <div className="space-y-3">
-              {supplements.map((supplement) => (
-                <Card
+              {supplements.map((supplement, index) => (
+                <motion.div
                   key={supplement.id}
-                  className={`border-white/10 bg-black/50 backdrop-blur-sm ${
-                    supplement.featured ? "border-accent/30 bg-accent/5" : ""
-                  }`}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.35 + index * 0.05 }}
+                  whileHover={{ scale: 1.02, y: -2 }}
                 >
+                  <Card
+                    className={`border-white/10 backdrop-blur-xl bg-white/5 hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,215,0,0.15)] transition-all ${
+                      supplement.featured ? "border-accent/30 bg-accent/5 shadow-[0_0_20px_rgba(255,215,0,0.2)]" : ""
+                    }`}
+                  >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -447,66 +564,106 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
           className="mb-6"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.35 }}
+          transition={{ duration: 0.5, delay: 1.5 }}
         >
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white">Recent Weigh-Ins</h2>
+            <motion.h2
+              className="text-lg font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.55 }}
+            >
+              Recent Weigh-Ins
+            </motion.h2>
           </div>
-          <Card className="border-white/10 bg-black/50 backdrop-blur-sm">
-            <CardContent className="p-0">
-              {weightHistory.length === 0 ? (
-                <div className="p-4 text-sm text-white/60">No entries logged yet.</div>
-              ) : (
-                <ul className="divide-y divide-white/5 text-sm text-white/80">
-                  {weightHistory.map((entry) => (
-                    <li key={entry.id} className="flex items-center justify-between px-4 py-3">
-                      <span>{new Date(entry.logged_at).toLocaleDateString()}</span>
-                      <div className="text-right">
-                        <p className="font-semibold">{Number(entry.weight).toFixed(1)} lbs</p>
-                        {entry.change !== null && (
-                          <p className={`text-xs ${entry.change > 0 ? "text-red-400" : "text-green-400"}`}>
-                            {entry.change > 0 ? "+" : ""}
-                            {entry.change?.toFixed(1)} lbs
-                          </p>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
+          <motion.div
+            whileHover={{ scale: 1.01, y: -2 }}
+          >
+            <Card className="border-white/10 backdrop-blur-xl bg-white/5 shadow-[0_0_30px_rgba(255,215,0,0.1)]">
+              <CardContent className="p-0">
+                {weightHistory.length === 0 ? (
+                  <div className="p-4 text-sm text-white/60">No entries logged yet.</div>
+                ) : (
+                  <ul className="divide-y divide-white/10 text-sm text-white/80">
+                    {weightHistory.map((entry, index) => (
+                      <motion.li
+                        key={entry.id}
+                        className="flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 1.6 + index * 0.05 }}
+                      >
+                        <span>{new Date(entry.logged_at).toLocaleDateString()}</span>
+                        <div className="text-right">
+                          <p className="font-semibold">{Number(entry.weight).toFixed(1)} lbs</p>
+                          {entry.change !== null && (
+                            <p className={`text-xs ${entry.change > 0 ? "text-red-400" : "text-green-400"}`}>
+                              {entry.change > 0 ? "+" : ""}
+                              {entry.change?.toFixed(1)} lbs
+                            </p>
+                          )}
+                        </div>
+                      </motion.li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
         </motion.div>
 
         <motion.div
           className="mb-6"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.4 }}
+          transition={{ duration: 0.5, delay: 1.8 }}
         >
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white">Progress Photos</h2>
+            <motion.h2
+              className="text-lg font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.85 }}
+            >
+              Progress Photos
+            </motion.h2>
             <div className="flex gap-2">
               {photoPreviews.length >= 2 && (
-                <ButtonGlow
-                  variant="outline-glow"
-                  size="sm"
-                  onClick={() => setCompareMode(!compareMode)}
-                  className={compareMode ? "border-accent bg-accent/20" : ""}
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1.9 }}
                 >
-                  <ArrowLeftRight className="mr-1 h-4 w-4" />
-                  {compareMode ? "Cancel" : "Compare"}
-                </ButtonGlow>
+                  <ButtonGlow
+                    variant="outline-glow"
+                    size="sm"
+                    onClick={() => setCompareMode(!compareMode)}
+                    className={`backdrop-blur-xl ${compareMode ? "border-accent bg-accent/20 shadow-[0_0_15px_rgba(255,215,0,0.2)]" : ""}`}
+                  >
+                    <ArrowLeftRight className="mr-1 h-4 w-4" />
+                    {compareMode ? "Cancel" : "Compare"}
+                  </ButtonGlow>
+                </motion.div>
               )}
-              <ButtonGlow variant="accent-glow" size="sm" onClick={() => setProgressPhotoModalOpen(true)}>
-                <Camera className="mr-1 h-4 w-4" />
-                Add
-              </ButtonGlow>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 1.95 }}
+              >
+                <ButtonGlow variant="accent-glow" size="sm" onClick={() => setProgressPhotoModalOpen(true)}>
+                  <Camera className="mr-1 h-4 w-4" />
+                  Add
+                </ButtonGlow>
+              </motion.div>
             </div>
           </div>
 
           {compareMode && (
-            <Card className="border-accent/30 bg-accent/5 backdrop-blur-sm p-3 mb-3">
+            <Card className="border-accent/30 backdrop-blur-xl bg-gradient-to-br from-accent/15 to-accent/5 shadow-[0_0_20px_rgba(255,215,0,0.15)] p-3 mb-3">
               <p className="text-sm text-white/80 mb-2">
                 Select two photos to compare side-by-side
               </p>
@@ -522,19 +679,25 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
           )}
 
           {photoPreviews.length === 0 ? (
-            <Card className="border-white/10 bg-black/50 backdrop-blur-sm p-4 text-white/70 text-sm">
+            <Card className="border-white/10 backdrop-blur-xl bg-white/5 p-4 text-white/70 text-sm">
               Capture your first photo to start the visual timeline.
             </Card>
           ) : (
             <div className="grid grid-cols-3 gap-2">
-              {photoPreviews.slice(0, 6).map((photo) => (
-                <div
+              {photoPreviews.slice(0, 6).map((photo, index) => (
+                <motion.div
                   key={photo.id}
-                  className={`rounded-lg overflow-hidden bg-black/40 ${compareMode ? 'cursor-pointer hover:ring-2 hover:ring-accent' : ''} ${
+                  className={`rounded-lg overflow-hidden backdrop-blur-xl bg-white/5 border border-white/10 ${compareMode ? 'cursor-pointer hover:ring-2 hover:ring-accent' : ''} ${
                     selectedPhotosForCompare[0]?.id === photo.id || selectedPhotosForCompare[1]?.id === photo.id
-                      ? 'ring-2 ring-accent'
+                      ? 'ring-2 ring-accent shadow-[0_0_15px_rgba(255,215,0,0.3)]'
                       : ''
                   }`}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 2.0 + index * 0.05 }}
+                  whileHover={{ scale: compareMode ? 1.05 : 1.02 }}
+                  whileTap={{ scale: 0.95 }}
+                >
                   onClick={() => {
                     if (compareMode) {
                       if (!selectedPhotosForCompare[0]) {
@@ -587,14 +750,20 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
             className="mb-6"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.5 }}
+            whileHover={{ scale: 1.01, y: -2 }}
           >
-            <Card className="border-accent/30 bg-black/50 backdrop-blur-sm overflow-hidden">
+            <Card className="border-accent/30 backdrop-blur-xl bg-gradient-to-br from-accent/10 to-accent/5 shadow-[0_0_30px_rgba(255,215,0,0.2)] overflow-hidden">
               <div className="flex items-center justify-between border-b border-accent/20 p-3">
-                <h3 className="font-bold text-white">Transformation Comparison</h3>
-                <button onClick={clearCompareSelection} className="rounded-full p-1 hover:bg-white/10">
+                <h3 className="font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent">Transformation Comparison</h3>
+                <motion.button
+                  onClick={clearCompareSelection}
+                  className="rounded-full p-1 hover:bg-white/10 transition-colors"
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                >
                   <X className="h-5 w-5 text-white/60" />
-                </button>
+                </motion.button>
               </div>
               <CardContent className="p-0">
                 <div className="grid grid-cols-2">
@@ -658,14 +827,28 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
           className="flex gap-3"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.45 }}
+          transition={{ duration: 0.5, delay: 2.3 }}
         >
-          <ButtonGlow variant="outline-glow" className="flex-1" onClick={() => setUpdateWeightModalOpen(true)}>
-            <Weight className="mr-2 h-4 w-4" /> Update Weight
-          </ButtonGlow>
-          <ButtonGlow variant="accent-glow" className="flex-1" onClick={() => setProgressPhotoModalOpen(true)}>
-            <Camera className="mr-2 h-4 w-4" /> Progress Photo
-          </ButtonGlow>
+          <motion.div
+            className="flex-1 relative group"
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-white/10 rounded-xl blur-lg opacity-0 group-hover:opacity-75 transition-opacity duration-300" />
+            <ButtonGlow variant="outline-glow" className="w-full backdrop-blur-xl relative" onClick={() => setUpdateWeightModalOpen(true)}>
+              <Weight className="mr-2 h-4 w-4" /> Update Weight
+            </ButtonGlow>
+          </motion.div>
+          <motion.div
+            className="flex-1 relative group"
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
+            <ButtonGlow variant="accent-glow" className="w-full relative" onClick={() => setProgressPhotoModalOpen(true)}>
+              <Camera className="mr-2 h-4 w-4" /> Progress Photo
+            </ButtonGlow>
+          </motion.div>
         </motion.div>
 
         <AddHabitModal isOpen={addHabitModalOpen} onClose={() => setAddHabitModalOpen(false)} onAdd={handleAddHabit} />

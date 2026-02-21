@@ -61,7 +61,7 @@ export function FitnessClient() {
         >
           <div>
             <motion.p
-              className="text-white/60 text-sm"
+              className="text-white/60 text-sm leading-relaxed"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.1 }}
@@ -69,7 +69,7 @@ export function FitnessClient() {
               Welcome back
             </motion.p>
             <motion.h1
-              className="text-2xl font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent"
+              className="text-2xl font-bold tracking-tight font-heading bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
@@ -105,7 +105,7 @@ export function FitnessClient() {
               <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
               <ButtonGlow
                 variant="accent-glow"
-                className="w-full h-14 text-base font-semibold relative bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500"
+                className="w-full h-14 text-base font-semibold tracking-wide relative bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500"
                 onClick={() => router.push("/ai-coach")}
               >
                 🏋️ Access AI Fitness Coach
@@ -113,7 +113,7 @@ export function FitnessClient() {
             </div>
           </motion.div>
           <motion.p
-            className="text-xs text-white/50 text-center px-4"
+            className="text-xs text-white/50 text-center px-4 leading-relaxed"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
@@ -180,11 +180,11 @@ export function FitnessClient() {
           >
             <Card className="border-white/10 backdrop-blur-xl bg-white/5 text-center">
               <CardContent className="p-3">
-                <p className="text-xs text-white/60">This Week</p>
+                <p className="text-xs text-white/60 tracking-wide uppercase">This Week</p>
                 {isLoading ? (
                   <Skeleton className="h-7 w-8 mx-auto mt-1" />
                 ) : (
-                  <p className="text-xl font-bold bg-gradient-to-r from-accent to-yellow-300 bg-clip-text text-transparent">
+                  <p className="text-xl font-bold tracking-tight bg-gradient-to-r from-accent to-yellow-300 bg-clip-text text-transparent">
                     {weeklyHighlights.workouts}
                   </p>
                 )}
@@ -199,11 +199,11 @@ export function FitnessClient() {
           >
             <Card className="border-white/10 backdrop-blur-xl bg-white/5 text-center">
               <CardContent className="p-3">
-                <p className="text-xs text-white/60">Volume</p>
+                <p className="text-xs text-white/60 tracking-wide uppercase">Volume</p>
                 {isLoading ? (
                   <Skeleton className="h-7 w-12 mx-auto mt-1" />
                 ) : (
-                  <p className="text-xl font-bold bg-gradient-to-r from-accent to-yellow-300 bg-clip-text text-transparent">
+                  <p className="text-xl font-bold tracking-tight bg-gradient-to-r from-accent to-yellow-300 bg-clip-text text-transparent">
                     {weeklyHighlights.volume}
                   </p>
                 )}
@@ -218,11 +218,11 @@ export function FitnessClient() {
           >
             <Card className="border-white/10 backdrop-blur-xl bg-white/5 text-center">
               <CardContent className="p-3">
-                <p className="text-xs text-white/60">Cardio</p>
+                <p className="text-xs text-white/60 tracking-wide uppercase">Cardio</p>
                 {isLoading ? (
                   <Skeleton className="h-7 w-10 mx-auto mt-1" />
                 ) : (
-                  <p className="text-xl font-bold bg-gradient-to-r from-accent to-yellow-300 bg-clip-text text-transparent">
+                  <p className="text-xl font-bold tracking-tight bg-gradient-to-r from-accent to-yellow-300 bg-clip-text text-transparent">
                     {weeklyHighlights.cardioMinutes}m
                   </p>
                 )}
@@ -241,7 +241,7 @@ export function FitnessClient() {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Calendar className="h-4 w-4 text-accent" />
-                <p className="text-sm text-white/70 font-medium">Monthly Overview</p>
+                <p className="text-sm text-white/70 font-medium tracking-wide">Monthly Overview</p>
               </div>
               {isLoading || !overview ? (
                 <div className="space-y-2">
@@ -249,9 +249,9 @@ export function FitnessClient() {
                   <Skeleton className="h-4 w-40" />
                 </div>
               ) : (
-                <div className="space-y-1 text-sm text-white/80">
-                  <p>Total workouts this month: <span className="font-semibold text-accent">{overview.totalWorkoutsThisMonth}</span></p>
-                  <p>Avg weekly sessions: <span className="font-semibold text-accent">{overview.avgWorkoutsPerWeek}</span></p>
+                <div className="space-y-1 text-sm text-white/80 leading-relaxed">
+                  <p>Total workouts this month: <span className="font-semibold tracking-wide text-accent">{overview.totalWorkoutsThisMonth}</span></p>
+                  <p>Avg weekly sessions: <span className="font-semibold tracking-wide text-accent">{overview.avgWorkoutsPerWeek}</span></p>
                 </div>
               )}
             </CardContent>

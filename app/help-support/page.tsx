@@ -142,21 +142,47 @@ export default function HelpSupport() {
     .filter((category) => category.questions.length > 0)
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-nav-safe">
-      <div className="container max-w-md px-4 py-6">
+    <div className="min-h-screen bg-black pb-nav-safe overflow-hidden">
+      {/* Animated gradient background */}
+      <div className="fixed inset-0 opacity-20">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/30 rounded-full blur-[128px] animate-blob" />
+        <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[128px] animate-blob animation-delay-2000" />
+        <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] animate-blob animation-delay-4000" />
+      </div>
+
+      {/* Grid pattern overlay */}
+      <div className="fixed inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
+
+      <div className="relative z-10 container max-w-md px-4 py-6">
         {/* Header */}
         <motion.div
           className="mb-6 flex items-center"
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.5 }}
         >
-          <ButtonGlow variant="outline-glow" size="icon" onClick={() => router.back()} className="mr-3 h-8 w-8">
-            <ArrowLeft className="h-4 w-4" />
-          </ButtonGlow>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <ButtonGlow variant="outline-glow" size="icon" onClick={() => router.back()} className="mr-3 h-10 w-10 backdrop-blur-xl">
+              <ArrowLeft className="h-4 w-4" />
+            </ButtonGlow>
+          </motion.div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Help & Support</h1>
-            <p className="text-white/70">We're here to help</p>
+            <motion.h1
+              className="text-2xl font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              Help & Support
+            </motion.h1>
+            <motion.p
+              className="text-white/70"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              We're here to help
+            </motion.p>
           </div>
         </motion.div>
 
@@ -165,7 +191,8 @@ export default function HelpSupport() {
           className="mb-6"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          whileHover={{ scale: 1.01, y: -2 }}
         >
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
@@ -173,31 +200,63 @@ export default function HelpSupport() {
               placeholder="Search for help..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="border-white/10 bg-white/5 pl-10 text-white placeholder:text-white/40"
+              className="backdrop-blur-xl bg-white/5 border-white/10 pl-10 text-white placeholder:text-white/40 focus:border-accent/50 focus:bg-white/10 transition-all"
             />
           </div>
         </motion.div>
 
         {/* Quick Actions */}
         <motion.div
-          className="mb-6 grid grid-cols-2 gap-3"
+          className="mb-6"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          whileHover={{ scale: 1.02, y: -2 }}
         >
-          <Card className="border-white/10 bg-gradient-to-br from-accent/10 to-black/50 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <Mail className="mx-auto mb-2 h-8 w-8 text-accent" />
-              <h3 className="mb-1 text-sm font-bold text-white">Email Us</h3>
-              <p className="mb-3 text-xs text-white/60">Get help via email</p>
-              <ButtonGlow
-                variant="outline-glow"
-                size="sm"
-                className="w-full"
-                onClick={() => (window.location.href = "mailto:support@vlife.app")}
+          <Card className="border-accent/30 backdrop-blur-xl bg-gradient-to-br from-accent/10 to-transparent shadow-[0_0_20px_rgba(255,215,0,0.15)]">
+            <CardContent className="p-5 text-center">
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
               >
-                Contact Support
-              </ButtonGlow>
+                <Mail className="mx-auto mb-3 h-10 w-10 text-accent drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]" />
+              </motion.div>
+              <motion.h3
+                className="mb-1 text-base font-bold text-white"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+              >
+                Email Us
+              </motion.h3>
+              <motion.p
+                className="mb-4 text-sm text-white/60"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+              >
+                Get help via email
+              </motion.p>
+              <motion.div
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 }}
+              >
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
+                  <ButtonGlow
+                    variant="accent-glow"
+                    size="sm"
+                    className="w-full relative"
+                    onClick={() => (window.location.href = "mailto:support@vlife.app")}
+                  >
+                    Contact Support
+                  </ButtonGlow>
+                </div>
+              </motion.div>
             </CardContent>
           </Card>
         </motion.div>
@@ -207,24 +266,54 @@ export default function HelpSupport() {
           className="mb-6"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.3 }}
+          transition={{ duration: 0.5, delay: 0.9 }}
+          whileHover={{ scale: 1.02, y: -2 }}
         >
-          <Card className="border-white/10 bg-black/50 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="mb-3 flex items-center gap-2">
-                <Video className="h-5 w-5 text-accent" />
+          <Card className="border-white/10 backdrop-blur-xl bg-white/5 shadow-[0_0_20px_rgba(255,215,0,0.1)]">
+            <CardContent className="p-5">
+              <motion.div
+                className="mb-4 flex items-center gap-2"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1.0 }}
+              >
+                <Video className="h-5 w-5 text-accent drop-shadow-[0_0_10px_rgba(255,215,0,0.3)]" />
                 <h3 className="font-bold text-white">Video Tutorials</h3>
-              </div>
+              </motion.div>
               <div className="space-y-2">
-                <ButtonGlow variant="outline-glow" className="w-full justify-start text-sm">
-                  Getting Started with V-Life
-                </ButtonGlow>
-                <ButtonGlow variant="outline-glow" className="w-full justify-start text-sm">
-                  How to Log Workouts
-                </ButtonGlow>
-                <ButtonGlow variant="outline-glow" className="w-full justify-start text-sm">
-                  Meal Planning & Tracking
-                </ButtonGlow>
+                <motion.div
+                  whileHover={{ scale: 1.02, x: 4 }}
+                  whileTap={{ scale: 0.98 }}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.1 }}
+                >
+                  <ButtonGlow variant="outline-glow" className="w-full justify-start text-sm backdrop-blur-xl">
+                    Getting Started with V-Life
+                  </ButtonGlow>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.02, x: 4 }}
+                  whileTap={{ scale: 0.98 }}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.15 }}
+                >
+                  <ButtonGlow variant="outline-glow" className="w-full justify-start text-sm backdrop-blur-xl">
+                    How to Log Workouts
+                  </ButtonGlow>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.02, x: 4 }}
+                  whileTap={{ scale: 0.98 }}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.2 }}
+                >
+                  <ButtonGlow variant="outline-glow" className="w-full justify-start text-sm backdrop-blur-xl">
+                    Meal Planning & Tracking
+                  </ButtonGlow>
+                </motion.div>
               </div>
             </CardContent>
           </Card>
@@ -234,54 +323,79 @@ export default function HelpSupport() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.4 }}
+          transition={{ duration: 0.5, delay: 1.25 }}
         >
-          <h2 className="mb-4 text-xl font-bold text-white">Frequently Asked Questions</h2>
+          <motion.h2
+            className="mb-4 text-xl font-bold bg-gradient-to-r from-white via-white/90 to-white/80 bg-clip-text text-transparent"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 1.3 }}
+          >
+            Frequently Asked Questions
+          </motion.h2>
 
           {filteredFaqs.length === 0 ? (
-            <Card className="border-white/10 bg-black/50 backdrop-blur-sm">
-              <CardContent className="p-8 text-center">
-                <Search className="mx-auto mb-3 h-12 w-12 text-white/30" />
-                <p className="text-white/60">No results found for "{searchQuery}"</p>
-                <p className="mt-2 text-sm text-white/40">Try different keywords or browse all categories</p>
-              </CardContent>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 1.35 }}
+            >
+              <Card className="border-white/10 backdrop-blur-xl bg-white/5 shadow-[0_0_20px_rgba(255,215,0,0.05)]">
+                <CardContent className="p-8 text-center">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 1.4, type: "spring", stiffness: 200 }}
+                  >
+                    <Search className="mx-auto mb-3 h-12 w-12 text-white/30" />
+                  </motion.div>
+                  <p className="text-white/60">No results found for "{searchQuery}"</p>
+                  <p className="mt-2 text-sm text-white/40">Try different keywords or browse all categories</p>
+                </CardContent>
+              </Card>
+            </motion.div>
           ) : (
             <Accordion type="multiple" className="space-y-4">
               {filteredFaqs.map((category, idx) => {
                 const Icon = category.icon
                 return (
-                  <AccordionItem
+                  <motion.div
                     key={idx}
-                    value={`category-${idx}`}
-                    className="rounded-lg border-white/10 bg-black/30 backdrop-blur-sm"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.35 + idx * 0.05 }}
                   >
-                    <AccordionTrigger className="px-4 hover:no-underline">
-                      <div className="flex items-center gap-2">
-                        <Icon className="h-5 w-5 text-accent" />
-                        <span className="font-bold text-white">{category.category}</span>
-                        <Badge variant="secondary" className="ml-2 bg-white/10 text-white">
-                          {category.questions.length}
-                        </Badge>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      <Accordion type="multiple" className="space-y-2">
-                        {category.questions.map((faq, qIdx) => (
-                          <AccordionItem
-                            key={qIdx}
-                            value={`faq-${idx}-${qIdx}`}
-                            className="rounded border-white/10 bg-white/5"
-                          >
-                            <AccordionTrigger className="px-3 py-2 text-left text-sm hover:no-underline">
-                              <span className="text-white">{faq.q}</span>
-                            </AccordionTrigger>
-                            <AccordionContent className="px-3 pb-3 text-sm text-white/70">{faq.a}</AccordionContent>
-                          </AccordionItem>
-                        ))}
-                      </Accordion>
-                    </AccordionContent>
-                  </AccordionItem>
+                    <AccordionItem
+                      value={`category-${idx}`}
+                      className="rounded-lg border-white/10 backdrop-blur-xl bg-white/5 shadow-[0_0_15px_rgba(255,215,0,0.08)] transition-all hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.15)]"
+                    >
+                      <AccordionTrigger className="px-4 hover:no-underline">
+                        <div className="flex items-center gap-2">
+                          <Icon className="h-5 w-5 text-accent drop-shadow-[0_0_10px_rgba(255,215,0,0.3)]" />
+                          <span className="font-bold text-white">{category.category}</span>
+                          <Badge variant="secondary" className="ml-2 backdrop-blur-xl bg-accent/20 border border-accent/30 text-accent">
+                            {category.questions.length}
+                          </Badge>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-4 pb-4">
+                        <Accordion type="multiple" className="space-y-2">
+                          {category.questions.map((faq, qIdx) => (
+                            <AccordionItem
+                              key={qIdx}
+                              value={`faq-${idx}-${qIdx}`}
+                              className="rounded border-white/10 backdrop-blur-xl bg-white/5 transition-all hover:border-accent/20 hover:bg-white/10"
+                            >
+                              <AccordionTrigger className="px-3 py-2 text-left text-sm hover:no-underline">
+                                <span className="text-white">{faq.q}</span>
+                              </AccordionTrigger>
+                              <AccordionContent className="px-3 pb-3 text-sm text-white/70">{faq.a}</AccordionContent>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </motion.div>
                 )
               })}
             </Accordion>
@@ -293,23 +407,53 @@ export default function HelpSupport() {
           className="mt-6"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.5 }}
+          transition={{ duration: 0.5, delay: 1.5 + filteredFaqs.length * 0.05 }}
+          whileHover={{ scale: 1.02, y: -2 }}
         >
-          <Card className="border-accent/30 bg-gradient-to-br from-accent/10 to-black/50 backdrop-blur-sm">
+          <Card className="border-accent/30 backdrop-blur-xl bg-gradient-to-br from-accent/10 to-transparent shadow-[0_0_25px_rgba(255,215,0,0.2)]">
             <CardContent className="p-6 text-center">
-              <HelpCircle className="mx-auto mb-3 h-12 w-12 text-accent" />
-              <h3 className="mb-2 text-lg font-bold text-white">Still Need Help?</h3>
-              <p className="mb-4 text-sm text-white/70">
-                Our support team is here for you. We typically respond within 24 hours.
-              </p>
-              <ButtonGlow
-                variant="glow"
-                className="w-full"
-                onClick={() => (window.location.href = "mailto:support@vlife.app?subject=Support Request")}
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 1.55 + filteredFaqs.length * 0.05, type: "spring", stiffness: 200, damping: 15 }}
               >
-                <Mail className="mr-2 h-4 w-4" />
-                Email Support
-              </ButtonGlow>
+                <HelpCircle className="mx-auto mb-3 h-12 w-12 text-accent drop-shadow-[0_0_20px_rgba(255,215,0,0.6)]" />
+              </motion.div>
+              <motion.h3
+                className="mb-2 text-lg font-bold text-white"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.6 + filteredFaqs.length * 0.05 }}
+              >
+                Still Need Help?
+              </motion.h3>
+              <motion.p
+                className="mb-5 text-sm text-white/70"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.65 + filteredFaqs.length * 0.05 }}
+              >
+                Our support team is here for you. We typically respond within 24 hours.
+              </motion.p>
+              <motion.div
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.7 + filteredFaqs.length * 0.05 }}
+              >
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
+                  <ButtonGlow
+                    variant="accent-glow"
+                    className="w-full relative"
+                    onClick={() => (window.location.href = "mailto:support@vlife.app?subject=Support Request")}
+                  >
+                    <Mail className="mr-2 h-4 w-4" />
+                    Email Support
+                  </ButtonGlow>
+                </div>
+              </motion.div>
             </CardContent>
           </Card>
         </motion.div>
