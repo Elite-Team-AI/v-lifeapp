@@ -22,11 +22,14 @@ export default function WelcomePage() {
   const [isChecking, setIsChecking] = useState(true)
 
   useEffect(() => {
+    // TEMPORARILY DISABLED - Debugging Capacitor detection
     // Check if this is a web browser - redirect to download page
+    /* DISABLED
     if (!isCapacitorApp()) {
       router.push("/download")
       return
     }
+    */
 
     const checkAuth = async () => {
       const supabase = createClient()

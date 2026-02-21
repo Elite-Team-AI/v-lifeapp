@@ -93,11 +93,25 @@ export async function updateSession(request: NextRequest) {
     const isWellKnown = pathname.startsWith("/.well-known/")
 
     // MOBILE-ONLY ENFORCEMENT: Redirect web browsers to download page
+    // TEMPORARILY DISABLED - Debugging Capacitor user-agent detection
     // Skip this check for:
     // - API routes (mobile apps need these)
     // - .well-known files (needed for domain verification)
     // - Already on download page
     // - Public landing page (/)
+
+    // Log user-agent for debugging
+    const userAgent = request.headers.get("user-agent") || ""
+    const detectedAsCapacitor = isCapacitorApp(request)
+    console.log("[Middleware] User-Agent Detection:", {
+      pathname,
+      userAgent: userAgent.substring(0, 200), // First 200 chars
+      detectedAsCapacitor,
+      isApiRoute,
+      isWellKnown
+    })
+
+    /* TEMPORARILY DISABLED - Restore after fixing detection
     if (!isApiRoute && !isWellKnown && pathname !== "/download" && pathname !== "/") {
       if (!isCapacitorApp(request)) {
         console.log("[Middleware] Web browser detected, redirecting to download page:", pathname)
@@ -106,6 +120,7 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url)
       }
     }
+    */
 
     if (!isPublicRoute && !isApiRoute) {
       // OPTIMIZATION 1: Skip prefetch requests entirely if session cookie exists
