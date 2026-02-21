@@ -2,11 +2,20 @@ import { Resend } from 'resend'
 import fs from 'fs'
 import path from 'path'
 
-if (!process.env.RESEND_API_KEY) {
-  throw new Error('RESEND_API_KEY is not set in environment variables')
-}
+// Lazy initialization - only create Resend client when needed
+let resend: Resend | null = null
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+function getResendClient(): Resend {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is not set in environment variables')
+  }
+
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY)
+  }
+
+  return resend
+}
 
 /**
  * Read an email template from the email-templates directory
@@ -51,8 +60,11 @@ export async function sendEmail({
     const templateHtml = getEmailTemplate(template)
     const html = replaceTemplateVariables(templateHtml, variables)
 
+    // Get Resend client (lazy initialization)
+    const client = getResendClient()
+
     // Send email
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await client.emails.send({
       from,
       to,
       subject,
