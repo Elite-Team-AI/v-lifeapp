@@ -31,7 +31,7 @@ export default function DownloadPage() {
               <div className="space-y-3">
                 {/* iOS App Store Button */}
                 <Link
-                  href="https://apps.apple.com/app/v-life/YOUR_APP_ID"
+                  href="https://apps.apple.com/in/app/v-life-fitness/id6757983194"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block"
