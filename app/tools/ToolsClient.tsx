@@ -698,7 +698,6 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
                   transition={{ delay: 2.0 + index * 0.05 }}
                   whileHover={{ scale: compareMode ? 1.05 : 1.02 }}
                   whileTap={{ scale: 0.95 }}
-                >
                   onClick={() => {
                     if (compareMode) {
                       if (!selectedPhotosForCompare[0]) {
