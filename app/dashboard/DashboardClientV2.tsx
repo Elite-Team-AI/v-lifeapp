@@ -202,22 +202,44 @@ function DashboardClientV2() {
   // Loading state
   if (appDataLoading && !appData) {
     return (
-      <div className="min-h-screen pb-nav-safe relative flex items-center justify-center">
-        <AmbientBackground />
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-accent border-t-transparent" />
-          <p className="text-foreground/70">Loading your arena...</p>
+      <div className="min-h-screen pb-nav-safe relative flex items-center justify-center bg-black overflow-hidden">
+        {/* Animated gradient background */}
+        <div className="fixed inset-0 opacity-20">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/40 rounded-full blur-[128px] animate-blob" />
+          <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-500/30 rounded-full blur-[128px] animate-blob animation-delay-2000" />
+          <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-blue-500/30 rounded-full blur-[128px] animate-blob animation-delay-4000" />
+        </div>
+
+        <div className="relative z-10 flex flex-col items-center gap-6">
+          <div className="relative">
+            <div className="h-16 w-16 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
+            <div className="absolute inset-0 h-16 w-16 rounded-full border-2 border-accent/20 animate-ping" />
+          </div>
+          <div className="text-center">
+            <p className="text-xl font-semibold bg-gradient-to-r from-accent to-yellow-300 bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]">
+              Loading your arena...
+            </p>
+            <p className="text-sm text-white/50 mt-2">Preparing your journey</p>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen pb-nav-safe relative">
-      <AmbientBackground />
-      
-      <motion.div 
-        className="container max-w-md px-4 py-6"
+    <div className="min-h-screen pb-nav-safe relative bg-black overflow-hidden">
+      {/* Animated gradient background */}
+      <div className="fixed inset-0 opacity-20">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent/30 rounded-full blur-[128px] animate-blob" />
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[128px] animate-blob animation-delay-2000" />
+        <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] animate-blob animation-delay-4000" />
+      </div>
+
+      {/* Grid pattern overlay */}
+      <div className="fixed inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
+
+      <motion.div
+        className="relative z-10 container max-w-md px-4 py-6"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -227,15 +249,24 @@ function DashboardClientV2() {
           <div className="flex items-start justify-between">
             <div className="flex-1">
               {gamificationStats && (
-                <LevelBadge stats={gamificationStats} showXPProgress />
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                >
+                  <LevelBadge stats={gamificationStats} showXPProgress />
+                </motion.div>
               )}
             </div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <ButtonGlow 
-                variant="outline-glow" 
-                size="icon" 
-                onClick={() => router.push("/settings")} 
-                className="h-10 w-10"
+            <motion.div
+              whileHover={{ scale: 1.1, rotate: 90 }}
+              whileTap={{ scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            >
+              <ButtonGlow
+                variant="outline-glow"
+                size="icon"
+                onClick={() => router.push("/settings")}
+                className="h-10 w-10 backdrop-blur-xl bg-white/5 border-white/10 hover:border-accent/30"
               >
                 <Settings className="h-5 w-5" />
               </ButtonGlow>
@@ -244,54 +275,87 @@ function DashboardClientV2() {
         </motion.div>
 
         {/* Motivational Banner */}
-        <motion.div className="mb-6" variants={itemVariants}>
-          <MotivationalBanner
-            userName={userName}
-            streakDays={streakDays}
-            missionsCompleted={completedMissionsCount}
-            totalMissions={vitalFlowMissions.length}
-            currentLevel={gamificationStats?.currentLevel ?? 1}
-            todayXP={appData?.todayXP ?? 0}
-          />
+        <motion.div
+          className="mb-6"
+          variants={itemVariants}
+          whileHover={{ y: -4 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-accent/10 to-purple-500/10 rounded-2xl blur-xl" />
+            <div className="relative">
+              <MotivationalBanner
+                userName={userName}
+                streakDays={streakDays}
+                missionsCompleted={completedMissionsCount}
+                totalMissions={vitalFlowMissions.length}
+                currentLevel={gamificationStats?.currentLevel ?? 1}
+                todayXP={appData?.todayXP ?? 0}
+              />
+            </div>
+          </div>
         </motion.div>
 
         {/* Streak Fire Ring - Centered */}
-        <motion.div className="mb-6" variants={itemVariants}>
+        <motion.div
+          className="mb-6"
+          variants={itemVariants}
+          whileHover={{ scale: 1.05 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        >
           <div className="flex justify-center">
-            <StreakFireRing streakDays={streakDays} size="sm" />
+            <div className="relative">
+              <div className="absolute inset-0 bg-accent/20 rounded-full blur-2xl animate-glow-pulse" />
+              <StreakFireRing streakDays={streakDays} size="sm" />
+            </div>
           </div>
         </motion.div>
 
         {/* Quick Actions */}
         <motion.div className="space-y-3 mb-6" variants={itemVariants}>
           {/* Primary CTA - Start Workout */}
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <ButtonGlow 
-              variant="accent-glow" 
-              className="w-full h-14 text-base font-semibold" 
-              onClick={() => router.push("/fitness")}
-            >
-              <Dumbbell className="mr-2 h-5 w-5" />
-              Start Today's Workout 
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </ButtonGlow>
+          <motion.div
+            whileHover={{ scale: 1.03, y: -2 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
+              <ButtonGlow
+                variant="accent-glow"
+                className="w-full h-14 text-base font-semibold relative"
+                onClick={() => router.push("/fitness")}
+              >
+                <Dumbbell className="mr-2 h-5 w-5" />
+                Start Today's Workout
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </ButtonGlow>
+            </div>
           </motion.div>
 
           {/* Secondary Actions Row */}
           <div className="grid grid-cols-2 gap-3">
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <ButtonGlow 
-                variant="outline-glow" 
-                className="w-full h-12 text-sm"
+            <motion.div
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            >
+              <ButtonGlow
+                variant="outline-glow"
+                className="w-full h-12 text-sm backdrop-blur-xl bg-white/5 border-white/10 hover:border-accent/30 hover:bg-white/10"
                 onClick={() => router.push("/nutrition")}
               >
                 🥗 Nutrition
               </ButtonGlow>
             </motion.div>
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <ButtonGlow 
-                variant="outline-glow" 
-                className="w-full h-12 text-sm"
+            <motion.div
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            >
+              <ButtonGlow
+                variant="outline-glow"
+                className="w-full h-12 text-sm backdrop-blur-xl bg-white/5 border-white/10 hover:border-accent/30 hover:bg-white/10"
                 onClick={() => router.push("/vbot")}
               >
                 🤖 VBot
@@ -304,49 +368,110 @@ function DashboardClientV2() {
         {appData?.subscription?.plan === "free" && (
           <motion.div className="mb-6" variants={itemVariants}>
             <motion.button
-              className="w-full flex items-center gap-3 rounded-xl border border-accent/20 bg-gradient-to-r from-accent/10 to-accent/5 px-4 py-3 text-left"
-              whileHover={{ scale: 1.02 }}
+              className="w-full relative group overflow-hidden rounded-xl"
+              whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
               onClick={() => setIsUpgradeModalOpen(true)}
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/20">
-                <Zap className="h-5 w-5 text-accent" />
+              {/* Animated gradient background */}
+              <div className="absolute inset-0 bg-gradient-to-r from-accent/20 to-purple-500/20 blur-xl opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
+
+              {/* Glassmorphic card */}
+              <div className="relative flex items-center gap-3 rounded-xl border border-accent/20 bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-xl px-4 py-3 text-left">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/20 border border-accent/30">
+                  <Zap className="h-5 w-5 text-accent animate-pulse" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white">Upgrade to Pro</p>
+                  <p className="text-xs text-white/60">Unlock AI coaching, unlimited plans & more</p>
+                </div>
+                <ArrowRight className="h-4 w-4 shrink-0 text-accent group-hover:translate-x-1 transition-transform" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white">Upgrade to Pro</p>
-                <p className="text-xs text-white/50">Unlock AI coaching, unlimited plans & more</p>
-              </div>
-              <ArrowRight className="h-4 w-4 shrink-0 text-accent/60" />
             </motion.button>
           </motion.div>
         )}
 
         {/* Power Stats - Horizontal Row */}
-        <motion.div className="mb-6" variants={itemVariants}>
-          <PowerStats
-            workoutStreak={powerStatsData.workoutStreak}
-            nutritionScore={powerStatsData.nutritionScore}
-            habitCompletion={powerStatsData.habitCompletion}
-          />
+        <motion.div
+          className="mb-6"
+          variants={itemVariants}
+          whileHover={{ y: -2 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl blur-xl" />
+            <div className="relative backdrop-blur-sm">
+              <PowerStats
+                workoutStreak={powerStatsData.workoutStreak}
+                nutritionScore={powerStatsData.nutritionScore}
+                habitCompletion={powerStatsData.habitCompletion}
+              />
+            </div>
+          </div>
         </motion.div>
 
         {/* Daily Missions */}
-        <motion.div className="mb-6" variants={itemVariants}>
-          <DailyMissions 
-            missions={vitalFlowMissions as any}
-            onMissionComplete={handleMissionComplete}
-          />
+        <motion.div
+          className="mb-6"
+          variants={itemVariants}
+          whileHover={{ y: -2 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-accent/10 to-blue-500/10 rounded-2xl blur-xl" />
+            <div className="relative">
+              <DailyMissions
+                missions={vitalFlowMissions as any}
+                onMissionComplete={handleMissionComplete}
+              />
+            </div>
+          </div>
         </motion.div>
 
         {/* Achievements Carousel */}
         {(appData?.allAchievements?.length ?? 0) > 0 && (
-          <motion.div className="mb-6" variants={itemVariants}>
-            <AchievementCarousel
-              allAchievements={appData?.allAchievements ?? []}
-              unlockedAchievements={appData?.unlockedAchievements ?? []}
-            />
+          <motion.div
+            className="mb-6"
+            variants={itemVariants}
+            whileHover={{ y: -2 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          >
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-2xl blur-xl" />
+              <div className="relative">
+                <AchievementCarousel
+                  allAchievements={appData?.allAchievements ?? []}
+                  unlockedAchievements={appData?.unlockedAchievements ?? []}
+                />
+              </div>
+            </div>
           </motion.div>
         )}
+
+        {/* Floating particles for ambiance */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          {[...Array(10)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-1 bg-accent/30 rounded-full"
+              animate={{
+                y: [0, -100, 0],
+                x: [0, Math.random() * 50 - 25, 0],
+                opacity: [0, 0.5, 0],
+              }}
+              transition={{
+                duration: 3 + Math.random() * 2,
+                repeat: Infinity,
+                delay: Math.random() * 2,
+              }}
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+            />
+          ))}
+        </div>
       </motion.div>
 
       <BottomNav />

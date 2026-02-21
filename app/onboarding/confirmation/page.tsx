@@ -121,9 +121,34 @@ export default function Confirmation() {
 
   if (isChecking) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-black to-charcoal p-4">
-        <Loader2 className="h-8 w-8 animate-spin text-accent" />
-        <p className="mt-4 text-white/70">Verifying authentication...</p>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-black overflow-hidden p-4">
+        {/* Animated gradient background */}
+        <div className="fixed inset-0 opacity-20">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/30 rounded-full blur-[128px] animate-blob" />
+          <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[128px] animate-blob animation-delay-2000" />
+          <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] animate-blob animation-delay-4000" />
+        </div>
+
+        {/* Grid pattern overlay */}
+        <div className="fixed inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
+
+        <div className="relative z-10">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Loader2 className="h-12 w-12 animate-spin text-accent drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]" />
+          </motion.div>
+          <motion.p
+            className="mt-4 text-white/70"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            Verifying authentication...
+          </motion.p>
+        </div>
       </div>
     )
   }
@@ -136,75 +161,94 @@ export default function Confirmation() {
   const hasRequiredData = data.name && data.name.trim() !== ""
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-black to-charcoal p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-black overflow-hidden p-4">
+      {/* Animated gradient background */}
+      <div className="fixed inset-0 opacity-20">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/30 rounded-full blur-[128px] animate-blob" />
+        <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[128px] animate-blob animation-delay-2000" />
+        <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] animate-blob animation-delay-4000" />
+      </div>
+
+      {/* Grid pattern overlay */}
+      <div className="fixed inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
+
       <motion.div
-        className="mx-auto w-full max-w-md text-center"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
+        className="relative z-10 mx-auto w-full max-w-md text-center"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
+          initial={{ scale: 0, opacity: 0, rotate: -180 }}
+          animate={{ scale: 1, opacity: 1, rotate: 0 }}
           transition={{
             type: "spring",
-            stiffness: 260,
-            damping: 20,
+            stiffness: 200,
+            damping: 15,
             delay: 0.2,
           }}
-          className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-black/50"
+          className="mx-auto mb-8 flex h-32 w-32 items-center justify-center rounded-full backdrop-blur-xl bg-accent/10 border-2 border-accent/30 shadow-[0_0_40px_rgba(255,215,0,0.3)]"
         >
-          <CheckCircle className="h-16 w-16 text-accent animate-glow" />
+          <CheckCircle className="h-20 w-20 text-accent animate-glow-pulse" />
         </motion.div>
 
         <motion.h1
-          className="mb-3 text-3xl font-bold text-white"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 text-4xl font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
           {hasRequiredData ? "Profile Complete!" : "Profile Data Missing"}
         </motion.h1>
 
         <motion.p
-          className="mb-8 text-white/70"
+          className="mb-10 text-lg text-white/70 leading-relaxed"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          {hasRequiredData 
+          {hasRequiredData
             ? "We're generating your personalized fitness and nutrition plan."
             : "It looks like your profile information wasn't saved. Please go back and complete your profile."}
         </motion.p>
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="space-y-3">
-          {hasRequiredData ? (
-            <ButtonGlow
-              variant="accent-glow"
-              size="lg"
-              onClick={saveProfile}
-              disabled={isSaving}
-              className="text-base font-semibold"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving Profile...
-                </>
-              ) : (
-                "Generate My Plan"
-              )}
-            </ButtonGlow>
-          ) : (
-            <ButtonGlow
-              variant="accent-glow"
-              size="lg"
-              onClick={() => router.push("/onboarding/profile")}
-              className="text-base font-semibold"
-            >
-              Go Back to Profile
-            </ButtonGlow>
-          )}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
+            {hasRequiredData ? (
+              <ButtonGlow
+                variant="accent-glow"
+                size="lg"
+                onClick={saveProfile}
+                disabled={isSaving}
+                className="w-full h-12 text-base font-semibold relative"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Saving Profile...
+                  </>
+                ) : (
+                  "Generate My Plan"
+                )}
+              </ButtonGlow>
+            ) : (
+              <ButtonGlow
+                variant="accent-glow"
+                size="lg"
+                onClick={() => router.push("/onboarding/profile")}
+                className="w-full h-12 text-base font-semibold relative"
+              >
+                Go Back to Profile
+              </ButtonGlow>
+            )}
+          </div>
         </motion.div>
       </motion.div>
     </div>

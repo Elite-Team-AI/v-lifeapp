@@ -2,6 +2,7 @@
 
 import { useState, useEffect, lazy, Suspense, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { motion } from "framer-motion"
 import {
   Heart,
   MessageCircle,
@@ -460,92 +461,191 @@ export default function Community() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-nav-safe">
-      <div className="container max-w-md px-4 py-6">
-        <div className="mb-6 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
+    <div className="min-h-screen bg-black overflow-hidden pb-nav-safe">
+      {/* Animated gradient background */}
+      <div className="fixed inset-0 opacity-20">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/30 rounded-full blur-[128px] animate-blob" />
+        <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[128px] animate-blob animation-delay-2000" />
+        <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] animate-blob animation-delay-4000" />
+      </div>
+
+      {/* Grid pattern overlay */}
+      <div className="fixed inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
+
+      <div className="relative z-10 container max-w-md px-4 py-6">
+        <motion.div
+          className="mb-6 space-y-4"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-white">Community</h1>
-              <p className="text-white/70">Connect with other members</p>
+              <motion.h1
+                className="text-2xl font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                Community
+              </motion.h1>
+              <motion.p
+                className="text-white/70"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                Connect with other members
+              </motion.p>
             </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
             <ButtonGlow variant="outline-glow" size="icon" onClick={() => router.push("/settings")} className="h-8 w-8">
               <Settings className="h-4 w-4" />
             </ButtonGlow>
+            </motion.div>
           </div>
 
           {/* Search Bar */}
-          <div className="relative">
+          <motion.div
+            className="relative"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50" />
             <Input
               placeholder="Search posts, users..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 backdrop-blur-xl bg-white/5 border-white/10 focus:border-accent/50 focus:bg-white/10 transition-all duration-300"
             />
-          </div>
+          </motion.div>
 
           {/* Quick Actions */}
-          <div className="flex gap-2">
-            <ButtonGlow variant="outline-glow" size="sm" onClick={() => setShowLeaderboard(true)} className="flex-1">
-              <Medal className="mr-2 h-4 w-4" />
-              Leaderboard
-            </ButtonGlow>
-            <ButtonGlow variant="outline-glow" size="sm" onClick={() => setShowChallenges(true)} className="flex-1">
-              <Target className="mr-2 h-4 w-4" />
-              Challenges
-            </ButtonGlow>
-          </div>
+          <motion.div
+            className="flex gap-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+          >
+            <motion.div
+              className="flex-1"
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <ButtonGlow variant="outline-glow" size="sm" onClick={() => setShowLeaderboard(true)} className="w-full backdrop-blur-xl">
+                <Medal className="mr-2 h-4 w-4" />
+                Leaderboard
+              </ButtonGlow>
+            </motion.div>
+            <motion.div
+              className="flex-1"
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <ButtonGlow variant="outline-glow" size="sm" onClick={() => setShowChallenges(true)} className="w-full backdrop-blur-xl">
+                <Target className="mr-2 h-4 w-4" />
+                Challenges
+              </ButtonGlow>
+            </motion.div>
+          </motion.div>
 
           {/* Category Tabs */}
-          <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-black/50">
-              {categories.map((cat) => (
-                <TabsTrigger key={cat.id} value={cat.id} className="text-xs">
-                  <cat.icon className="mr-1 h-3 w-3" />
-                  {cat.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+          >
+            <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
+              <TabsList className="grid w-full grid-cols-4 backdrop-blur-xl bg-white/5 border border-white/10">
+                {categories.map((cat) => (
+                  <TabsTrigger key={cat.id} value={cat.id} className="text-xs">
+                    <cat.icon className="mr-1 h-3 w-3" />
+                    {cat.name}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </motion.div>
 
           {/* Sort Options */}
-          <div className="flex gap-2">
-            <ButtonGlow
-              variant={sortBy === "recent" ? "accent-glow" : "outline-glow"}
-              size="sm"
-              onClick={() => setSortBy("recent")}
+          <motion.div
+            className="flex gap-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.7 }}
+          >
+            <motion.div
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <Clock className="mr-1 h-3 w-3" />
-              Recent
-            </ButtonGlow>
-            <ButtonGlow
-              variant={sortBy === "popular" ? "accent-glow" : "outline-glow"}
-              size="sm"
-              onClick={() => setSortBy("popular")}
+              <ButtonGlow
+                variant={sortBy === "recent" ? "accent-glow" : "outline-glow"}
+                size="sm"
+                onClick={() => setSortBy("recent")}
+                className="backdrop-blur-xl"
+              >
+                <Clock className="mr-1 h-3 w-3" />
+                Recent
+              </ButtonGlow>
+            </motion.div>
+            <motion.div
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <Heart className="mr-1 h-3 w-3" />
-              Popular
-            </ButtonGlow>
-            <ButtonGlow
-              variant={sortBy === "trending" ? "accent-glow" : "outline-glow"}
-              size="sm"
-              onClick={() => setSortBy("trending")}
+              <ButtonGlow
+                variant={sortBy === "popular" ? "accent-glow" : "outline-glow"}
+                size="sm"
+                onClick={() => setSortBy("popular")}
+                className="backdrop-blur-xl"
+              >
+                <Heart className="mr-1 h-3 w-3" />
+                Popular
+              </ButtonGlow>
+            </motion.div>
+            <motion.div
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <TrendingUp className="mr-1 h-3 w-3" />
-              Trending
-            </ButtonGlow>
-          </div>
-        </div>
+              <ButtonGlow
+                variant={sortBy === "trending" ? "accent-glow" : "outline-glow"}
+                size="sm"
+                onClick={() => setSortBy("trending")}
+                className="backdrop-blur-xl"
+              >
+                <TrendingUp className="mr-1 h-3 w-3" />
+                Trending
+              </ButtonGlow>
+            </motion.div>
+          </motion.div>
+        </motion.div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
+          <motion.div
+            className="flex items-center justify-center py-12"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent border-t-transparent" />
-          </div>
+          </motion.div>
         ) : (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-200 delay-75">
-            {filteredAndSortedPosts.map((post) => (
-              <div key={post.id}>
-                <Card className="overflow-hidden border-white/10 bg-black/50 backdrop-blur-sm">
+          <div className="space-y-6">
+            {filteredAndSortedPosts.map((post, index) => (
+              <motion.div
+                key={post.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.8 + index * 0.05 }}
+                whileHover={{ scale: 1.02, y: -2 }}
+              >
+                <Card className="overflow-hidden border-white/10 backdrop-blur-xl bg-white/5 shadow-[0_0_15px_rgba(255,215,0,0.05)]">
                   <CardContent className="p-0">
                     <div className="flex items-center justify-between p-4">
                       <div className="flex items-center flex-1">
@@ -673,57 +773,106 @@ export default function Community() {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
+              </motion.div>
             ))}
           </div>
         )}
 
         {!isLoading && filteredAndSortedPosts.length === 0 && (
-          <div className="text-center py-12 animate-in fade-in duration-300 delay-150">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent/20 mx-auto">
+          <motion.div
+            className="text-center py-12"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+          >
+            <motion.div
+              className="mb-4 flex h-16 w-16 items-center justify-center rounded-full backdrop-blur-xl bg-accent/20 border border-accent/30 mx-auto"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.9, type: "spring", stiffness: 200 }}
+            >
               <Search className="h-8 w-8 text-accent" />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">No posts yet</h3>
-            <p className="text-white/70 mb-4">Be the first to share your fitness journey!</p>
-            <ButtonGlow variant="accent-glow" onClick={() => setCreatePostModalOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Post
-            </ButtonGlow>
-          </div>
+            </motion.div>
+            <motion.h3
+              className="text-lg font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent mb-2"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.0 }}
+            >
+              No posts yet
+            </motion.h3>
+            <motion.p
+              className="text-white/70 mb-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.1 }}
+            >
+              Be the first to share your fitness journey!
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.2 }}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <ButtonGlow variant="accent-glow" onClick={() => setCreatePostModalOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Post
+              </ButtonGlow>
+            </motion.div>
+          </motion.div>
         )}
       </div>
 
       <Dialog open={!!selectedPost} onOpenChange={() => setSelectedPost(null)}>
-        <DialogContent className="max-w-md bg-black/95 border-accent/30">
+        <DialogContent className="max-w-md backdrop-blur-xl bg-black/95 border-accent/30 shadow-[0_0_30px_rgba(255,215,0,0.2)]">
           <DialogHeader>
-            <DialogTitle className="text-white">Comments</DialogTitle>
+            <DialogTitle className="bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">Comments</DialogTitle>
             <DialogDescription className="text-white/70">{selectedPost?.comments || 0} comments</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-            {selectedPost?.commentsList?.map((comment) => (
-              <div key={comment.id} className="flex gap-3">
+            {selectedPost?.commentsList?.map((comment, index) => (
+              <motion.div
+                key={comment.id}
+                className="flex gap-3"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
                 <Avatar className="h-8 w-8 border border-white/10">
                   <AvatarImage src={comment.user.avatar || "/placeholder.svg"} alt={comment.user.name} />
                   <AvatarFallback>{comment.user.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <div className="bg-white/5 rounded-lg p-3">
+                  <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-3">
                     <h4 className="text-sm font-medium text-white">{comment.user.name}</h4>
                     <p className="text-sm text-white/80 mt-1">{comment.content}</p>
                   </div>
                   <div className="flex items-center gap-4 mt-1 px-3">
                     <span className="text-xs text-white/50">{comment.time}</span>
-                    <button className="text-xs text-white/50 hover:text-accent">Like</button>
-                    <button className="text-xs text-white/50 hover:text-accent">Reply</button>
+                    <button className="text-xs text-white/50 hover:text-accent transition-colors">Like</button>
+                    <button className="text-xs text-white/50 hover:text-accent transition-colors">Reply</button>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
             {(!selectedPost?.commentsList || selectedPost.commentsList.length === 0) && (
-              <div className="text-center py-8">
-                <MessageCircle className="h-12 w-12 text-white/20 mx-auto mb-2" />
+              <motion.div
+                className="text-center py-8"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+                >
+                  <MessageCircle className="h-12 w-12 text-white/20 mx-auto mb-2" />
+                </motion.div>
                 <p className="text-white/50 text-sm">No comments yet. Be the first!</p>
-              </div>
+              </motion.div>
             )}
           </div>
           <div className="flex gap-2 pt-4 border-t border-white/10">
@@ -732,7 +881,7 @@ export default function Community() {
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddComment()}
-              className="flex-1 text-white bg-black/50 border-white/20 placeholder:text-white/40"
+              className="flex-1 text-white backdrop-blur-xl bg-white/5 border-white/10 placeholder:text-white/40 focus:border-accent/50 focus:bg-white/10 transition-all"
             />
             <ButtonGlow variant="accent-glow" size="icon" onClick={handleAddComment} disabled={!commentText.trim()}>
               <Send className="h-4 w-4" />
@@ -742,49 +891,57 @@ export default function Community() {
       </Dialog>
 
       <Dialog open={showLeaderboard} onOpenChange={setShowLeaderboard}>
-        <DialogContent className="max-w-md bg-black/95 border-accent/30">
+        <DialogContent className="max-w-md backdrop-blur-xl bg-black/95 border-accent/30 shadow-[0_0_30px_rgba(255,215,0,0.2)]">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center">
+            <DialogTitle className="bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto] flex items-center">
               <Medal className="mr-2 h-5 w-5 text-yellow-400" />
               Community Leaderboard
             </DialogTitle>
             <DialogDescription className="text-white/70">Top contributors this month</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            {leaderboard.map((user) => (
-              <Card key={user.rank} className="border-white/10 bg-black/50">
-                <CardContent className="p-4 flex items-center gap-4">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-accent/20 text-accent font-bold">
-                    {user.rank}
-                  </div>
-                  <Avatar className="h-10 w-10 border border-white/10">
-                    <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <h4 className="font-medium text-white">{user.name}</h4>
-                    <p className="text-xs text-white/60">
-                      {user.posts} posts • {user.likes} likes
-                    </p>
-                  </div>
-                  {user.rank <= 3 && (
-                    <Trophy
-                      className={`h-5 w-5 ${
-                        user.rank === 1 ? "text-yellow-400" : user.rank === 2 ? "text-gray-400" : "text-orange-400"
-                      }`}
-                    />
-                  )}
-                </CardContent>
-              </Card>
+            {leaderboard.map((user, index) => (
+              <motion.div
+                key={user.rank}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                whileHover={{ scale: 1.02, x: 4 }}
+              >
+                <Card className="border-white/10 backdrop-blur-xl bg-white/5 shadow-[0_0_15px_rgba(255,215,0,0.05)]">
+                  <CardContent className="p-4 flex items-center gap-4">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-accent/20 text-accent font-bold border border-accent/30">
+                      {user.rank}
+                    </div>
+                    <Avatar className="h-10 w-10 border border-white/10">
+                      <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-white">{user.name}</h4>
+                      <p className="text-xs text-white/60">
+                        {user.posts} posts • {user.likes} likes
+                      </p>
+                    </div>
+                    {user.rank <= 3 && (
+                      <Trophy
+                        className={`h-5 w-5 ${
+                          user.rank === 1 ? "text-yellow-400" : user.rank === 2 ? "text-gray-400" : "text-orange-400"
+                        }`}
+                      />
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </DialogContent>
       </Dialog>
 
       <Dialog open={showChallenges} onOpenChange={setShowChallenges}>
-        <DialogContent className="max-w-md bg-black/95 border-accent/30 max-h-[85vh] flex flex-col">
+        <DialogContent className="max-w-md backdrop-blur-xl bg-black/95 border-accent/30 shadow-[0_0_30px_rgba(255,215,0,0.2)] max-h-[85vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="text-white flex items-center">
+            <DialogTitle className="bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto] flex items-center">
               <Target className="mr-2 h-5 w-5 text-accent" />
               Active Challenges
             </DialogTitle>
@@ -793,64 +950,86 @@ export default function Community() {
             </DialogDescription>
           </DialogHeader>
           {isLoadingChallenges ? (
-            <div className="flex items-center justify-center py-12">
+            <motion.div
+              className="flex items-center justify-center py-12"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent border-t-transparent" />
-            </div>
+            </motion.div>
           ) : (
             <div className="space-y-4 overflow-y-auto flex-1 pr-1">
-              {challenges.map((challenge) => (
-                <Card key={challenge.id} className="border-white/10 bg-black/50">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h4 className="font-bold text-white mb-1">{challenge.title}</h4>
-                        <p className="text-sm text-white/70">{challenge.description}</p>
+              {challenges.map((challenge, index) => (
+                <motion.div
+                  key={challenge.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  whileHover={{ scale: 1.02, y: -2 }}
+                >
+                  <Card className="border-white/10 backdrop-blur-xl bg-white/5 shadow-[0_0_15px_rgba(255,215,0,0.05)]">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h4 className="font-bold text-white mb-1">{challenge.title}</h4>
+                          <p className="text-sm text-white/70">{challenge.description}</p>
+                        </div>
+                        <Badge variant="outline" className="border-accent/50 text-accent backdrop-blur-xl bg-accent/10">
+                          {challenge.daysLeft}d left
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className="border-accent/50 text-accent">
-                        {challenge.daysLeft}d left
-                      </Badge>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs text-white/60">
-                        <span>{challenge.participants} participants</span>
-                        <span>{challenge.progress}% complete</span>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs text-white/60">
+                          <span>{challenge.participants} participants</span>
+                          <span className="text-accent font-medium">{challenge.progress}% complete</span>
+                        </div>
+                        <div className="h-2 backdrop-blur-xl bg-white/10 rounded-full overflow-hidden border border-white/5">
+                          <motion.div
+                            className="h-full bg-gradient-to-r from-accent to-accent/50"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${challenge.progress}%` }}
+                            transition={{ duration: 0.8, delay: index * 0.05 + 0.2 }}
+                          />
+                        </div>
                       </div>
-                      <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-accent to-accent/50 transition-all"
-                          style={{ width: `${challenge.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                    {challenge.joined ? (
-                      <ButtonGlow
-                        variant="outline-glow"
-                        size="sm"
-                        className="w-full mt-3"
-                        onClick={() => handleLeaveChallenge(challenge.id)}
-                      >
-                        Leave Challenge
-                      </ButtonGlow>
-                    ) : (
-                      <ButtonGlow
-                        variant="accent-glow"
-                        size="sm"
-                        className="w-full mt-3"
-                        onClick={() => handleJoinChallenge(challenge.id)}
-                      >
-                        Join Challenge
-                      </ButtonGlow>
-                    )}
-                    {!challenge.isDbChallenge && (
-                      <p className="mt-2 text-center text-[10px] text-white/40">
-                        Progress tracked from your activity
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
+                      {challenge.joined ? (
+                        <ButtonGlow
+                          variant="outline-glow"
+                          size="sm"
+                          className="w-full mt-3 backdrop-blur-xl"
+                          onClick={() => handleLeaveChallenge(challenge.id)}
+                        >
+                          Leave Challenge
+                        </ButtonGlow>
+                      ) : (
+                        <ButtonGlow
+                          variant="accent-glow"
+                          size="sm"
+                          className="w-full mt-3"
+                          onClick={() => handleJoinChallenge(challenge.id)}
+                        >
+                          Join Challenge
+                        </ButtonGlow>
+                      )}
+                      {!challenge.isDbChallenge && (
+                        <p className="mt-2 text-center text-[10px] text-white/40">
+                          Progress tracked from your activity
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))}
               {challenges.length === 0 && (
-                <div className="text-center text-white/60 py-8">No challenges found for this month.</div>
+                <motion.div
+                  className="text-center text-white/60 py-8"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  No challenges found for this month.
+                </motion.div>
               )}
             </div>
           )}
@@ -858,16 +1037,26 @@ export default function Community() {
       </Dialog>
 
       {/* Floating Create Post Button */}
-      <div className="fixed bottom-20 right-4 z-50 animate-in zoom-in duration-300 delay-300">
-        <ButtonGlow
-          variant="accent-glow"
-          size="icon"
-          className="h-14 w-14 rounded-full shadow-lg"
-          onClick={() => setCreatePostModalOpen(true)}
-        >
-          <Plus className="h-6 w-6" />
-        </ButtonGlow>
-      </div>
+      <motion.div
+        className="fixed bottom-20 right-4 z-50"
+        initial={{ opacity: 0, scale: 0, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ delay: 1.5, type: "spring", stiffness: 200 }}
+        whileHover={{ scale: 1.1, y: -4 }}
+        whileTap={{ scale: 0.9 }}
+      >
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-full blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
+          <ButtonGlow
+            variant="accent-glow"
+            size="icon"
+            className="h-14 w-14 rounded-full relative"
+            onClick={() => setCreatePostModalOpen(true)}
+          >
+            <Plus className="h-6 w-6" />
+          </ButtonGlow>
+        </div>
+      </motion.div>
 
       {createPostModalOpen && (
         <Suspense fallback={null}>

@@ -69,152 +69,271 @@ export default function Preferences() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-black to-charcoal p-4">
+    <div className="flex min-h-screen flex-col bg-black overflow-hidden p-4">
+      {/* Animated gradient background */}
+      <div className="fixed inset-0 opacity-20">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/30 rounded-full blur-[128px] animate-blob" />
+        <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[128px] animate-blob animation-delay-2000" />
+        <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] animate-blob animation-delay-4000" />
+      </div>
+
+      {/* Grid pattern overlay */}
+      <div className="fixed inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
+
       <motion.div
-        className="mx-auto w-full max-w-md"
+        className="relative z-10 mx-auto w-full max-w-2xl"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-white">Training & Preferences</h1>
-          <p className="mt-2 text-white/70">Help us customize your workout and nutrition plans</p>
+          <motion.h1
+            className="text-4xl font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            Training & Preferences
+          </motion.h1>
+          <motion.p
+            className="mt-2 text-white/70"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            Help us customize your workout and nutrition plans
+          </motion.p>
         </div>
 
-        <div className="space-y-6">
+        <motion.div
+          className="space-y-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4, staggerChildren: 0.1 }}
+        >
           {/* Fitness Program Type */}
-          <div className="space-y-3">
-            <h2 className="text-lg font-medium text-white flex items-center gap-2">
+          <motion.div
+            className="space-y-3"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <h2 className="text-lg font-medium text-white/90 flex items-center gap-2">
               <Dumbbell className="h-5 w-5 text-accent" />
               Fitness Program
             </h2>
             <div className="grid gap-2">
-              {programTypes.map((style) => (
-                <Card
+              {programTypes.map((style, index) => (
+                <motion.div
                   key={style.id}
-                  className={`p-3 cursor-pointer transition-all ${
-                    programType === style.id
-                      ? "border-accent bg-accent/10"
-                      : "border-white/10 hover:border-white/30"
-                  }`}
-                  onClick={() => setProgramType(style.id)}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.6 + index * 0.05 }}
+                  whileHover={{ scale: 1.02, x: 4 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <p className={`font-medium ${programType === style.id ? "text-accent" : "text-white"}`}>
-                    {style.label}
-                  </p>
-                  <p className="text-xs text-white/60">{style.description}</p>
-                </Card>
+                  <Card
+                    className={`relative p-4 cursor-pointer transition-all backdrop-blur-xl ${
+                      programType === style.id
+                        ? "border-accent bg-accent/10 shadow-[0_0_15px_rgba(255,215,0,0.2)]"
+                        : "border-white/10 bg-white/5 hover:border-accent/50 hover:bg-white/10"
+                    }`}
+                    onClick={() => setProgramType(style.id)}
+                  >
+                    {programType === style.id && (
+                      <div className="absolute inset-0 bg-gradient-to-br from-accent/10 to-transparent rounded-lg" />
+                    )}
+                    <p
+                      className={`relative font-medium ${
+                        programType === style.id ? "text-accent" : "text-white"
+                      }`}
+                    >
+                      {style.label}
+                    </p>
+                    <p className="relative text-xs text-white/60 mt-1">{style.description}</p>
+                  </Card>
+                </motion.div>
               ))}
             </div>
             {programType === "other" && (
-              <Input
-                value={customProgramType}
-                onChange={(e) => setCustomProgramType(e.target.value)}
-                placeholder="Describe your program type"
-                className="mt-2"
-              />
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+              >
+                <Input
+                  value={customProgramType}
+                  onChange={(e) => setCustomProgramType(e.target.value)}
+                  placeholder="Describe your program type"
+                  className="mt-2 backdrop-blur-xl bg-white/5 border-white/10 focus:border-accent/50 focus:bg-white/10 transition-all duration-300"
+                />
+              </motion.div>
             )}
-          </div>
+          </motion.div>
 
           {/* Available Time */}
-          <div className="space-y-3">
-            <h2 className="text-lg font-medium text-white flex items-center gap-2">
+          <motion.div
+            className="space-y-3"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.9 }}
+          >
+            <h2 className="text-lg font-medium text-white/90 flex items-center gap-2">
               <Clock className="h-5 w-5 text-accent" />
               Available Workout Time
             </h2>
             <div className="flex gap-2">
-              {timeOptions.map((option) => (
-                <button
+              {timeOptions.map((option, index) => (
+                <motion.button
                   key={option.value}
-                  className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                  className={`flex-1 rounded-lg px-3 py-3 text-sm font-medium transition-all backdrop-blur-xl ${
                     availableTime === option.value
-                      ? "bg-accent text-black"
-                      : "bg-black/50 text-white/70 border border-accent/30 hover:border-accent/50"
+                      ? "bg-accent text-black shadow-[0_0_15px_rgba(255,215,0,0.3)]"
+                      : "bg-white/5 text-white/70 border border-white/10 hover:border-accent/50 hover:bg-white/10"
                   }`}
                   onClick={() => setAvailableTime(option.value)}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.95 + index * 0.05 }}
                 >
                   {option.label}
-                </button>
+                </motion.button>
               ))}
             </div>
-          </div>
+          </motion.div>
 
           {/* Training Days */}
-          <div className="space-y-3">
-            <h2 className="text-lg font-medium text-white flex items-center gap-2">
+          <motion.div
+            className="space-y-3"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 1.1 }}
+          >
+            <h2 className="text-lg font-medium text-white/90 flex items-center gap-2">
               <Calendar className="h-5 w-5 text-accent" />
               Days Per Week
             </h2>
             <div className="flex gap-2">
-              {daysOptions.map((days) => (
-                <button
+              {daysOptions.map((days, index) => (
+                <motion.button
                   key={days}
-                  className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                  className={`flex-1 rounded-lg px-3 py-3 text-sm font-medium transition-all backdrop-blur-xl ${
                     trainingDays === days
-                      ? "bg-accent text-black"
-                      : "bg-black/50 text-white/70 border border-accent/30 hover:border-accent/50"
+                      ? "bg-accent text-black shadow-[0_0_15px_rgba(255,215,0,0.3)]"
+                      : "bg-white/5 text-white/70 border border-white/10 hover:border-accent/50 hover:bg-white/10"
                   }`}
                   onClick={() => setTrainingDays(days)}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1.15 + index * 0.05 }}
                 >
                   {days}
-                </button>
+                </motion.button>
               ))}
             </div>
-          </div>
+          </motion.div>
 
-          <div className="space-y-3">
-            <h2 className="text-lg font-medium text-white">Food Allergies</h2>
+          <motion.div
+            className="space-y-3"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 1.3 }}
+          >
+            <h2 className="text-lg font-medium text-white/90">Food Allergies</h2>
             <div className="flex flex-wrap gap-2">
-              {allergies.map((allergy) => (
-                <button
+              {allergies.map((allergy, index) => (
+                <motion.button
                   key={allergy}
-                  className={`rounded-full px-3 py-1 text-sm transition-all ${
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-all backdrop-blur-xl ${
                     selectedAllergies.includes(allergy)
-                      ? "bg-accent text-black"
-                      : "bg-black/50 text-white/70 border border-accent/30 hover:border-accent/50"
+                      ? "bg-accent text-black shadow-[0_0_15px_rgba(255,215,0,0.3)]"
+                      : "bg-white/5 text-white/70 border border-white/10 hover:border-accent/50 hover:bg-white/10"
                   }`}
                   onClick={() => toggleAllergy(allergy)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1.35 + index * 0.05 }}
                 >
                   {allergy}
-                </button>
+                </motion.button>
               ))}
             </div>
-          </div>
+          </motion.div>
 
-          <div className="space-y-3">
-            <h2 className="text-lg font-medium text-white">Custom Restrictions</h2>
+          <motion.div
+            className="space-y-3"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 1.6 }}
+          >
+            <h2 className="text-lg font-medium text-white/90">Custom Restrictions</h2>
             <div className="flex gap-2">
               <Input
                 value={customRestriction}
                 onChange={(e) => setCustomRestriction(e.target.value)}
                 placeholder="Add custom restriction"
-                className="flex-1"
+                className="flex-1 backdrop-blur-xl bg-white/5 border-white/10 focus:border-accent/50 focus:bg-white/10 transition-all duration-300"
               />
-              <ButtonGlow
-                variant="outline-glow"
-                size="icon"
-                onClick={addCustomRestriction}
-                disabled={!customRestriction.trim()}
-              >
-                <Plus className="h-4 w-4" />
-              </ButtonGlow>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <ButtonGlow
+                  variant="outline-glow"
+                  size="icon"
+                  onClick={addCustomRestriction}
+                  disabled={!customRestriction.trim()}
+                  className="backdrop-blur-xl"
+                >
+                  <Plus className="h-4 w-4" />
+                </ButtonGlow>
+              </motion.div>
             </div>
 
             {customRestrictions.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-2">
+              <motion.div
+                className="flex flex-wrap gap-2 pt-2"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+              >
                 {customRestrictions.map((restriction, index) => (
-                  <div key={index} className="rounded-full bg-accent/20 px-3 py-1 text-sm text-accent">
+                  <motion.div
+                    key={index}
+                    className="rounded-full backdrop-blur-xl bg-accent/20 border border-accent/30 px-4 py-2 text-sm text-accent font-medium"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
                     {restriction}
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             )}
-          </div>
+          </motion.div>
 
-          <ButtonGlow variant="accent-glow" className="w-full" onClick={handleContinue}>
-            Continue <ArrowRight className="ml-2 h-4 w-4" />
-          </ButtonGlow>
-        </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.7 }}
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
+              <ButtonGlow
+                variant="accent-glow"
+                className="w-full h-12 text-base font-semibold relative"
+                onClick={handleContinue}
+              >
+                Continue
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </ButtonGlow>
+            </div>
+          </motion.div>
+        </motion.div>
       </motion.div>
     </div>
   )

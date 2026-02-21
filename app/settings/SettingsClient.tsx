@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState, useEffect, lazy, Suspense, useMemo } from "react"
+import { motion } from "framer-motion"
 import { useToast } from "@/hooks/use-toast"
 import { updateProfile } from "@/lib/actions/profile"
 import { createClient } from "@/lib/supabase/client"
@@ -470,50 +471,106 @@ export default function SettingsClient() {
   // Show loading state while app data is being fetched
   if (appDataLoading && !appData) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-nav-safe flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-accent border-t-transparent" />
-          <p className="text-white/70">Loading settings...</p>
+      <div className="min-h-screen bg-black pb-nav-safe flex items-center justify-center overflow-hidden">
+        {/* Animated gradient background */}
+        <div className="fixed inset-0 opacity-20">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/30 rounded-full blur-[128px] animate-blob" />
+          <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[128px] animate-blob animation-delay-2000" />
+          <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] animate-blob animation-delay-4000" />
         </div>
+
+        {/* Grid pattern overlay */}
+        <div className="fixed inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
+
+        <motion.div
+          className="relative z-10 flex flex-col items-center gap-4"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-accent border-t-transparent drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]" />
+          <motion.p
+            className="text-white/70"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            Loading settings...
+          </motion.p>
+        </motion.div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-charcoal pb-nav-safe">
-      <div className="container max-w-md px-4 py-6">
+    <div className="min-h-screen bg-black pb-nav-safe overflow-hidden">
+      {/* Animated gradient background */}
+      <div className="fixed inset-0 opacity-20">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/30 rounded-full blur-[128px] animate-blob" />
+        <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[128px] animate-blob animation-delay-2000" />
+        <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] animate-blob animation-delay-4000" />
+      </div>
+
+      {/* Grid pattern overlay */}
+      <div className="fixed inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
+
+      <div className="relative z-10 container max-w-md px-4 py-6">
         {/* Header */}
-        <div className="mb-6 flex items-center">
-          <ButtonGlow variant="outline-glow" size="icon" onClick={handleBack} className="mr-3 h-8 w-8">
+        <motion.div
+          className="mb-6 flex items-center"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <ButtonGlow variant="outline-glow" size="icon" onClick={handleBack} className="mr-3 h-8 w-8 backdrop-blur-xl">
             <ArrowLeft className="h-4 w-4" />
           </ButtonGlow>
           <div>
-            <h1 className="text-2xl font-bold text-white">Settings</h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]">
+              Settings
+            </h1>
             <p className="text-white/70">Manage your preferences</p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Admin Panel Link - only shows for admins */}
         {appData?.profile?.is_admin && (
-          <ButtonGlow
-            variant="accent-glow"
-            className="w-full mb-6"
-            onClick={() => router.push("/admin")}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            className="mb-6"
           >
-            <Shield className="h-4 w-4 mr-2" />
-            Admin Panel
-          </ButtonGlow>
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
+              <ButtonGlow
+                variant="accent-glow"
+                className="w-full relative"
+                onClick={() => router.push("/admin")}
+              >
+                <Shield className="h-4 w-4 mr-2" />
+                Admin Panel
+              </ButtonGlow>
+            </div>
+          </motion.div>
         )}
 
-        <Accordion type="multiple" className="space-y-4">
-          <AccountSection
-            loading={false}
-            profileData={profileData}
-            onEditProfile={() => setUpdateProfileModalOpen(true)}
-            onChangePassword={() => setChangePasswordModalOpen(true)}
-            onManageSubscription={() => setManageSubscriptionModalOpen(true)}
-            onSignOut={handleSignOut}
-          />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <Accordion type="multiple" className="space-y-4">
+            <AccountSection
+              loading={false}
+              profileData={profileData}
+              onEditProfile={() => setUpdateProfileModalOpen(true)}
+              onChangePassword={() => setChangePasswordModalOpen(true)}
+              onManageSubscription={() => setManageSubscriptionModalOpen(true)}
+              onSignOut={handleSignOut}
+            />
 
           <ReferralsSection
             loading={false}
@@ -577,14 +634,15 @@ export default function SettingsClient() {
             onRateApp={() => setRateAppModalOpen(true)}
             onShare={() => shareReferralCode("native")}
           />
-        </Accordion>
+          </Accordion>
+        </motion.div>
       </div>
 
       {/* Affiliate Application Modal */}
       <Dialog open={affiliateModalOpen} onOpenChange={setAffiliateModalOpen}>
-        <DialogContent className="border-white/10 bg-gradient-to-b from-black to-charcoal">
+        <DialogContent className="backdrop-blur-xl bg-black/95 border-accent/30 shadow-[0_0_30px_rgba(255,215,0,0.2)]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
+            <DialogTitle className="flex items-center gap-2 bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto]">
               <Briefcase className="h-5 w-5 text-accent" />
               Become an Affiliate
             </DialogTitle>
@@ -593,7 +651,12 @@ export default function SettingsClient() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <motion.div
+            className="space-y-4 py-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
             <div>
               <Label htmlFor="affiliate-name" className="text-white">Full Name</Label>
               <Input
@@ -601,7 +664,7 @@ export default function SettingsClient() {
                 placeholder="John Doe"
                 value={affiliateForm.name}
                 onChange={(e) => setAffiliateForm({ ...affiliateForm, name: e.target.value })}
-                className="mt-2 border-white/10 bg-white/5 text-white placeholder:text-white/40"
+                className="mt-2 backdrop-blur-xl bg-white/5 border-white/10 focus:border-accent/50 focus:bg-white/10 transition-all duration-300 text-white placeholder:text-white/40"
               />
             </div>
             <div>
@@ -612,7 +675,7 @@ export default function SettingsClient() {
                 placeholder="john@example.com"
                 value={affiliateForm.email}
                 onChange={(e) => setAffiliateForm({ ...affiliateForm, email: e.target.value })}
-                className="mt-2 border-white/10 bg-white/5 text-white placeholder:text-white/40"
+                className="mt-2 backdrop-blur-xl bg-white/5 border-white/10 focus:border-accent/50 focus:bg-white/10 transition-all duration-300 text-white placeholder:text-white/40"
               />
             </div>
             <div>
@@ -623,11 +686,11 @@ export default function SettingsClient() {
                 placeholder="+1 (555) 123-4567"
                 value={affiliateForm.phone}
                 onChange={(e) => setAffiliateForm({ ...affiliateForm, phone: e.target.value })}
-                className="mt-2 border-white/10 bg-white/5 text-white placeholder:text-white/40"
+                className="mt-2 backdrop-blur-xl bg-white/5 border-white/10 focus:border-accent/50 focus:bg-white/10 transition-all duration-300 text-white placeholder:text-white/40"
               />
             </div>
-            <div className="rounded-lg bg-accent/10 p-3 text-sm text-white/70">
-              <p className="mb-2 font-bold text-white">Affiliate Benefits:</p>
+            <div className="rounded-lg backdrop-blur-xl bg-accent/10 border border-accent/30 p-3 text-sm text-white/70">
+              <p className="mb-2 font-bold text-accent">Affiliate Benefits:</p>
               <ul className="space-y-1 text-xs">
                 <li>• Higher commission rates (up to 30%)</li>
                 <li>• Exclusive marketing materials</li>
@@ -635,12 +698,17 @@ export default function SettingsClient() {
                 <li>• Priority support</li>
               </ul>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="flex gap-3">
+          <motion.div
+            className="flex gap-3"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
             <ButtonGlow
               variant="outline-glow"
-              className="flex-1"
+              className="flex-1 backdrop-blur-xl"
               onClick={() => setAffiliateModalOpen(false)}
               disabled={submitting}
             >
@@ -654,7 +722,7 @@ export default function SettingsClient() {
             >
               {submitting ? "Submitting..." : "Submit Application"}
             </ButtonGlow>
-          </div>
+          </motion.div>
         </DialogContent>
       </Dialog>
 
