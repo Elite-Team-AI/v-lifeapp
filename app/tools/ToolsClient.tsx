@@ -724,7 +724,7 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
                     <p>{photo.type}</p>
                     <p>{new Date(photo.date).toLocaleDateString()}</p>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}
