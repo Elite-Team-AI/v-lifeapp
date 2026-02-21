@@ -7,11 +7,27 @@ import { AnimatedRings } from "@/components/animated-rings"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 
+/**
+ * Check if running in Capacitor mobile app
+ */
+function isCapacitorApp(): boolean {
+  const userAgent = navigator.userAgent || ""
+  return userAgent.includes("Capacitor") ||
+         userAgent.includes("CapacitorWebView") ||
+         userAgent.includes("wv")
+}
+
 export default function WelcomePage() {
   const router = useRouter()
   const [isChecking, setIsChecking] = useState(true)
 
   useEffect(() => {
+    // Check if this is a web browser - redirect to download page
+    if (!isCapacitorApp()) {
+      router.push("/download")
+      return
+    }
+
     const checkAuth = async () => {
       const supabase = createClient()
       const {

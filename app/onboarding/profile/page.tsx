@@ -21,6 +21,7 @@ export default function ProfileSetup() {
   const [heightFeet, setHeightFeet] = useState(data.heightFeet)
   const [heightInches, setHeightInches] = useState(data.heightInches)
   const [weight, setWeight] = useState(data.weight)
+  const [goalWeight, setGoalWeight] = useState(data.goalWeight)
   const [gymAccess, setGymAccess] = useState<string | null>(data.gymAccess || null)
   const [activityLevel, setActivityLevel] = useState(data.activityLevel)
   const [showActivityDefinitions, setShowActivityDefinitions] = useState(false)
@@ -49,6 +50,7 @@ export default function ProfileSetup() {
       heightFeet,
       heightInches,
       weight,
+      goalWeight,
       gymAccess: gymAccess || "",
       selectedGym: selectedGym || "",
       customEquipment,
@@ -104,52 +106,65 @@ export default function ProfileSetup() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Height</Label>
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <Input
-                    id="feet"
-                    type="number"
-                    placeholder="Feet"
-                    min="1"
-                    max="8"
-                    value={heightFeet}
-                    onChange={(e) => {
-                      console.log("[v0] Height feet changed to:", e.target.value)
-                      setHeightFeet(e.target.value)
-                    }}
-                  />
-                </div>
-                <div className="flex-1">
-                  <Input
-                    id="inches"
-                    type="number"
-                    placeholder="In"
-                    min="0"
-                    max="11"
-                    value={heightInches}
-                    onChange={(e) => {
-                      console.log("[v0] Height inches changed to:", e.target.value)
-                      setHeightInches(e.target.value)
-                    }}
-                    onFocus={() => console.log("[v0] Inches input focused, current value:", heightInches)}
-                    onBlur={() => console.log("[v0] Inches input blurred, final value:", heightInches)}
-                    className="w-full text-foreground"
-                    style={{ width: "100%", minWidth: "60px" }}
-                  />
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Height</Label>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Input
+                      id="feet"
+                      type="number"
+                      placeholder="Feet"
+                      min="1"
+                      max="8"
+                      value={heightFeet}
+                      onChange={(e) => {
+                        console.log("[v0] Height feet changed to:", e.target.value)
+                        setHeightFeet(e.target.value)
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Input
+                      id="inches"
+                      type="number"
+                      placeholder="In"
+                      min="0"
+                      max="11"
+                      value={heightInches}
+                      onChange={(e) => {
+                        console.log("[v0] Height inches changed to:", e.target.value)
+                        setHeightInches(e.target.value)
+                      }}
+                      onFocus={() => console.log("[v0] Inches input focused, current value:", heightInches)}
+                      onBlur={() => console.log("[v0] Inches input blurred, final value:", heightInches)}
+                      className="w-full text-foreground"
+                      style={{ width: "100%", minWidth: "60px" }}
+                    />
+                  </div>
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="weight">Current Weight (lbs)</Label>
+                <Input
+                  id="weight"
+                  type="number"
+                  placeholder="Current weight"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                />
+              </div>
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="weight">Weight (lbs)</Label>
+              <Label htmlFor="goalWeight">Goal Weight (lbs)</Label>
               <Input
-                id="weight"
+                id="goalWeight"
                 type="number"
-                placeholder="Weight in lbs"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
+                placeholder="Target weight"
+                value={goalWeight}
+                onChange={(e) => setGoalWeight(e.target.value)}
               />
             </div>
           </div>

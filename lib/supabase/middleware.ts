@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { env } from "@/lib/env"
 
 // Public routes that don't require authentication
-const PUBLIC_ROUTES = ["/auth", "/privacy", "/privacy-policy", "/terms-of-service", "/help-support", "/health-sources"]
+const PUBLIC_ROUTES = ["/auth", "/privacy", "/privacy-policy", "/terms-of-service", "/help-support", "/health-sources", "/download"]
 
 // Protected routes within the app (for checking referer)
 const PROTECTED_ROUTES = ["/dashboard", "/fitness", "/nutrition", "/community", "/settings", "/vbot", "/workout", "/ai-coach", "/tools", "/grocery-list", "/delete"]
@@ -55,19 +55,31 @@ function isPrefetchRequest(request: NextRequest): boolean {
 function isFromAuthenticatedRoute(request: NextRequest): boolean {
   const referer = request.headers.get("referer")
   if (!referer) return false
-  
+
   try {
     const refererUrl = new URL(referer)
     const origin = request.nextUrl.origin
-    
+
     // Must be same origin
     if (refererUrl.origin !== origin) return false
-    
+
     // Check if coming from a protected route
     return PROTECTED_ROUTES.some(route => refererUrl.pathname.startsWith(route))
   } catch {
     return false
   }
+}
+
+/**
+ * Check if request is from Capacitor mobile app
+ */
+function isCapacitorApp(request: NextRequest): boolean {
+  const userAgent = request.headers.get("user-agent") || ""
+
+  // Capacitor apps include specific user agent strings
+  return userAgent.includes("Capacitor") ||
+         userAgent.includes("CapacitorWebView") ||
+         userAgent.includes("wv") // WebView indicator
 }
 
 export async function updateSession(request: NextRequest) {
@@ -78,6 +90,22 @@ export async function updateSession(request: NextRequest) {
     // API routes handle their own authentication and should not redirect
     const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname.startsWith(route)) || pathname === "/"
     const isApiRoute = pathname.startsWith("/api/")
+    const isWellKnown = pathname.startsWith("/.well-known/")
+
+    // MOBILE-ONLY ENFORCEMENT: Redirect web browsers to download page
+    // Skip this check for:
+    // - API routes (mobile apps need these)
+    // - .well-known files (needed for domain verification)
+    // - Already on download page
+    // - Public landing page (/)
+    if (!isApiRoute && !isWellKnown && pathname !== "/download" && pathname !== "/") {
+      if (!isCapacitorApp(request)) {
+        console.log("[Middleware] Web browser detected, redirecting to download page:", pathname)
+        const url = request.nextUrl.clone()
+        url.pathname = "/download"
+        return NextResponse.redirect(url)
+      }
+    }
 
     if (!isPublicRoute && !isApiRoute) {
       // OPTIMIZATION 1: Skip prefetch requests entirely if session cookie exists
