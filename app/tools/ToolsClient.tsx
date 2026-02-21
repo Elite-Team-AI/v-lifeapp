@@ -555,6 +555,7 @@ export function ToolsClient({ weightEntries, progressPhotos, supplements, habits
                     </div>
                   </CardContent>
                 </Card>
+                </motion.div>
               ))}
             </div>
           )}
