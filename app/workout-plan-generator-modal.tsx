@@ -84,7 +84,7 @@ export function WorkoutPlanGeneratorModal({ isOpen, onClose, onSuccess }: Workou
   const [sessionDuration, setSessionDuration] = useState<number>(60)
   const [experienceLevel, setExperienceLevel] = useState<string>("intermediate")
   const [fitnessGoal, setFitnessGoal] = useState<string>("")
-  const [equipment, setEquipment] = useState<string[]>(["Barbell", "Dumbbells", "Bench"])
+  const [equipment, setEquipment] = useState<string[]>(["Barbell", "Dumbbells", "Bench", "Bodyweight Only"])
   const [focusAreas, setFocusAreas] = useState<string[]>(["Full Body"])
 
   const handleGenerate = async () => {
@@ -127,7 +127,7 @@ export function WorkoutPlanGeneratorModal({ isOpen, onClose, onSuccess }: Workou
     setSessionDuration(60)
     setExperienceLevel("intermediate")
     setFitnessGoal("")
-    setEquipment(["Barbell", "Dumbbells", "Bench"])
+    setEquipment(["Barbell", "Dumbbells", "Bench", "Bodyweight Only"])
     setFocusAreas(["Full Body"])
     setError(null)
   }
@@ -384,7 +384,7 @@ export function WorkoutPlanGeneratorModal({ isOpen, onClose, onSuccess }: Workou
                     className="space-y-2"
                   >
                     <Label className="text-white">Available Equipment</Label>
-                    <p className="text-xs text-white/60 mb-3">Select all that apply</p>
+                    <p className="text-xs text-white/60 mb-3">Select all that apply (minimum 3 recommended)</p>
                     <div className="grid grid-cols-2 gap-2">
                       {equipmentOptions.map((item) => (
                         <motion.div
@@ -414,6 +414,15 @@ export function WorkoutPlanGeneratorModal({ isOpen, onClose, onSuccess }: Workou
                         </motion.div>
                       ))}
                     </div>
+
+                    {/* Equipment warning */}
+                    {equipment.length < 3 && (
+                      <div className="mt-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                        <p className="text-xs text-yellow-500">
+                          ⚠️ <strong>Limited equipment selected.</strong> We recommend selecting at least 3 equipment options (including "Bodyweight Only") to ensure enough exercise variety for your plan.
+                        </p>
+                      </div>
+                    )}
                   </motion.div>
                 )}
 
