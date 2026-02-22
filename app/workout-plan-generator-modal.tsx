@@ -18,7 +18,7 @@ interface WorkoutPlanGeneratorModalProps {
 
 const trainingModalities = [
   { id: "strength", name: "Strength", icon: Dumbbell, description: "Build max strength" },
-  { id: "hypertrophy", name: "Hypertrophy", icon: TrendingUp, description: "Muscle growth" },
+  { id: "hypertrophy", name: "Bodybuilding", icon: TrendingUp, description: "Muscle growth" },
   { id: "endurance", name: "Endurance", icon: Activity, description: "Cardio & stamina" },
   { id: "power", name: "Power", icon: Flame, description: "Explosive movements" },
   { id: "HIIT", name: "HIIT", icon: Zap, description: "High-intensity" },

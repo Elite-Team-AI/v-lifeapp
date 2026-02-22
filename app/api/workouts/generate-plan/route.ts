@@ -201,7 +201,7 @@ ${getSplitPattern(daysPerWeek, trainingStyle)}
 Return ONLY a valid JSON object (no markdown, no explanation):
 
 {
-  "planName": "Descriptive plan name (e.g., '4-Week Hypertrophy Mesocycle')",
+  "planName": "Descriptive plan name (e.g., '4-Week Bodybuilding Mesocycle')",
   "planType": "${trainingStyle}",
   "daysPerWeek": ${daysPerWeek},
   "splitPattern": "Brief description of split (e.g., 'Push/Pull/Legs')",
@@ -265,7 +265,7 @@ function getModalityGuidelines(modality: string, daysPerWeek: number): string {
 - Progression: Add 2.5-5lbs weekly or reduce rest periods`,
 
     hypertrophy: `
-**HYPERTROPHY MODALITY:**
+**BODYBUILDING MODALITY:**
 - Primary Focus: Muscle growth, metabolic stress, time under tension
 - Intensity: 70-80% 1RM
 - Rep Range: 8-12 reps per set
@@ -344,9 +344,9 @@ function getModalityGuidelines(modality: string, daysPerWeek: number): string {
 **MIXED MODALITY:**
 - Combines elements from multiple training styles
 - Vary intensity throughout week: Heavy (85%+), Moderate (70-80%), Light (50-65%)
-- Include: Compound strength, hypertrophy isolation, conditioning, mobility
+- Include: Compound strength, bodybuilding isolation, conditioning, mobility
 - Balance pushing, pulling, squatting, hinging, carrying movements
-- Progression: Periodize across weeks (strength → hypertrophy → endurance → power)`
+- Progression: Periodize across weeks (strength → bodybuilding → endurance → power)`
   }
 
   return guidelines[modality] || guidelines.mixed
@@ -376,7 +376,7 @@ function getSplitPattern(daysPerWeek: number, modality: string): string {
 - Day 1: Push (Chest, Shoulders, Triceps)
 - Day 2: Pull (Back, Biceps, Rear Delts)
 - Day 3: Legs (Quads, Hamstrings, Glutes, Calves)
-- Day 4: Upper Body Hypertrophy (Compound + Isolation)
+- Day 4: Upper Body Bodybuilding (Compound + Isolation)
 - Day 5: Lower Body Power/Athleticism`
   }
 
@@ -385,9 +385,9 @@ function getSplitPattern(daysPerWeek: number, modality: string): string {
 - Day 1: Push (Strength Focus - Heavy compounds)
 - Day 2: Pull (Strength Focus - Heavy compounds)
 - Day 3: Legs (Strength Focus - Heavy squats/deads)
-- Day 4: Push (Hypertrophy Focus - Volume work)
-- Day 5: Pull (Hypertrophy Focus - Volume work)
-- Day 6: Legs (Hypertrophy/Accessories)`
+- Day 4: Push (Bodybuilding Focus - Volume work)
+- Day 5: Pull (Bodybuilding Focus - Volume work)
+- Day 6: Legs (Bodybuilding/Accessories)`
   }
 
   // Default: flexible

@@ -68,7 +68,7 @@ const popularGyms = [
 const commonAllergies = ["Dairy", "Gluten", "Peanuts", "Tree Nuts", "Soy", "Eggs", "Fish", "Shellfish"]
 
 const programTypes = [
-  { id: "aesthetics", label: "Aesthetics / Hypertrophy", description: "Muscle building & definition" },
+  { id: "aesthetics", label: "Aesthetics / Bodybuilding", description: "Muscle building & definition" },
   { id: "hiit", label: "HIIT", description: "High intensity interval training" },
   { id: "crossfit", label: "CrossFit Style", description: "Varied functional movements" },
   { id: "cardio", label: "Purely Cardio", description: "Endurance & cardiovascular focus" },
