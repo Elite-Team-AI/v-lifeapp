@@ -43,42 +43,91 @@ ALTER TABLE post_reports ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for user_blocks
 -- Users can view their own blocks
-CREATE POLICY "Users can view own blocks" ON user_blocks
-  FOR SELECT USING (blocker_id = auth.uid());
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'user_blocks' AND policyname = 'Users can view own blocks'
+  ) THEN
+    CREATE POLICY "Users can view own blocks" ON user_blocks
+      FOR SELECT USING (blocker_id = auth.uid());
+  END IF;
+END $$;
 
 -- Users can create blocks
-CREATE POLICY "Users can create blocks" ON user_blocks
-  FOR INSERT WITH CHECK (blocker_id = auth.uid());
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'user_blocks' AND policyname = 'Users can create blocks'
+  ) THEN
+    CREATE POLICY "Users can create blocks" ON user_blocks
+      FOR INSERT WITH CHECK (blocker_id = auth.uid());
+  END IF;
+END $$;
 
 -- Users can delete their own blocks (unblock)
-CREATE POLICY "Users can delete own blocks" ON user_blocks
-  FOR DELETE USING (blocker_id = auth.uid());
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'user_blocks' AND policyname = 'Users can delete own blocks'
+  ) THEN
+    CREATE POLICY "Users can delete own blocks" ON user_blocks
+      FOR DELETE USING (blocker_id = auth.uid());
+  END IF;
+END $$;
 
 -- RLS Policies for post_reports
 -- Users can create reports
-CREATE POLICY "Users can create reports" ON post_reports
-  FOR INSERT WITH CHECK (reporter_id = auth.uid());
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'post_reports' AND policyname = 'Users can create reports'
+  ) THEN
+    CREATE POLICY "Users can create reports" ON post_reports
+      FOR INSERT WITH CHECK (reporter_id = auth.uid());
+  END IF;
+END $$;
 
 -- Users can view their own reports
-CREATE POLICY "Users can view own reports" ON post_reports
-  FOR SELECT USING (reporter_id = auth.uid());
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'post_reports' AND policyname = 'Users can view own reports'
+  ) THEN
+    CREATE POLICY "Users can view own reports" ON post_reports
+      FOR SELECT USING (reporter_id = auth.uid());
+  END IF;
+END $$;
 
 -- Admins can view and update all reports
-CREATE POLICY "Admins can view all reports" ON post_reports
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND is_admin = true
-    )
-  );
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'post_reports' AND policyname = 'Admins can view all reports'
+  ) THEN
+    CREATE POLICY "Admins can view all reports" ON post_reports
+      FOR SELECT USING (
+        EXISTS (
+          SELECT 1 FROM profiles
+          WHERE id = auth.uid() AND is_admin = true
+        )
+      );
+  END IF;
+END $$;
 
-CREATE POLICY "Admins can update reports" ON post_reports
-  FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND is_admin = true
-    )
-  );
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'post_reports' AND policyname = 'Admins can update reports'
+  ) THEN
+    CREATE POLICY "Admins can update reports" ON post_reports
+      FOR UPDATE USING (
+        EXISTS (
+          SELECT 1 FROM profiles
+          WHERE id = auth.uid() AND is_admin = true
+        )
+      );
+  END IF;
+END $$;
 
 -- Comment on tables for documentation
 COMMENT ON TABLE user_blocks IS 'Tracks which users have blocked other users. Used for content filtering.';

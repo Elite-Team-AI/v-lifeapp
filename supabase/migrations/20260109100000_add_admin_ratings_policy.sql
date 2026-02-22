@@ -14,19 +14,40 @@ CREATE TABLE IF NOT EXISTS app_ratings (
 ALTER TABLE app_ratings ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can create their own ratings
-CREATE POLICY "Users can create ratings" ON app_ratings
-FOR INSERT WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'app_ratings' AND policyname = 'Users can create ratings'
+  ) THEN
+    CREATE POLICY "Users can create ratings" ON app_ratings
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Policy: Users can view their own ratings
-CREATE POLICY "Users can view their ratings" ON app_ratings
-FOR SELECT USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'app_ratings' AND policyname = 'Users can view their ratings'
+  ) THEN
+    CREATE POLICY "Users can view their ratings" ON app_ratings
+    FOR SELECT USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Policy: Admins can view all ratings
-CREATE POLICY "Admins can view all ratings" ON app_ratings
-FOR SELECT USING (
-  EXISTS (
-    SELECT 1 FROM profiles
-    WHERE profiles.id = auth.uid()
-    AND profiles.is_admin = true
-  )
-);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'app_ratings' AND policyname = 'Admins can view all ratings'
+  ) THEN
+    CREATE POLICY "Admins can view all ratings" ON app_ratings
+    FOR SELECT USING (
+      EXISTS (
+        SELECT 1 FROM profiles
+        WHERE profiles.id = auth.uid()
+        AND profiles.is_admin = true
+      )
+    );
+  END IF;
+END $$;
