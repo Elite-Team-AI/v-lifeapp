@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect, Suspense, lazy } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Settings, Target, Dumbbell, Calendar, ArrowRight, Sparkles, Zap, Clock, Info } from "lucide-react"
@@ -11,11 +11,112 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useAppData } from "@/lib/contexts/app-data-context"
 import { useFitnessData } from "@/hooks/use-fitness-data"
 import { Skeleton } from "@/components/ui/skeleton-loaders"
+import { PersonalizedWorkoutPlan } from "@/components/fitness/PersonalizedWorkoutPlan"
+import { WorkoutSessionTracker } from "@/components/fitness/WorkoutSessionTracker"
+import {
+  getCurrentWorkoutPlan,
+  getWorkoutPlanDetails,
+  getTodaysWorkout,
+  startWorkoutSession,
+  type WorkoutPlanSummary,
+  type WorkoutPlanDetails,
+  type WorkoutSession,
+} from "@/lib/actions/personalized-workouts"
+
+// Lazy load modals
+const WorkoutPlanGeneratorModal = lazy(() =>
+  import("@/app/workout-plan-generator-modal").then((mod) => ({ default: mod.WorkoutPlanGeneratorModal }))
+)
 
 export function FitnessClient() {
   const router = useRouter()
   const [showRestDayInfo, setShowRestDayInfo] = useState(false)
-  
+  const [showPlanGenerator, setShowPlanGenerator] = useState(false)
+  const [activeSession, setActiveSession] = useState<WorkoutSession | null>(null)
+
+  // Personalized workout plan state
+  const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlanSummary | null>(null)
+  const [planDetails, setPlanDetails] = useState<WorkoutPlanDetails | null>(null)
+  const [todaysWorkout, setTodaysWorkout] = useState<WorkoutSession | null>(null)
+  const [isLoadingPlan, setIsLoadingPlan] = useState(true)
+
+  // Fetch personalized workout plan data
+  useEffect(() => {
+    async function loadWorkoutPlan() {
+      setIsLoadingPlan(true)
+      try {
+        const plan = await getCurrentWorkoutPlan()
+        setWorkoutPlan(plan)
+
+        if (plan?.id) {
+          const details = await getWorkoutPlanDetails(plan.id)
+          setPlanDetails(details)
+        }
+
+        const todayWorkout = await getTodaysWorkout()
+        setTodaysWorkout(todayWorkout)
+      } catch (error) {
+        console.error("Failed to load workout plan:", error)
+      } finally {
+        setIsLoadingPlan(false)
+      }
+    }
+    loadWorkoutPlan()
+  }, [])
+
+  // Handler functions for personalized workout plan
+  const handleStartWorkout = async (workoutId: string) => {
+    try {
+      await startWorkoutSession(workoutId)
+      const session = await getTodaysWorkout()
+      setActiveSession(session)
+    } catch (error) {
+      console.error("Failed to start workout session:", error)
+    }
+  }
+
+  const handleCompleteSession = async () => {
+    setActiveSession(null)
+    // Refresh plan data after completing workout
+    try {
+      const plan = await getCurrentWorkoutPlan()
+      setWorkoutPlan(plan)
+
+      if (plan?.id) {
+        const details = await getWorkoutPlanDetails(plan.id)
+        setPlanDetails(details)
+      }
+
+      const todayWorkout = await getTodaysWorkout()
+      setTodaysWorkout(todayWorkout)
+    } catch (error) {
+      console.error("Failed to refresh workout plan:", error)
+    }
+  }
+
+  const handleExitSession = () => {
+    setActiveSession(null)
+  }
+
+  const handlePlanGenerated = async (planId: string) => {
+    setShowPlanGenerator(false)
+    // Refresh plan data after generation
+    try {
+      const plan = await getCurrentWorkoutPlan()
+      setWorkoutPlan(plan)
+
+      if (plan?.id) {
+        const details = await getWorkoutPlanDetails(plan.id)
+        setPlanDetails(details)
+      }
+
+      const todayWorkout = await getTodaysWorkout()
+      setTodaysWorkout(todayWorkout)
+    } catch (error) {
+      console.error("Failed to refresh workout plan:", error)
+    }
+  }
+
   // Get user name from cached app data (instant)
   const { appData } = useAppData()
   const userName = useMemo(() => {
@@ -39,6 +140,32 @@ export function FitnessClient() {
       cardioMinutes: latestWeek?.cardioMinutes || 0,
     }
   }, [overview])
+
+  // If in active workout session, show tracker instead
+  if (activeSession) {
+    return (
+      <div className="min-h-screen bg-black overflow-hidden pb-nav-safe">
+        {/* Animated gradient background */}
+        <div className="fixed inset-0 opacity-20">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/30 rounded-full blur-[128px] animate-blob" />
+          <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[128px] animate-blob animation-delay-2000" />
+          <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] animate-blob animation-delay-4000" />
+        </div>
+
+        <div className="fixed inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
+
+        <div className="relative z-10">
+          <WorkoutSessionTracker
+            workout={activeSession}
+            onComplete={handleCompleteSession}
+            onExit={handleExitSession}
+          />
+        </div>
+
+        <BottomNav />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-black overflow-hidden pb-nav-safe">
@@ -477,10 +604,33 @@ export function FitnessClient() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Personalized Workout Plan Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 1.05 }}
+        >
+          <PersonalizedWorkoutPlan
+            plan={planDetails}
+            isLoading={isLoadingPlan}
+            onRegeneratePlan={() => setShowPlanGenerator(true)}
+            onStartWorkout={handleStartWorkout}
+          />
+        </motion.div>
       </div>
 
       <BottomNav />
-      
+
+      {/* Workout Plan Generator Modal */}
+      <Suspense fallback={null}>
+        <WorkoutPlanGeneratorModal
+          isOpen={showPlanGenerator}
+          onClose={() => setShowPlanGenerator(false)}
+          onSuccess={handlePlanGenerated}
+        />
+      </Suspense>
+
       {/* Rest Day & Workout Split Info Modal */}
       <Dialog open={showRestDayInfo} onOpenChange={setShowRestDayInfo}>
         <DialogContent className="max-w-md backdrop-blur-xl bg-black/95 border-accent/30">
