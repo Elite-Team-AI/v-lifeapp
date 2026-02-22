@@ -2,25 +2,38 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { 
-  Check, 
-  X, 
-  Loader2, 
+import {
+  Check,
+  X,
+  Loader2,
   Zap,
   Clock,
   ChevronRight,
   Trophy,
-  Info
+  Info,
+  Plus
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { ButtonGlow } from "@/components/ui/button-glow"
+import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Slider } from "@/components/ui/slider"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { XP_REWARDS } from "@/lib/gamification"
 import {
   updateSuggestionStatus,
   logHabitEvent,
+  createManualVitalFlowHabit,
   type VitalFlowSuggestion,
 } from "@/lib/actions/vitalflow-habits"
 import { addXP } from "@/lib/actions/gamification"
@@ -56,8 +69,18 @@ export function DailyMissions({ missions: initialMissions, onMissionComplete, cl
   const [celebratingId, setCelebratingId] = useState<string | null>(null)
   const [showInfoModal, setShowInfoModal] = useState(false)
 
+  // Custom mission form state
+  const [showCustomForm, setShowCustomForm] = useState(false)
+  const [customTitle, setCustomTitle] = useState("")
+  const [customCategory, setCustomCategory] = useState<'movement' | 'nutrition' | 'sleep' | 'mindset' | 'recovery' | 'hydration'>("movement")
+  const [customTime, setCustomTime] = useState(10)
+  const [customEnergy, setCustomEnergy] = useState(0)
+  const [creatingCustom, setCreatingCustom] = useState(false)
+
+  // Filter missions - show all except skipped ones
   const activeMissions = missions.filter(m => m.status === 'suggested' || m.status === 'accepted')
   const completedMissions = missions.filter(m => m.status === 'completed')
+  const visibleMissions = missions.filter(m => m.status !== 'skipped' && m.status !== 'failed')
   const completedCount = completedMissions.length
   const totalCount = missions.length
   const allComplete = totalCount > 0 && completedCount === totalCount
@@ -164,6 +187,61 @@ export function DailyMissions({ missions: initialMissions, onMissionComplete, cl
     }
   }
 
+  const handleCreateCustom = async () => {
+    if (!customTitle.trim()) {
+      toast({
+        title: "Title required",
+        description: "Please enter a title for your custom mission",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setCreatingCustom(true)
+    try {
+      const result = await createManualVitalFlowHabit(
+        customTitle.trim(),
+        customCategory,
+        customTime,
+        customEnergy,
+        `Custom mission created by user`
+      )
+
+      if (result.suggestion) {
+        // Add to missions list with 'accepted' status so it's immediately active
+        const newMission = { ...result.suggestion, status: 'accepted' as const }
+        setMissions(prev => [...prev, newMission])
+
+        // Reset form
+        setCustomTitle("")
+        setCustomCategory("movement")
+        setCustomTime(10)
+        setCustomEnergy(0)
+        setShowCustomForm(false)
+
+        toast({
+          title: "Mission added!",
+          description: `"${customTitle}" is now on your daily list.`,
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to create custom mission",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("[DailyMissions] Error creating custom:", error)
+      toast({
+        title: "Error",
+        description: "Failed to create custom mission",
+        variant: "destructive",
+      })
+    } finally {
+      setCreatingCustom(false)
+    }
+  }
+
   const totalXPAvailable = activeMissions.reduce((sum, m) => sum + getMissionXP(m), 0)
   const xpEarnedToday = completedMissions.reduce((sum, m) => sum + getMissionXP(m), 0)
 
@@ -191,16 +269,29 @@ export function DailyMissions({ missions: initialMissions, onMissionComplete, cl
               <Info className="h-4 w-4 text-muted-foreground hover:text-accent" />
             </button>
           </div>
-          
-          {/* XP Badge */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20">
-            <Zap className="h-4 w-4 text-accent" />
-            <span className="text-sm font-bold text-accent">
-              {xpEarnedToday > 0 && `+${xpEarnedToday}`}
-              {xpEarnedToday > 0 && totalXPAvailable > 0 && " / "}
-              {totalXPAvailable > 0 && `${totalXPAvailable + xpEarnedToday} XP`}
-              {totalXPAvailable === 0 && xpEarnedToday === 0 && "0 XP"}
-            </span>
+
+          <div className="flex items-center gap-2">
+            {/* Add Custom Mission Button */}
+            <motion.button
+              onClick={() => setShowCustomForm(true)}
+              className="p-2 rounded-full hover:bg-accent/10 transition-colors border border-accent/20 hover:border-accent/40"
+              aria-label="Add custom mission"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Plus className="h-4 w-4 text-accent" />
+            </motion.button>
+
+            {/* XP Badge */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20">
+              <Zap className="h-4 w-4 text-accent" />
+              <span className="text-sm font-bold text-accent">
+                {xpEarnedToday > 0 && `+${xpEarnedToday}`}
+                {xpEarnedToday > 0 && totalXPAvailable > 0 && " / "}
+                {totalXPAvailable > 0 && `${totalXPAvailable + xpEarnedToday} XP`}
+                {totalXPAvailable === 0 && xpEarnedToday === 0 && "0 XP"}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -233,21 +324,34 @@ export function DailyMissions({ missions: initialMissions, onMissionComplete, cl
         {/* Missions List */}
         <div className="space-y-3">
           <AnimatePresence mode="popLayout">
-            {activeMissions.length === 0 && totalCount > 0 && (
+            {visibleMissions.length === 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="text-center py-8"
               >
                 <Trophy className="h-12 w-12 text-accent mx-auto mb-3" />
-                <p className="text-lg font-semibold text-foreground mb-1">All Missions Complete!</p>
-                <p className="text-sm text-muted-foreground">Amazing work today! 🏆</p>
+                <p className="text-lg font-semibold text-foreground mb-1">No Missions Yet</p>
+                <p className="text-sm text-muted-foreground">Click the + button to add your first mission! 🎯</p>
               </motion.div>
             )}
 
-            {activeMissions.map((mission, index) => {
+            {allComplete && visibleMissions.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-6"
+              >
+                <Trophy className="h-12 w-12 text-accent mx-auto mb-3 animate-bounce" />
+                <p className="text-lg font-semibold text-foreground mb-1">All Missions Complete! 🏆</p>
+                <p className="text-sm text-muted-foreground">Amazing work today!</p>
+              </motion.div>
+            )}
+
+            {visibleMissions.map((mission, index) => {
               const isProcessing = processingId === mission.id
               const isCelebrating = celebratingId === mission.id
+              const isCompleted = mission.status === 'completed'
               const xpReward = getMissionXP(mission)
 
               return (
@@ -255,8 +359,8 @@ export function DailyMissions({ missions: initialMissions, onMissionComplete, cl
                   key={mission.id}
                   layout
                   initial={{ opacity: 0, y: 20 }}
-                  animate={{ 
-                    opacity: 1, 
+                  animate={{
+                    opacity: isCompleted ? 0.7 : 1,
                     y: 0,
                     scale: isCelebrating ? [1, 1.02, 1] : 1
                   }}
@@ -265,7 +369,8 @@ export function DailyMissions({ missions: initialMissions, onMissionComplete, cl
                   className={cn(
                     "relative rounded-xl border bg-gradient-to-br p-4",
                     categoryColors[mission.category],
-                    isCelebrating && "ring-2 ring-accent ring-offset-2 ring-offset-background"
+                    isCelebrating && "ring-2 ring-accent ring-offset-2 ring-offset-background",
+                    isCompleted && "border-accent/50"
                   )}
                 >
                   {/* Celebration particles */}
@@ -301,14 +406,24 @@ export function DailyMissions({ missions: initialMissions, onMissionComplete, cl
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-semibold text-foreground text-sm truncate pr-2">
+                        <h3 className={cn(
+                          "font-semibold text-sm truncate pr-2",
+                          isCompleted ? "text-muted-foreground line-through" : "text-foreground"
+                        )}>
                           {mission.title}
                         </h3>
-                        {/* XP Reward Badge */}
-                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 flex-shrink-0">
-                          <Zap className="h-3 w-3 text-accent" />
-                          <span className="text-xs font-bold text-accent">+{xpReward}</span>
-                        </div>
+                        {/* XP Reward or Completion Badge */}
+                        {isCompleted ? (
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/30 flex-shrink-0">
+                            <Check className="h-3 w-3 text-accent" />
+                            <span className="text-xs font-bold text-accent">+{xpReward} XP</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 flex-shrink-0">
+                            <Zap className="h-3 w-3 text-accent" />
+                            <span className="text-xs font-bold text-accent">+{xpReward}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Meta info */}
@@ -320,60 +435,65 @@ export function DailyMissions({ missions: initialMissions, onMissionComplete, cl
                         {mission.status === 'accepted' && (
                           <span className="text-accent font-medium">Ready to complete</span>
                         )}
+                        {isCompleted && (
+                          <span className="text-accent font-medium">✓ Completed</span>
+                        )}
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex items-center gap-2">
-                        {mission.status === 'suggested' && (
-                          <>
+                      {!isCompleted && (
+                        <div className="flex items-center gap-2">
+                          {mission.status === 'suggested' && (
+                            <>
+                              <ButtonGlow
+                                variant="accent-glow"
+                                size="sm"
+                                onClick={() => handleAccept(mission)}
+                                disabled={isProcessing}
+                                className="flex-1 h-8 text-xs"
+                              >
+                                {isProcessing ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Check className="h-3 w-3 mr-1" />
+                                    Accept
+                                  </>
+                                )}
+                              </ButtonGlow>
+                              <ButtonGlow
+                                variant="outline-glow"
+                                size="sm"
+                                onClick={() => handleSkip(mission)}
+                                disabled={isProcessing}
+                                className="h-8 w-8 p-0"
+                              >
+                                <X className="h-3 w-3" />
+                              </ButtonGlow>
+                            </>
+                          )}
+
+                          {mission.status === 'accepted' && (
                             <ButtonGlow
                               variant="accent-glow"
                               size="sm"
-                              onClick={() => handleAccept(mission)}
+                              onClick={() => handleComplete(mission)}
                               disabled={isProcessing}
-                              className="flex-1 h-8 text-xs"
+                              className="w-full h-9 text-sm font-semibold"
                             >
                               {isProcessing ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
+                                <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
                                 <>
-                                  <Check className="h-3 w-3 mr-1" />
-                                  Accept
+                                  <Check className="h-4 w-4 mr-2" />
+                                  Complete Mission
+                                  <ChevronRight className="h-4 w-4 ml-1" />
                                 </>
                               )}
                             </ButtonGlow>
-                            <ButtonGlow
-                              variant="outline-glow"
-                              size="sm"
-                              onClick={() => handleSkip(mission)}
-                              disabled={isProcessing}
-                              className="h-8 w-8 p-0"
-                            >
-                              <X className="h-3 w-3" />
-                            </ButtonGlow>
-                          </>
-                        )}
-                        
-                        {mission.status === 'accepted' && (
-                          <ButtonGlow
-                            variant="accent-glow"
-                            size="sm"
-                            onClick={() => handleComplete(mission)}
-                            disabled={isProcessing}
-                            className="w-full h-9 text-sm font-semibold"
-                          >
-                            {isProcessing ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <>
-                                <Check className="h-4 w-4 mr-2" />
-                                Complete Mission
-                                <ChevronRight className="h-4 w-4 ml-1" />
-                              </>
-                            )}
-                          </ButtonGlow>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -381,19 +501,6 @@ export function DailyMissions({ missions: initialMissions, onMissionComplete, cl
             })}
           </AnimatePresence>
         </div>
-
-        {/* Completed missions summary */}
-        {completedCount > 0 && activeMissions.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-4 pt-4 border-t border-border/50"
-          >
-            <p className="text-sm text-muted-foreground text-center">
-              ✅ {completedCount} mission{completedCount !== 1 ? 's' : ''} completed today
-            </p>
-          </motion.div>
-        )}
       </CardContent>
       
       {/* Info Modal */}
@@ -434,13 +541,155 @@ export function DailyMissions({ missions: initialMissions, onMissionComplete, cl
               </p>
             </div>
           </div>
-          <ButtonGlow 
-            variant="accent-glow" 
+          <ButtonGlow
+            variant="accent-glow"
             className="w-full mt-2"
             onClick={() => setShowInfoModal(false)}
           >
             Got it!
           </ButtonGlow>
+        </DialogContent>
+      </Dialog>
+
+      {/* Custom Mission Form Modal */}
+      <Dialog open={showCustomForm} onOpenChange={setShowCustomForm}>
+        <DialogContent className="max-w-md bg-black/95 border-accent/30">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Plus className="h-5 w-5 text-accent" />
+              Add Custom Mission
+            </DialogTitle>
+            <DialogDescription className="text-white/70">
+              Create your own daily challenge
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            {/* Title Input */}
+            <div className="space-y-2">
+              <Label htmlFor="custom-title" className="text-white">
+                Mission Title
+              </Label>
+              <Input
+                id="custom-title"
+                value={customTitle}
+                onChange={(e) => setCustomTitle(e.target.value)}
+                placeholder="e.g., 30-minute morning walk"
+                className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                disabled={creatingCustom}
+              />
+            </div>
+
+            {/* Category Select */}
+            <div className="space-y-2">
+              <Label htmlFor="custom-category" className="text-white">
+                Category
+              </Label>
+              <Select
+                value={customCategory}
+                onValueChange={(value) => setCustomCategory(value as typeof customCategory)}
+                disabled={creatingCustom}
+              >
+                <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-black/95 border-accent/30">
+                  <SelectItem value="movement" className="text-white hover:bg-white/10">
+                    🏃 Movement
+                  </SelectItem>
+                  <SelectItem value="nutrition" className="text-white hover:bg-white/10">
+                    🥗 Nutrition
+                  </SelectItem>
+                  <SelectItem value="sleep" className="text-white hover:bg-white/10">
+                    😴 Sleep
+                  </SelectItem>
+                  <SelectItem value="mindset" className="text-white hover:bg-white/10">
+                    🧠 Mindset
+                  </SelectItem>
+                  <SelectItem value="recovery" className="text-white hover:bg-white/10">
+                    💆 Recovery
+                  </SelectItem>
+                  <SelectItem value="hydration" className="text-white hover:bg-white/10">
+                    💧 Hydration
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Time Slider */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="custom-time" className="text-white">
+                  Time Commitment
+                </Label>
+                <span className="text-sm text-accent font-semibold">{customTime} min</span>
+              </div>
+              <Slider
+                id="custom-time"
+                min={5}
+                max={60}
+                step={5}
+                value={[customTime]}
+                onValueChange={(value) => setCustomTime(value[0])}
+                disabled={creatingCustom}
+                className="w-full"
+              />
+            </div>
+
+            {/* Energy Slider */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="custom-energy" className="text-white">
+                  Energy Impact
+                </Label>
+                <span className="text-sm text-accent font-semibold">
+                  {customEnergy > 0 ? `+${customEnergy}` : customEnergy} kcal
+                </span>
+              </div>
+              <Slider
+                id="custom-energy"
+                min={0}
+                max={200}
+                step={10}
+                value={[customEnergy]}
+                onValueChange={(value) => setCustomEnergy(value[0])}
+                disabled={creatingCustom}
+                className="w-full"
+              />
+              <p className="text-xs text-white/50">
+                Calories burned or consumed by this activity
+              </p>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 mt-6">
+            <ButtonGlow
+              variant="outline-glow"
+              onClick={() => {
+                setShowCustomForm(false)
+                setCustomTitle("")
+                setCustomCategory("movement")
+                setCustomTime(10)
+                setCustomEnergy(0)
+              }}
+              disabled={creatingCustom}
+              className="flex-1"
+            >
+              Cancel
+            </ButtonGlow>
+            <ButtonGlow
+              variant="accent-glow"
+              onClick={handleCreateCustom}
+              disabled={!customTitle.trim() || creatingCustom}
+              isLoading={creatingCustom}
+              loadingText="Adding..."
+              className="flex-1"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Mission
+            </ButtonGlow>
+          </div>
         </DialogContent>
       </Dialog>
     </Card>
