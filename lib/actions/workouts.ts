@@ -354,7 +354,7 @@ async function createDailyWorkout(
     .from("workouts")
     .insert({
       user_id: userId,
-      name: workoutData.name,
+      workout_name: workoutData.name,
       description: `${dayName} - ${emphasis}: ${workoutData.description}`,
       workout_type: template.workoutType,
       duration_minutes: calculatedDuration,
