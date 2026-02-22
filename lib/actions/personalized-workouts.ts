@@ -301,57 +301,55 @@ NOTE: Good exercise variety (${finalExercises.length} exercises). Maximize quali
 - Progressive overload principles`
     }
 
-    const prompt = `Generate a personalized 4-week workout plan for a ${experienceLevel} user focused on ${fitnessGoal}. Training ${daysPerWeek} days per week, ${sessionDuration} minutes per session. Training style: ${trainingStyle}.
+    // Helper function to call OpenAI with retry logic for a single week
+    const callOpenAIForSingleWeek = async (weekNumber: number, maxRetries = 3): Promise<any> => {
+      const previousWeeksContext = weekNumber > 1
+        ? `\n\nIMPORTANT: This is week ${weekNumber} of a 4-week plan. Ensure progressive overload from previous weeks by:
+- Slightly increasing volume (more reps or sets)
+- Increasing intensity (heavier weight suggestions via RPE)
+- Adding exercise complexity or variation`
+        : ''
+
+      const prompt = `Generate week ${weekNumber} of a personalized workout plan for a ${experienceLevel} user focused on ${fitnessGoal}. Training ${daysPerWeek} days per week, ${sessionDuration} minutes per session. Training style: ${trainingStyle}.${previousWeeksContext}
 ${adaptiveInstructions}
 
 Available exercises:
 ${availableExercises}
 
 CRITICAL REQUIREMENTS:
-- Create 4 weeks with ${daysPerWeek} workouts per week
+- Create ${daysPerWeek} workouts for week ${weekNumber}
 - Include ${exercisesPerWorkout} exercises per workout
 - Use ONLY exercise IDs from the available exercises list above
-- Progressive overload: increase volume, intensity, or complexity across weeks
 - Ensure proper muscle group balance and recovery
 - Set RPE between 6.0-9.0 based on exercise difficulty and experience level
 - Use simple text in notes field (avoid quotes, apostrophes, special characters)
 
 Return ONLY valid JSON (no markdown, no extra text) with this exact structure:
 {
-  "planName": "4-Week Goal-Based Plan",
-  "planType": "${trainingStyle}",
-  "daysPerWeek": ${daysPerWeek},
+  "weekNumber": ${weekNumber},
   "splitPattern": "training split description",
-  "weeks": [
+  "workouts": [
     {
-      "weekNumber": 1,
-      "workouts": [
+      "dayOfWeek": 1,
+      "workoutName": "Workout Name",
+      "focusAreas": ["muscle1", "muscle2"],
+      "estimatedDuration": ${sessionDuration},
+      "exercises": [
         {
-          "dayOfWeek": 1,
-          "workoutName": "Workout Name",
-          "focusAreas": ["muscle1", "muscle2"],
-          "estimatedDuration": ${sessionDuration},
-          "exercises": [
-            {
-              "exerciseId": "UUID-FROM-LIST",
-              "exerciseOrder": 1,
-              "sets": 3,
-              "repsMin": 8,
-              "repsMax": 12,
-              "restSeconds": 90,
-              "tempo": "3-0-1-1",
-              "rpe": 7.5,
-              "notes": "form cue"
-            }
-          ]
+          "exerciseId": "UUID-FROM-LIST",
+          "exerciseOrder": 1,
+          "sets": 3,
+          "repsMin": 8,
+          "repsMax": 12,
+          "restSeconds": 90,
+          "tempo": "3-0-1-1",
+          "rpe": 7.5,
+          "notes": "form cue"
         }
       ]
     }
   ]
 }`
-
-    // Helper function to call OpenAI with retry logic
-    const callOpenAIWithRetry = async (maxRetries = 3): Promise<any> => {
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
           console.log(`[generateWorkoutPlan] OpenAI API call attempt ${attempt}/${maxRetries}...`)
@@ -365,7 +363,7 @@ Return ONLY valid JSON (no markdown, no extra text) with this exact structure:
             body: JSON.stringify({
               model: 'gpt-4o',
               temperature: 0.7,
-              max_tokens: 32000, // Increased to handle full 4-week plans with all exercises
+              max_tokens: 8000, // Reduced - generating one week at a time
               messages: [
                 {
                   role: 'system',
@@ -413,17 +411,17 @@ CRITICAL JSON REQUIREMENTS:
           }
 
           // Attempt to parse JSON with detailed error handling
-          let generatedPlan: any
+          let generatedWeek: any
           try {
-            generatedPlan = JSON.parse(aiResponse)
+            generatedWeek = JSON.parse(aiResponse)
           } catch (parseError) {
-            console.error(`[generateWorkoutPlan] JSON parse error (attempt ${attempt}):`, parseError)
+            console.error(`[generateWorkoutPlan] JSON parse error for week ${weekNumber} (attempt ${attempt}):`, parseError)
             console.error('[generateWorkoutPlan] AI response length:', aiResponse.length)
             console.error('[generateWorkoutPlan] AI response preview:', aiResponse.substring(0, 500))
             console.error('[generateWorkoutPlan] AI response ending:', aiResponse.substring(Math.max(0, aiResponse.length - 500)))
 
             if (attempt === maxRetries) {
-              throw new Error(`Invalid JSON from AI: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`)
+              throw new Error(`Invalid JSON from AI for week ${weekNumber}: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`)
             }
 
             // Try next attempt with exponential backoff
@@ -431,48 +429,35 @@ CRITICAL JSON REQUIREMENTS:
             continue
           }
 
-          // Validate the structure
-          if (!generatedPlan.planName || !generatedPlan.weeks || !Array.isArray(generatedPlan.weeks)) {
-            console.error(`[generateWorkoutPlan] Invalid plan structure (attempt ${attempt}):`, Object.keys(generatedPlan))
+          // Validate the week structure
+          if (!generatedWeek.weekNumber || !generatedWeek.workouts || !Array.isArray(generatedWeek.workouts)) {
+            console.error(`[generateWorkoutPlan] Invalid week structure for week ${weekNumber} (attempt ${attempt}):`, Object.keys(generatedWeek))
 
             if (attempt === maxRetries) {
-              throw new Error('AI generated plan with invalid structure')
+              throw new Error(`AI generated week ${weekNumber} with invalid structure`)
             }
 
             await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
             continue
           }
 
-          // Validate weeks structure
-          for (const week of generatedPlan.weeks) {
-            if (!week.weekNumber || !week.workouts || !Array.isArray(week.workouts)) {
-              console.error(`[generateWorkoutPlan] Invalid week structure (attempt ${attempt})`)
+          // Validate workouts structure
+          for (const workout of generatedWeek.workouts) {
+            if (!workout.workoutName || !workout.exercises || !Array.isArray(workout.exercises)) {
+              console.error(`[generateWorkoutPlan] Invalid workout structure in week ${weekNumber} (attempt ${attempt})`)
 
               if (attempt === maxRetries) {
-                throw new Error('AI generated week with invalid structure')
+                throw new Error(`AI generated workout with invalid structure in week ${weekNumber}`)
               }
 
               await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
               continue
             }
-
-            for (const workout of week.workouts) {
-              if (!workout.workoutName || !workout.exercises || !Array.isArray(workout.exercises)) {
-                console.error(`[generateWorkoutPlan] Invalid workout structure (attempt ${attempt})`)
-
-                if (attempt === maxRetries) {
-                  throw new Error('AI generated workout with invalid structure')
-                }
-
-                await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
-                continue
-              }
-            }
           }
 
-          // Success! Return the validated plan
-          console.log(`[generateWorkoutPlan] Successfully generated plan on attempt ${attempt}`)
-          return generatedPlan
+          // Success! Return the validated week
+          console.log(`[generateWorkoutPlan] Successfully generated week ${weekNumber} on attempt ${attempt}`)
+          return generatedWeek
 
         } catch (error) {
           console.error(`[generateWorkoutPlan] Error on attempt ${attempt}:`, error)
@@ -486,11 +471,42 @@ CRITICAL JSON REQUIREMENTS:
         }
       }
 
-      throw new Error('Failed to generate workout plan after all retries')
+      throw new Error(`Failed to generate week ${weekNumber} after all retries`)
     }
 
-    // Call OpenAI with retry logic
-    const generatedPlan = await callOpenAIWithRetry()
+    // Generate all 4 weeks sequentially
+    console.log('[generateWorkoutPlan] Starting week-by-week generation...')
+    const allWeeks: any[] = []
+    let splitPattern = ''
+
+    for (let weekNum = 1; weekNum <= 4; weekNum++) {
+      console.log(`[generateWorkoutPlan] Generating week ${weekNum}/4...`)
+      const weekData = await callOpenAIForSingleWeek(weekNum)
+
+      // Store split pattern from first week
+      if (weekNum === 1 && weekData.splitPattern) {
+        splitPattern = weekData.splitPattern
+      }
+
+      allWeeks.push(weekData)
+      console.log(`[generateWorkoutPlan] Week ${weekNum} completed successfully`)
+
+      // Small delay between API calls to avoid rate limiting
+      if (weekNum < 4) {
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+    }
+
+    // Combine into full plan structure
+    const generatedPlan = {
+      planName: `4-Week ${trainingStyle.charAt(0).toUpperCase() + trainingStyle.slice(1)} Plan`,
+      planType: trainingStyle,
+      daysPerWeek: daysPerWeek,
+      splitPattern: splitPattern || 'Progressive training split',
+      weeks: allWeeks
+    }
+
+    console.log('[generateWorkoutPlan] All 4 weeks generated successfully!')
 
     // Save plan to database
     const startDate = new Date()
