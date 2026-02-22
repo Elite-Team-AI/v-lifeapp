@@ -207,12 +207,15 @@ export function ManageHabitsModal({ isOpen, onClose, habits, onHabitsChange }: M
                   <p className="text-sm text-accent">Add, edit, or remove your habits</p>
                 </div>
               </div>
-              <button
+              <motion.button
                 onClick={onClose}
-                className="rounded-full p-2 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                className="rounded-full p-2 text-white/70 transition-colors hover:bg-white/10 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center"
+                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 <X className="h-5 w-5" />
-              </button>
+              </motion.button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4">
@@ -281,13 +284,14 @@ export function ManageHabitsModal({ isOpen, onClose, habits, onHabitsChange }: M
                         variant="accent-glow"
                         size="sm"
                         onClick={handleSave}
-                        disabled={isSaving}
+                        isLoading={isSaving}
+                        loadingText="Saving..."
                         className="flex-1"
                       >
                         <Save className="mr-1 h-4 w-4" />
-                        {isSaving ? "Saving..." : "Save"}
+                        Save
                       </ButtonGlow>
-                      <ButtonGlow variant="outline-glow" size="sm" onClick={handleCancel} className="flex-1">
+                      <ButtonGlow variant="outline-glow" size="sm" onClick={handleCancel} disabled={isSaving} className="flex-1">
                         Cancel
                       </ButtonGlow>
                     </div>
@@ -309,37 +313,48 @@ export function ManageHabitsModal({ isOpen, onClose, habits, onHabitsChange }: M
                   </Card>
                 ) : (
                   habits.map((habit) => (
-                    <Card
+                    <motion.div
                       key={habit.id}
-                      className={`border-white/10 bg-black/50 p-3 ${editingHabit?.id === habit.id ? "border-accent/50" : ""}`}
+                      whileTap={{ scale: 0.98 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-white">{habit.name}</h4>
-                          <div className="mt-1 flex gap-2 text-xs text-white/60">
-                            <span className="capitalize">{habit.category}</span>
-                            <span>•</span>
-                            <span className="capitalize">{habit.frequency}</span>
-                            <span>•</span>
-                            <span>{habit.current_streak} day streak</span>
+                      <Card
+                        className={`border-white/10 bg-black/50 p-3 ${editingHabit?.id === habit.id ? "border-accent/50" : ""}`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-white truncate">{habit.name}</h4>
+                            <div className="mt-1 flex flex-wrap gap-2 text-xs text-white/60">
+                              <span className="capitalize">{habit.category}</span>
+                              <span>•</span>
+                              <span className="capitalize">{habit.frequency}</span>
+                              <span>•</span>
+                              <span>{habit.current_streak} day streak</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 flex-shrink-0">
+                            <motion.button
+                              onClick={() => handleEdit(habit)}
+                              className="rounded-full p-2.5 text-accent transition-colors hover:bg-accent/10 active:bg-accent/20 min-w-[40px] min-h-[40px] flex items-center justify-center"
+                              whileTap={{ scale: 0.9 }}
+                              whileHover={{ scale: 1.05 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </motion.button>
+                            <motion.button
+                              onClick={() => handleDelete(habit.id)}
+                              className="rounded-full p-2.5 text-red-400 transition-colors hover:bg-red-500/10 active:bg-red-500/20 min-w-[40px] min-h-[40px] flex items-center justify-center"
+                              whileTap={{ scale: 0.9 }}
+                              whileHover={{ scale: 1.05 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </motion.button>
                           </div>
                         </div>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => handleEdit(habit)}
-                            className="rounded-full p-2 text-accent transition-colors hover:bg-accent/10"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(habit.id)}
-                            className="rounded-full p-2 text-red-400 transition-colors hover:bg-red-500/10"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </Card>
+                      </Card>
+                    </motion.div>
                   ))
                 )}
               </div>

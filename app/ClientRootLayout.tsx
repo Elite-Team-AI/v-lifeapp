@@ -5,6 +5,7 @@ import { useEffect } from "react"
 import { ThemeProvider } from "@/components/theme-provider"
 import { NavigationLoading } from "@/components/navigation-loading"
 import { AppDataProvider } from "@/lib/contexts/app-data-context"
+import { PageTransition } from "@/components/ui/page-transition"
 
 export function Providers({
   children,
@@ -65,7 +66,9 @@ export function Providers({
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
       <AppDataProvider>
         <NavigationLoading />
-        {children}
+        <PageTransition>
+          {children}
+        </PageTransition>
       </AppDataProvider>
     </ThemeProvider>
   )

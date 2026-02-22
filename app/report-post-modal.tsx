@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
+import { motion } from "framer-motion"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { ButtonGlow } from "@/components/ui/button-glow"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { AlertTriangle, Flag, Loader2 } from "lucide-react"
+import { AlertTriangle, Flag } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface ReportPostModalProps {
@@ -95,19 +96,21 @@ export function ReportPostModal({ isOpen, onClose, postId, postTitle }: ReportPo
             <Label className="text-white">Why are you reporting this post?</Label>
             <div className="space-y-2">
               {REPORT_REASONS.map((reason) => (
-                <button
+                <motion.button
                   key={reason.id}
                   type="button"
                   onClick={() => setSelectedReason(reason.id)}
-                  className={`w-full text-left p-3 rounded-lg border transition-all ${
+                  className={`w-full text-left p-3 rounded-lg border transition-all min-h-[64px] ${
                     selectedReason === reason.id
                       ? "border-accent bg-accent/10"
                       : "border-white/10 bg-black/30 hover:bg-white/5"
                   }`}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
                 >
                   <div className="font-medium text-white">{reason.label}</div>
                   <div className="text-sm text-white/60">{reason.description}</div>
-                </button>
+                </motion.button>
               ))}
             </div>
           </div>
@@ -144,16 +147,11 @@ export function ReportPostModal({ isOpen, onClose, postId, postTitle }: ReportPo
             variant="glow"
             className="flex-1 bg-red-500 hover:bg-red-600"
             onClick={handleSubmit}
-            disabled={!selectedReason || isSubmitting}
+            disabled={!selectedReason}
+            isLoading={isSubmitting}
+            loadingText="Submitting..."
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              "Submit Report"
-            )}
+            Submit Report
           </ButtonGlow>
         </div>
       </DialogContent>

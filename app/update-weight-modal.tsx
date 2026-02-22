@@ -116,31 +116,41 @@ export function UpdateWeightModal({ isOpen, onClose, currentWeight, recentEntrie
                     <p className="text-xs text-accent">Track your progress</p>
                   </div>
                 </div>
-                <button onClick={onClose} className="rounded-full p-1 hover:bg-white/10">
+                <motion.button
+                  onClick={onClose}
+                  className="rounded-full p-2 hover:bg-white/10 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                >
                   <X className="h-5 w-5 text-white/60" />
-                </button>
+                </motion.button>
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {/* Unit Toggle */}
                 <div className="flex justify-center">
                   <div className="flex rounded-lg bg-black/30 p-1">
-                    <button
+                    <motion.button
                       onClick={() => setUnit("lbs")}
-                      className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-all min-w-[44px] min-h-[44px] flex items-center justify-center ${
                         unit === "lbs" ? "bg-accent text-black" : "text-white/70 hover:text-white"
                       }`}
+                      whileTap={{ scale: 0.95 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     >
                       lbs
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button
                       onClick={() => setUnit("kg")}
-                      className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-all min-w-[44px] min-h-[44px] flex items-center justify-center ${
                         unit === "kg" ? "bg-accent text-black" : "text-white/70 hover:text-white"
                       }`}
+                      whileTap={{ scale: 0.95 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     >
                       kg
-                    </button>
+                    </motion.button>
                   </div>
                 </div>
 
@@ -168,18 +178,20 @@ export function UpdateWeightModal({ isOpen, onClose, currentWeight, recentEntrie
                   <Label className="text-white">Quick Adjustments</Label>
                   <div className="grid grid-cols-6 gap-2">
                     {quickAdjustments.map((adj) => (
-                      <button
+                      <motion.button
                         key={adj}
                         onClick={() => adjustWeight(adj)}
-                        className={`flex items-center justify-center h-10 rounded-lg border transition-all text-sm font-medium ${
+                        className={`flex items-center justify-center min-h-[44px] rounded-lg border transition-all text-sm font-medium ${
                           adj < 0
-                            ? "border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20"
-                            : "border-green-500/30 bg-green-500/10 text-green-400 hover:bg-green-500/20"
+                            ? "border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 active:bg-red-500/30"
+                            : "border-green-500/30 bg-green-500/10 text-green-400 hover:bg-green-500/20 active:bg-green-500/30"
                         }`}
+                        whileTap={{ scale: 0.95 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
                       >
                         {adj > 0 ? "+" : ""}
                         {adj}
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 </div>
@@ -271,11 +283,13 @@ export function UpdateWeightModal({ isOpen, onClose, currentWeight, recentEntrie
                 <ButtonGlow
                   variant="accent-glow"
                   onClick={handleUpdate}
-                  disabled={!weight || Number.parseFloat(weight) <= 0 || isPending}
+                  disabled={!weight || Number.parseFloat(weight) <= 0}
+                  isLoading={isPending}
+                  loadingText="Saving..."
                   className="flex-1"
                 >
                   <Scale className="mr-2 h-4 w-4" />
-                  {isPending ? "Saving..." : "Update Weight"}
+                  Update Weight
                 </ButtonGlow>
               </div>
             </Card>

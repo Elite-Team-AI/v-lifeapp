@@ -56,20 +56,26 @@ export function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalProps) {
   const [selectedCategory, setSelectedCategory] = useState("fitness")
   const [selectedFrequency, setSelectedFrequency] = useState("daily")
   const [showSuggestions, setShowSuggestions] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (habitName.trim()) {
-      onAdd({
-        name: habitName.trim(),
-        category: selectedCategory,
-        frequency: selectedFrequency,
-      })
-      // Reset form
-      setHabitName("")
-      setSelectedCategory("fitness")
-      setSelectedFrequency("daily")
-      setShowSuggestions(true)
-      onClose()
+      setIsLoading(true)
+      try {
+        await onAdd({
+          name: habitName.trim(),
+          category: selectedCategory,
+          frequency: selectedFrequency,
+        })
+        // Reset form
+        setHabitName("")
+        setSelectedCategory("fitness")
+        setSelectedFrequency("daily")
+        setShowSuggestions(true)
+        onClose()
+      } finally {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -102,9 +108,16 @@ export function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalProps) {
                   <h3 className="font-bold text-white">Add New Habit</h3>
                   <p className="text-xs text-accent">Build consistency, one habit at a time</p>
                 </div>
-                <button onClick={onClose} className="rounded-full p-1 hover:bg-white/10">
+                <motion.button
+                  onClick={onClose}
+                  className="rounded-full p-2 hover:bg-white/10 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  disabled={isLoading}
+                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                >
                   <X className="h-5 w-5 text-white/60" />
-                </button>
+                </motion.button>
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -113,28 +126,33 @@ export function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalProps) {
                   <Label className="text-white">Category</Label>
                   <div className="grid grid-cols-3 gap-2">
                     {habitCategories.map((category) => (
-                      <Card
+                      <motion.div
                         key={category.id}
-                        className={`cursor-pointer transition-all hover:border-accent/50 ${
-                          selectedCategory === category.id
-                            ? "border-accent border-glow bg-accent/10"
-                            : "border-white/10 bg-black/30"
-                        }`}
-                        onClick={() => setSelectedCategory(category.id)}
+                        whileTap={{ scale: 0.98 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
                       >
-                        <CardContent className="p-3 text-center">
-                          <category.icon
-                            className={`mx-auto mb-1 h-5 w-5 ${
-                              selectedCategory === category.id ? "text-accent" : category.color
-                            }`}
-                          />
-                          <span
-                            className={`text-xs ${selectedCategory === category.id ? "text-accent" : "text-white/70"}`}
-                          >
-                            {category.name}
-                          </span>
-                        </CardContent>
-                      </Card>
+                        <Card
+                          className={`cursor-pointer transition-all hover:border-accent/50 min-h-[72px] ${
+                            selectedCategory === category.id
+                              ? "border-accent border-glow bg-accent/10"
+                              : "border-white/10 bg-black/30"
+                          }`}
+                          onClick={() => setSelectedCategory(category.id)}
+                        >
+                          <CardContent className="p-3 text-center">
+                            <category.icon
+                              className={`mx-auto mb-1 h-5 w-5 ${
+                                selectedCategory === category.id ? "text-accent" : category.color
+                              }`}
+                            />
+                            <span
+                              className={`text-xs ${selectedCategory === category.id ? "text-accent" : "text-white/70"}`}
+                            >
+                              {category.name}
+                            </span>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
                     ))}
                   </div>
                 </div>
@@ -159,13 +177,15 @@ export function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalProps) {
                     <Label className="text-white">Suggested Habits</Label>
                     <div className="space-y-2">
                       {suggestedHabits[selectedCategory as keyof typeof suggestedHabits].map((habit, index) => (
-                        <button
+                        <motion.button
                           key={index}
                           onClick={() => selectSuggestedHabit(habit)}
-                          className="w-full text-left rounded-lg border border-white/10 bg-black/30 p-3 text-sm text-white/80 transition-all hover:border-accent/50 hover:bg-accent/5"
+                          className="w-full text-left rounded-lg border border-white/10 bg-black/30 p-3 text-sm text-white/80 transition-all hover:border-accent/50 hover:bg-accent/5 active:border-accent min-h-[44px]"
+                          whileTap={{ scale: 0.98 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 17 }}
                         >
                           {habit}
-                        </button>
+                        </motion.button>
                       ))}
                     </div>
                   </div>
@@ -176,41 +196,53 @@ export function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalProps) {
                   <Label className="text-white">Frequency</Label>
                   <div className="space-y-2">
                     {frequencyOptions.map((option) => (
-                      <Card
+                      <motion.div
                         key={option.id}
-                        className={`cursor-pointer transition-all hover:border-accent/50 ${
-                          selectedFrequency === option.id
-                            ? "border-accent border-glow bg-accent/10"
-                            : "border-white/10 bg-black/30"
-                        }`}
-                        onClick={() => setSelectedFrequency(option.id)}
+                        whileTap={{ scale: 0.98 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
                       >
-                        <CardContent className="p-3">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h4
-                                className={`font-medium ${
-                                  selectedFrequency === option.id ? "text-accent" : "text-white"
-                                }`}
-                              >
-                                {option.name}
-                              </h4>
-                              <p className="text-xs text-white/60">{option.description}</p>
+                        <Card
+                          className={`cursor-pointer transition-all hover:border-accent/50 min-h-[60px] ${
+                            selectedFrequency === option.id
+                              ? "border-accent border-glow bg-accent/10"
+                              : "border-white/10 bg-black/30"
+                          }`}
+                          onClick={() => setSelectedFrequency(option.id)}
+                        >
+                          <CardContent className="p-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4
+                                  className={`font-medium ${
+                                    selectedFrequency === option.id ? "text-accent" : "text-white"
+                                  }`}
+                                >
+                                  {option.name}
+                                </h4>
+                                <p className="text-xs text-white/60">{option.description}</p>
+                              </div>
+                              {selectedFrequency === option.id && <div className="h-4 w-4 rounded-full bg-accent" />}
                             </div>
-                            {selectedFrequency === option.id && <div className="h-4 w-4 rounded-full bg-accent" />}
-                          </div>
-                        </CardContent>
-                      </Card>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
                     ))}
                   </div>
                 </div>
               </div>
 
               <div className="border-t border-accent/20 p-4 flex gap-3 flex-shrink-0">
-                <ButtonGlow variant="outline-glow" onClick={onClose} className="flex-1">
+                <ButtonGlow variant="outline-glow" onClick={onClose} className="flex-1" disabled={isLoading}>
                   Cancel
                 </ButtonGlow>
-                <ButtonGlow variant="accent-glow" onClick={handleAdd} disabled={!habitName.trim()} className="flex-1">
+                <ButtonGlow
+                  variant="accent-glow"
+                  onClick={handleAdd}
+                  disabled={!habitName.trim()}
+                  isLoading={isLoading}
+                  loadingText="Adding..."
+                  className="flex-1"
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   Add Habit
                 </ButtonGlow>

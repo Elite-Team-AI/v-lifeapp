@@ -4,6 +4,7 @@ import { memo, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Home, Dumbbell, Utensils, Users, Bot } from "lucide-react"
+import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 
 const leftNavItems = [
@@ -16,28 +17,40 @@ const rightNavItems = [
   { icon: Users, label: "Community", path: "/community" },
 ]
 
-// Memoized nav item to prevent unnecessary re-renders
-const NavItem = memo(function NavItem({ 
-  path, 
-  label, 
-  Icon, 
-  isActive 
-}: { 
+// Memoized nav item to prevent unnecessary re-renders with enhanced touch interactions
+const NavItem = memo(function NavItem({
+  path,
+  label,
+  Icon,
+  isActive
+}: {
   path: string
   label: string
   Icon: typeof Home
-  isActive: boolean 
+  isActive: boolean
 }) {
   return (
     <Link
       href={path}
       prefetch={true}
-      className="flex flex-col items-center justify-center min-w-[60px]"
+      className="flex flex-col items-center justify-center min-w-[72px] min-h-[56px] -mb-1"
     >
-      <Icon className={cn("h-6 w-6", isActive ? "text-accent" : "text-white/60")} />
-      <span className={cn("mt-1 text-xs", isActive ? "text-accent font-medium" : "text-white/60")}>
-        {label}
-      </span>
+      <motion.div
+        className="flex flex-col items-center"
+        whileTap={{ scale: 0.9 }}
+        whileHover={{ scale: 1.05 }}
+        transition={{ type: "spring", stiffness: 400, damping: 17 }}
+      >
+        <motion.div
+          animate={isActive ? { scale: [1, 1.1, 1] } : {}}
+          transition={{ duration: 0.3 }}
+        >
+          <Icon className={cn("h-6 w-6", isActive ? "text-accent" : "text-white/60")} />
+        </motion.div>
+        <span className={cn("mt-1.5 text-xs", isActive ? "text-accent font-medium" : "text-white/60")}>
+          {label}
+        </span>
+      </motion.div>
     </Link>
   )
 })
@@ -64,7 +77,7 @@ export const BottomNav = memo(function BottomNav() {
     <div className="fixed bottom-0 left-0 z-50 w-full border-t border-white/10 bg-black/90 backdrop-blur-lg pb-safe">
       <div className="mx-auto flex h-20 max-w-md items-end justify-between px-4 pb-2 relative">
         {/* Left nav items */}
-        <div className="flex gap-2 mr-2">
+        <div className="flex gap-4 mr-3">
           {leftNavItems.map((item) => (
             <NavItem
               key={item.path}
@@ -79,18 +92,26 @@ export const BottomNav = memo(function BottomNav() {
         <Link
           href="/vbot"
           prefetch={true}
-          className={cn(
-            "absolute left-1/2 -translate-x-1/2 -top-4 flex h-14 w-14 items-center justify-center rounded-full border-2 border-black",
-            isVBotActive
-              ? "bg-accent scale-105 shadow-[0_0_20px_rgba(255,215,0,0.6)]"
-              : "bg-gradient-to-br from-accent to-accent/90 hover:scale-110 shadow-[0_0_15px_rgba(255,215,0,0.5)]",
-          )}
+          className="absolute left-1/2 -translate-x-1/2 -top-4"
         >
-          <Bot className="h-7 w-7 text-black" strokeWidth={2.5} />
+          <motion.div
+            className={cn(
+              "flex h-16 w-16 items-center justify-center rounded-full border-2 border-black",
+              isVBotActive
+                ? "bg-accent shadow-[0_0_20px_rgba(255,215,0,0.6)]"
+                : "bg-gradient-to-br from-accent to-accent/90 shadow-[0_0_15px_rgba(255,215,0,0.5)]",
+            )}
+            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.1 }}
+            animate={isVBotActive ? { scale: [1, 1.05, 1] } : {}}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
+            <Bot className="h-7 w-7 text-black" strokeWidth={2.5} />
+          </motion.div>
         </Link>
 
         {/* Right nav items */}
-        <div className="flex gap-2 ml-2">
+        <div className="flex gap-4 ml-3">
           {rightNavItems.map((item) => (
             <NavItem
               key={item.path}

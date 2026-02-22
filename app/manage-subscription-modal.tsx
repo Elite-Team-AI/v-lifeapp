@@ -491,9 +491,10 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
                       }
                       loadData()
                     }}
-                    disabled={loading}
+                    isLoading={loading}
+                    loadingText="Retrying..."
                   >
-                    <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                    <RefreshCw className="mr-2 h-4 w-4" />
                     Retry
                   </ButtonGlow>
                 </div>
@@ -543,7 +544,9 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
                           variant={plan.popular ? "glow" : "outline-glow"}
                           className="w-full"
                           onClick={() => handleChangePlan(plan.id)}
-                          disabled={loading || (isNative && plan.price > 0 && revenueCatPackages.length === 0)}
+                          disabled={isNative && plan.price > 0 && revenueCatPackages.length === 0}
+                          isLoading={loading}
+                          loadingText={`${plan.price > currentPlan.price ? "Upgrading" : plan.price === 0 ? "Downgrading" : "Switching"} to ${plan.name}...`}
                         >
                           {isNative && plan.price > 0 && revenueCatPackages.length === 0
                             ? "Unavailable — Try Again Later"
@@ -588,9 +591,10 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
               variant="outline-glow"
               className="w-full"
               onClick={handleRestorePurchases}
-              disabled={loading}
+              isLoading={loading}
+              loadingText="Restoring..."
             >
-              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw className="mr-2 h-4 w-4" />
               Restore Purchases
             </ButtonGlow>
           )}
@@ -610,7 +614,8 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
               variant="outline-glow"
               className="w-full text-red-400 hover:text-red-300"
               onClick={handleCancelSubscription}
-              disabled={loading}
+              isLoading={loading && !isNative}
+              loadingText="Cancelling..."
             >
               {isNative ? "How to Cancel" : "Cancel Subscription"}
             </ButtonGlow>

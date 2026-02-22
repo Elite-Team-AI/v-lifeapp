@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { motion } from "framer-motion"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -133,13 +134,16 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
                 onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
                 className="border-white/10 bg-white/5 pr-10 text-white placeholder:text-white/40"
               />
-              <button
+              <motion.button
                 type="button"
                 onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center"
+                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+              </motion.button>
             </div>
             {errors.currentPassword && <p className="mt-1 text-xs text-red-400">{errors.currentPassword}</p>}
           </div>
@@ -158,13 +162,16 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
                 onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
                 className="border-white/10 bg-white/5 pr-10 text-white placeholder:text-white/40"
               />
-              <button
+              <motion.button
                 type="button"
                 onClick={() => setShowNewPassword(!showNewPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center"
+                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+              </motion.button>
             </div>
             {errors.newPassword && <p className="mt-1 text-xs text-red-400">{errors.newPassword}</p>}
           </div>
@@ -183,13 +190,16 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 className="border-white/10 bg-white/5 pr-10 text-white placeholder:text-white/40"
               />
-              <button
+              <motion.button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white min-w-[44px] min-h-[44px] flex items-center justify-center"
+                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+              </motion.button>
             </div>
             {errors.confirmPassword && <p className="mt-1 text-xs text-red-400">{errors.confirmPassword}</p>}
           </div>
@@ -209,8 +219,14 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
           <ButtonGlow variant="outline-glow" className="flex-1" onClick={handleClose} disabled={loading}>
             Cancel
           </ButtonGlow>
-          <ButtonGlow variant="glow" className="flex-1" onClick={handleSubmit} disabled={loading}>
-            {loading ? "Changing..." : "Change Password"}
+          <ButtonGlow
+            variant="glow"
+            className="flex-1"
+            onClick={handleSubmit}
+            isLoading={loading}
+            loadingText="Changing..."
+          >
+            Change Password
           </ButtonGlow>
         </div>
       </DialogContent>

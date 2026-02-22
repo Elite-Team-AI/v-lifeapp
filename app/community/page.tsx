@@ -826,12 +826,12 @@ export default function Community() {
       </div>
 
       <Dialog open={!!selectedPost} onOpenChange={() => setSelectedPost(null)}>
-        <DialogContent className="max-w-md backdrop-blur-xl bg-black/95 border-accent/30 shadow-[0_0_30px_rgba(255,215,0,0.2)]">
-          <DialogHeader>
+        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] flex flex-col backdrop-blur-xl bg-black/95 border-accent/30 shadow-[0_0_30px_rgba(255,215,0,0.2)]">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="tracking-tight font-heading bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">Comments</DialogTitle>
             <DialogDescription className="text-white/70 leading-relaxed">{selectedPost?.comments || 0} comments</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-1">
             {selectedPost?.commentsList?.map((comment, index) => (
               <motion.div
                 key={comment.id}
@@ -875,7 +875,7 @@ export default function Community() {
               </motion.div>
             )}
           </div>
-          <div className="flex gap-2 pt-4 border-t border-white/10">
+          <div className="flex gap-2 pt-4 border-t border-white/10 flex-shrink-0">
             <Input
               placeholder="Add a comment..."
               value={commentText}
@@ -891,15 +891,15 @@ export default function Community() {
       </Dialog>
 
       <Dialog open={showLeaderboard} onOpenChange={setShowLeaderboard}>
-        <DialogContent className="max-w-md backdrop-blur-xl bg-black/95 border-accent/30 shadow-[0_0_30px_rgba(255,215,0,0.2)]">
-          <DialogHeader>
+        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] flex flex-col backdrop-blur-xl bg-black/95 border-accent/30 shadow-[0_0_30px_rgba(255,215,0,0.2)]">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="tracking-tight font-heading bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto] flex items-center">
               <Medal className="mr-2 h-5 w-5 text-yellow-400" />
               Community Leaderboard
             </DialogTitle>
             <DialogDescription className="text-white/70 leading-relaxed">Top contributors this month</DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-3 overflow-y-auto flex-1 pr-1">
             {leaderboard.map((user, index) => (
               <motion.div
                 key={user.rank}
@@ -939,7 +939,7 @@ export default function Community() {
       </Dialog>
 
       <Dialog open={showChallenges} onOpenChange={setShowChallenges}>
-        <DialogContent className="max-w-md backdrop-blur-xl bg-black/95 border-accent/30 shadow-[0_0_30px_rgba(255,215,0,0.2)] max-h-[85vh] flex flex-col">
+        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] flex flex-col backdrop-blur-xl bg-black/95 border-accent/30 shadow-[0_0_30px_rgba(255,215,0,0.2)]">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="tracking-tight font-heading bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent animate-gradient-shift bg-[length:200%_auto] flex items-center">
               <Target className="mr-2 h-5 w-5 text-accent" />

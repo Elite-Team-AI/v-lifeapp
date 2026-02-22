@@ -69,9 +69,16 @@ export function MealSwapModal({
                   <h3 className="font-bold text-white">Swap {mealType}</h3>
                   <p className="text-xs text-accent">Currently: {currentMeal}</p>
                 </div>
-                <button onClick={onClose} className="rounded-full p-1 hover:bg-white/10">
+                <motion.button
+                  onClick={onClose}
+                  className="rounded-full p-2 hover:bg-white/10 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  disabled={isSaving}
+                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                >
                   <X className="h-5 w-5 text-white/60" />
-                </button>
+                </motion.button>
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -79,42 +86,49 @@ export function MealSwapModal({
                   <div className="text-center text-sm text-white/60">Loading alternatives...</div>
                 ) : (
                   alternatives.map((meal, index) => (
-                    <Card
+                    <motion.div
                       key={index}
-                      className={`cursor-pointer transition-all hover:border-accent/50 ${
-                        selectedMeal?.id === meal.id ? "border-accent border-glow bg-accent/10" : "border-white/10 bg-black/30"
-                      }`}
-                      onClick={() => setSelectedMeal(meal)}
+                      whileTap={{ scale: 0.98 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     >
-                      <CardContent className="p-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <h4 className={`font-medium ${selectedMeal?.id === meal.id ? "text-accent" : "text-white"}`}>
-                              {meal.name}
-                            </h4>
-                            <p className="text-sm text-white/60">{meal.calories} kcal</p>
-                            {meal.description && <p className="text-xs text-white/50 mt-1">{meal.description}</p>}
+                      <Card
+                        className={`cursor-pointer transition-all hover:border-accent/50 min-h-[72px] ${
+                          selectedMeal?.id === meal.id ? "border-accent border-glow bg-accent/10" : "border-white/10 bg-black/30"
+                        }`}
+                        onClick={() => setSelectedMeal(meal)}
+                      >
+                        <CardContent className="p-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <h4 className={`font-medium ${selectedMeal?.id === meal.id ? "text-accent" : "text-white"}`}>
+                                {meal.name}
+                              </h4>
+                              <p className="text-sm text-white/60">{meal.calories} kcal</p>
+                              {meal.description && <p className="text-xs text-white/50 mt-1">{meal.description}</p>}
+                            </div>
+                            {selectedMeal?.id === meal.id && <Check className="h-5 w-5 text-accent ml-2" />}
                           </div>
-                          {selectedMeal?.id === meal.id && <Check className="h-5 w-5 text-accent ml-2" />}
-                        </div>
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
                   ))
                 )}
               </div>
 
               <div className="border-t border-accent/20 p-4 flex gap-3 flex-shrink-0">
-                <ButtonGlow variant="outline-glow" onClick={onClose} className="flex-1">
+                <ButtonGlow variant="outline-glow" onClick={onClose} className="flex-1" disabled={isSaving}>
                   Cancel
                 </ButtonGlow>
                 <ButtonGlow
                   variant="accent-glow"
                   onClick={handleSwap}
-                  disabled={!selectedMeal || isSaving}
+                  disabled={!selectedMeal}
+                  isLoading={isSaving}
+                  loadingText="Swapping..."
                   className="flex-1"
                 >
                   <RotateCcw className="mr-2 h-4 w-4" />
-                  {isSaving ? "Swapping..." : "Swap Meal"}
+                  Swap Meal
                 </ButtonGlow>
               </div>
             </Card>

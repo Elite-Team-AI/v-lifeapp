@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { X } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { ButtonGlow } from "@/components/ui/button-glow"
 import {
   Dialog,
   DialogContent,
@@ -170,21 +170,24 @@ export function WeeklyReflectionModal({ isOpen, onClose }: WeeklyReflectionModal
         </div>
 
         <div className="flex gap-3">
-          <Button
-            variant="outline"
+          <ButtonGlow
+            variant="outline-glow"
             onClick={handleSkip}
             className="flex-1"
-            disabled={saving}
+            isLoading={saving}
+            loadingText="Skipping..."
           >
             Skip for now
-          </Button>
-          <Button
+          </ButtonGlow>
+          <ButtonGlow
+            variant="accent-glow"
             onClick={handleSubmit}
             className="flex-1"
-            disabled={saving}
+            isLoading={saving}
+            loadingText="Saving..."
           >
-            {saving ? "Saving..." : "Save Reflection"}
-          </Button>
+            Save Reflection
+          </ButtonGlow>
         </div>
       </DialogContent>
     </Dialog>

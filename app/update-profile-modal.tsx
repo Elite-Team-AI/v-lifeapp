@@ -265,24 +265,32 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                     <p className="text-xs text-accent">Keep your information current</p>
                   </div>
                 </div>
-                <button onClick={onClose} className="rounded-full p-1 hover:bg-white/10">
+                <motion.button
+                  onClick={onClose}
+                  className="rounded-full p-2 hover:bg-white/10 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                >
                   <X className="h-5 w-5 text-white/60" />
-                </button>
+                </motion.button>
               </div>
 
               {/* Fixed Tab Navigation */}
               <div className="flex border-b border-accent/20 overflow-x-auto flex-shrink-0">
                 {tabs.map((tab) => (
-                  <button
+                  <motion.button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`flex items-center px-4 py-3 text-sm font-medium transition-all whitespace-nowrap ${
+                    className={`flex items-center px-4 py-3 text-sm font-medium transition-all whitespace-nowrap min-h-[48px] ${
                       activeTab === tab.id ? "border-b-2 border-accent text-accent" : "text-white/70 hover:text-white"
                     }`}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
                   >
                     <tab.icon className="mr-2 h-4 w-4" />
                     {tab.label}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
 
@@ -304,18 +312,21 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                               {profile.name?.charAt(0)?.toUpperCase() || "U"}
                             </AvatarFallback>
                           </Avatar>
-                          <button
+                          <motion.button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={uploadingAvatar}
-                            className="absolute bottom-0 right-0 p-2 rounded-full bg-accent text-black hover:bg-accent/90 transition-colors disabled:opacity-50"
+                            className="absolute bottom-0 right-0 p-2.5 rounded-full bg-accent text-black hover:bg-accent/90 transition-colors disabled:opacity-50 min-w-[40px] min-h-[40px] flex items-center justify-center"
+                            whileTap={{ scale: 0.9 }}
+                            whileHover={{ scale: 1.05 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 17 }}
                           >
                             {uploadingAvatar ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                               <Camera className="h-4 w-4" />
                             )}
-                          </button>
+                          </motion.button>
                           <input
                             ref={fileInputRef}
                             type="file"
@@ -481,22 +492,27 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                         <p className="text-white/70 text-sm mb-4">What would you like to achieve?</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {goals.map((goal) => (
-                            <Card
+                            <motion.div
                               key={goal.id}
-                              className={`cursor-pointer transition-all hover:border-accent ${
-                                profile.primaryGoal === goal.id ? "border-accent border-glow" : "border-border"
-                              }`}
-                              onClick={() => updateProfileState({ primaryGoal: goal.id })}
+                              whileTap={{ scale: 0.98 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 17 }}
                             >
-                              <CardContent className="p-4">
-                                <h3
-                                  className={`font-bold ${profile.primaryGoal === goal.id ? "text-accent" : "text-white"}`}
-                                >
-                                  {goal.title}
-                                </h3>
-                                <p className="mt-1 text-sm text-white/70">{goal.description}</p>
-                              </CardContent>
-                            </Card>
+                              <Card
+                                className={`cursor-pointer transition-all hover:border-accent ${
+                                  profile.primaryGoal === goal.id ? "border-accent border-glow" : "border-border"
+                                }`}
+                                onClick={() => updateProfileState({ primaryGoal: goal.id })}
+                              >
+                                <CardContent className="p-4">
+                                  <h3
+                                    className={`font-bold ${profile.primaryGoal === goal.id ? "text-accent" : "text-white"}`}
+                                  >
+                                    {goal.title}
+                                  </h3>
+                                  <p className="mt-1 text-sm text-white/70">{goal.description}</p>
+                                </CardContent>
+                              </Card>
+                            </motion.div>
                           ))}
                         </div>
                       </div>
@@ -518,22 +534,27 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                             { icon: Building, label: "Specific Gym", value: "gym" },
                             { icon: Settings, label: "Custom", value: "custom" },
                           ].map((item) => (
-                            <Card
+                            <motion.div
                               key={item.value}
-                              className={`cursor-pointer transition-all hover:border-accent ${
-                                profile.gymAccess === item.value ? "border-accent border-glow" : "border-border"
-                              }`}
-                              onClick={() => updateProfileState({ gymAccess: item.value })}
+                              whileTap={{ scale: 0.98 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 17 }}
                             >
-                              <CardContent className="flex flex-col items-center justify-center p-4">
-                                <item.icon
-                                  className={`mb-2 h-6 w-6 ${profile.gymAccess === item.value ? "text-accent" : "text-white/70"}`}
-                                />
-                                <span className={profile.gymAccess === item.value ? "text-accent" : "text-white/70"}>
-                                  {item.label}
-                                </span>
-                              </CardContent>
-                            </Card>
+                              <Card
+                                className={`cursor-pointer transition-all hover:border-accent min-h-[80px] ${
+                                  profile.gymAccess === item.value ? "border-accent border-glow" : "border-border"
+                                }`}
+                                onClick={() => updateProfileState({ gymAccess: item.value })}
+                              >
+                                <CardContent className="flex flex-col items-center justify-center p-4">
+                                  <item.icon
+                                    className={`mb-2 h-6 w-6 ${profile.gymAccess === item.value ? "text-accent" : "text-white/70"}`}
+                                  />
+                                  <span className={`text-sm ${profile.gymAccess === item.value ? "text-accent" : "text-white/70"}`}>
+                                    {item.label}
+                                  </span>
+                                </CardContent>
+                              </Card>
+                            </motion.div>
                           ))}
                         </div>
 
@@ -583,20 +604,25 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                         </h2>
                         <div className="grid gap-2">
                           {programTypes.map((style) => (
-                            <Card
+                            <motion.div
                               key={style.id}
-                              className={`p-3 cursor-pointer transition-all ${
-                                profile.programType === style.id
-                                  ? "border-accent bg-accent/10"
-                                  : "border-white/10 hover:border-white/30"
-                              }`}
-                              onClick={() => updateProfileState({ programType: style.id })}
+                              whileTap={{ scale: 0.98 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 17 }}
                             >
-                              <p className={`font-medium ${profile.programType === style.id ? "text-accent" : "text-white"}`}>
-                                {style.label}
-                              </p>
-                              <p className="text-xs text-white/60">{style.description}</p>
-                            </Card>
+                              <Card
+                                className={`p-3 cursor-pointer transition-all ${
+                                  profile.programType === style.id
+                                    ? "border-accent bg-accent/10"
+                                    : "border-white/10 hover:border-white/30"
+                                }`}
+                                onClick={() => updateProfileState({ programType: style.id })}
+                              >
+                                <p className={`font-medium ${profile.programType === style.id ? "text-accent" : "text-white"}`}>
+                                  {style.label}
+                                </p>
+                                <p className="text-xs text-white/60">{style.description}</p>
+                              </Card>
+                            </motion.div>
                           ))}
                         </div>
                         {profile.programType === "other" && (
@@ -617,17 +643,19 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                         </h2>
                         <div className="flex gap-2">
                           {timeOptions.map((option) => (
-                            <button
+                            <motion.button
                               key={option.value}
-                              className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                              className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all min-h-[44px] ${
                                 profile.availableTimeMinutes === option.value
                                   ? "bg-accent text-black"
-                                  : "bg-black/50 text-white/70 border border-accent/30 hover:border-accent/50"
+                                  : "bg-black/50 text-white/70 border border-accent/30 hover:border-accent/50 active:border-accent"
                               }`}
                               onClick={() => updateProfileState({ availableTimeMinutes: option.value })}
+                              whileTap={{ scale: 0.95 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 17 }}
                             >
                               {option.label}
-                            </button>
+                            </motion.button>
                           ))}
                         </div>
                       </div>
@@ -640,17 +668,19 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                         </h2>
                         <div className="flex gap-2">
                           {daysOptions.map((days) => (
-                            <button
+                            <motion.button
                               key={days}
-                              className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                              className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all min-h-[44px] ${
                                 profile.trainingDaysPerWeek === days
                                   ? "bg-accent text-black"
-                                  : "bg-black/50 text-white/70 border border-accent/30 hover:border-accent/50"
+                                  : "bg-black/50 text-white/70 border border-accent/30 hover:border-accent/50 active:border-accent"
                               }`}
                               onClick={() => updateProfileState({ trainingDaysPerWeek: days })}
+                              whileTap={{ scale: 0.95 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 17 }}
                             >
                               {days}
-                            </button>
+                            </motion.button>
                           ))}
                         </div>
                       </div>
@@ -721,17 +751,19 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                         <p className="text-white/70 text-sm mb-4">Select any allergies you have</p>
                         <div className="flex flex-wrap gap-2">
                           {commonAllergies.map((allergy) => (
-                            <button
+                            <motion.button
                               key={allergy}
                               onClick={() => toggleAllergy(allergy)}
-                              className={`rounded-full px-3 py-1 text-sm transition-all ${
+                              className={`rounded-full px-3 py-2 text-sm transition-all min-h-[36px] ${
                                 profile.allergies?.includes(allergy)
                                   ? "bg-accent text-black"
-                                  : "bg-black/50 text-white/70 border border-accent/30 hover:border-accent/50"
+                                  : "bg-black/50 text-white/70 border border-accent/30 hover:border-accent/50 active:border-accent"
                               }`}
+                              whileTap={{ scale: 0.95 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 17 }}
                             >
                               {allergy}
-                            </button>
+                            </motion.button>
                           ))}
                         </div>
                       </div>
@@ -786,9 +818,15 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                 <ButtonGlow variant="outline-glow" onClick={onClose} className="flex-1" disabled={saving}>
                   Cancel
                 </ButtonGlow>
-                <ButtonGlow variant="accent-glow" onClick={handleSave} className="flex-1" disabled={saving}>
+                <ButtonGlow
+                  variant="accent-glow"
+                  onClick={handleSave}
+                  className="flex-1"
+                  isLoading={saving}
+                  loadingText="Saving..."
+                >
                   <Save className="mr-2 h-4 w-4" />
-                  {saving ? "Saving..." : "Save Changes"}
+                  Save Changes
                 </ButtonGlow>
               </div>
             </Card>

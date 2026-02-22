@@ -163,9 +163,16 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
                     <p className="text-xs text-accent">Share your journey with the community</p>
                   </div>
                 </div>
-                <button onClick={onClose} className="rounded-full p-1 hover:bg-white/10" disabled={isPosting}>
+                <motion.button
+                  onClick={onClose}
+                  className="rounded-full p-2.5 hover:bg-white/10 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  disabled={isPosting}
+                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                >
                   <X className="h-5 w-5 text-white/60" />
-                </button>
+                </motion.button>
               </div>
 
               {/* Scrollable Content */}
@@ -176,34 +183,39 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
                     <Label className="text-white">Category</Label>
                     <div className="grid grid-cols-2 gap-2">
                       {postCategories.map((category) => (
-                        <Card
+                        <motion.div
                           key={category.id}
-                          className={`cursor-pointer transition-all hover:border-accent/50 ${
-                            selectedCategory === category.id
-                              ? "border-accent border-glow bg-accent/10"
-                              : "border-white/10 bg-black/30"
-                          }`}
-                          onClick={() => setSelectedCategory(category.id)}
+                          whileTap={{ scale: 0.98 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 17 }}
                         >
-                          <CardContent className="p-3 text-center">
-                            <div
-                              className={`mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-full ${
-                                selectedCategory === category.id ? "bg-accent/20" : category.bg
-                              }`}
-                            >
-                              <category.icon
-                                className={`h-4 w-4 ${selectedCategory === category.id ? "text-accent" : category.color}`}
-                              />
-                            </div>
-                            <span
-                              className={`text-xs font-medium ${
-                                selectedCategory === category.id ? "text-accent" : "text-white/70"
-                              }`}
-                            >
-                              {category.name}
-                            </span>
-                          </CardContent>
-                        </Card>
+                          <Card
+                            className={`cursor-pointer transition-all hover:border-accent/50 min-h-[80px] ${
+                              selectedCategory === category.id
+                                ? "border-accent border-glow bg-accent/10"
+                                : "border-white/10 bg-black/30"
+                            }`}
+                            onClick={() => setSelectedCategory(category.id)}
+                          >
+                            <CardContent className="p-3 text-center">
+                              <div
+                                className={`mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-full ${
+                                  selectedCategory === category.id ? "bg-accent/20" : category.bg
+                                }`}
+                              >
+                                <category.icon
+                                  className={`h-4 w-4 ${selectedCategory === category.id ? "text-accent" : category.color}`}
+                                />
+                              </div>
+                              <span
+                                className={`text-xs font-medium ${
+                                  selectedCategory === category.id ? "text-accent" : "text-white/70"
+                                }`}
+                              >
+                                {category.name}
+                              </span>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
                       ))}
                     </div>
                   </div>
@@ -213,13 +225,15 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
                     <Label className="text-white">Quick Templates</Label>
                     <div className="space-y-2 max-h-24 overflow-y-auto">
                       {templates[selectedCategory].map((template, index) => (
-                        <button
+                        <motion.button
                           key={index}
                           onClick={() => setTitle(template)}
-                          className="w-full text-left rounded-lg border border-white/10 bg-black/30 p-2 text-sm text-white/80 transition-all hover:border-accent/50 hover:bg-accent/5"
+                          className="w-full text-left rounded-lg border border-white/10 bg-black/30 p-2.5 text-sm text-white/80 transition-all hover:border-accent/50 hover:bg-accent/5 active:border-accent min-h-[44px]"
+                          whileTap={{ scale: 0.98 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 17 }}
                         >
                           {template}
-                        </button>
+                        </motion.button>
                       ))}
                     </div>
                   </div>
@@ -264,14 +278,16 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
                   <div className="space-y-2">
                     <Label className="text-white">Add Photo (Optional)</Label>
                     {!selectedImage ? (
-                      <button
+                      <motion.button
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full aspect-[4/3] flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-white/20 bg-black/30 transition-all hover:border-accent/50 hover:bg-accent/5"
+                        className="w-full aspect-[4/3] flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-white/20 bg-black/30 transition-all hover:border-accent/50 hover:bg-accent/5 active:border-accent"
+                        whileTap={{ scale: 0.98 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
                       >
                         <Camera className="mb-2 h-6 w-6 text-white/50" />
                         <p className="text-sm text-white/70">Tap to add a photo</p>
                         <p className="text-xs text-white/50 mt-1">JPG, PNG up to 10MB</p>
-                      </button>
+                      </motion.button>
                     ) : (
                       <div className="relative">
                         <div className="aspect-[4/3] w-full rounded-lg overflow-hidden">
@@ -281,12 +297,15 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
                             className="h-full w-full object-cover"
                           />
                         </div>
-                        <button
+                        <motion.button
                           onClick={() => setSelectedImage(null)}
-                          className="absolute top-2 right-2 rounded-full bg-black/70 p-2 hover:bg-black/90"
+                          className="absolute top-2 right-2 rounded-full bg-black/70 p-2 hover:bg-black/90 min-w-[40px] min-h-[40px] flex items-center justify-center"
+                          whileTap={{ scale: 0.9 }}
+                          whileHover={{ scale: 1.05 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 17 }}
                         >
                           <X className="h-4 w-4 text-white" />
-                        </button>
+                        </motion.button>
                       </div>
                     )}
 
@@ -349,20 +368,13 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
                 <ButtonGlow
                   variant="accent-glow"
                   onClick={handlePost}
-                  disabled={!title.trim() || isPosting}
+                  disabled={!title.trim()}
+                  isLoading={isPosting}
+                  loadingText="Posting..."
                   className="flex-1"
                 >
-                  {isPosting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Posting...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="mr-2 h-4 w-4" />
-                      Post
-                    </>
-                  )}
+                  <Send className="mr-2 h-4 w-4" />
+                  Post
                 </ButtonGlow>
               </div>
             </Card>

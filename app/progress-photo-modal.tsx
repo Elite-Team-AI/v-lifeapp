@@ -166,9 +166,15 @@ export function ProgressPhotoModal({ isOpen, onClose, onSuccess, recentPhotos, c
                   <h3 className="font-bold text-white">Progress Photo</h3>
                   <p className="text-xs text-accent">{selectedPhotoForPreview.date}</p>
                 </div>
-                <button onClick={closePreview} className="rounded-full p-1 hover:bg-white/10">
+                <motion.button
+                  onClick={closePreview}
+                  className="rounded-full p-2 hover:bg-white/10 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                >
                   <X className="h-5 w-5 text-white/60" />
-                </button>
+                </motion.button>
               </div>
 
               <CardContent className="p-0">
@@ -236,9 +242,16 @@ export function ProgressPhotoModal({ isOpen, onClose, onSuccess, recentPhotos, c
                     <p className="text-xs text-accent">Document your transformation</p>
                   </div>
                 </div>
-                <button onClick={onClose} className="rounded-full p-1 hover:bg-white/10">
+                <motion.button
+                  onClick={onClose}
+                  className="rounded-full p-2 hover:bg-white/10 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  disabled={isPending}
+                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                >
                   <X className="h-5 w-5 text-white/60" />
-                </button>
+                </motion.button>
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -248,9 +261,11 @@ export function ProgressPhotoModal({ isOpen, onClose, onSuccess, recentPhotos, c
 
                   {!selectedImage ? (
                     <div className="space-y-3">
-                      <button
+                      <motion.button
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full aspect-[3/4] flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-accent/50 bg-black/30 transition-all hover:border-accent hover:bg-accent/5"
+                        className="w-full aspect-[3/4] flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-accent/50 bg-black/30 transition-all hover:border-accent hover:bg-accent/5 active:border-accent"
+                        whileTap={{ scale: 0.98 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
                       >
                         <Upload className="mb-3 h-12 w-12 text-accent/70" />
                         <p className="text-white/70 text-center">
@@ -259,7 +274,7 @@ export function ProgressPhotoModal({ isOpen, onClose, onSuccess, recentPhotos, c
                           or drag and drop
                         </p>
                         <p className="text-xs text-white/50 mt-2">PNG, JPG up to 10MB</p>
-                      </button>
+                      </motion.button>
 
                       <input
                         ref={fileInputRef}
@@ -278,12 +293,15 @@ export function ProgressPhotoModal({ isOpen, onClose, onSuccess, recentPhotos, c
                           className="h-full w-full object-cover"
                         />
                       </div>
-                      <button
+                      <motion.button
                         onClick={() => setSelectedImage(null)}
-                        className="absolute top-2 right-2 rounded-full bg-black/70 p-2 hover:bg-black/90"
+                        className="absolute top-2 right-2 rounded-full bg-black/70 p-2 hover:bg-black/90 min-w-[40px] min-h-[40px] flex items-center justify-center"
+                        whileTap={{ scale: 0.9 }}
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
                       >
                         <Trash2 className="h-4 w-4 text-white" />
-                      </button>
+                      </motion.button>
                     </div>
                   )}
                 </div>
@@ -293,22 +311,27 @@ export function ProgressPhotoModal({ isOpen, onClose, onSuccess, recentPhotos, c
                   <Label className="text-white">Photo Type</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {photoTypes.map((type) => (
-                      <Card
+                      <motion.div
                         key={type.id}
-                        className={`cursor-pointer transition-all hover:border-accent/50 ${
-                          photoType === type.id
-                            ? "border-accent border-glow bg-accent/10"
-                            : "border-white/10 bg-black/30"
-                        }`}
-                        onClick={() => setPhotoType(type.id as any)}
+                        whileTap={{ scale: 0.98 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
                       >
-                        <CardContent className="p-3">
-                          <h4 className={`font-medium text-sm ${photoType === type.id ? "text-accent" : "text-white"}`}>
-                            {type.name}
-                          </h4>
-                          <p className="text-xs text-white/60 mt-1">{type.description}</p>
-                        </CardContent>
-                      </Card>
+                        <Card
+                          className={`cursor-pointer transition-all hover:border-accent/50 min-h-[72px] ${
+                            photoType === type.id
+                              ? "border-accent border-glow bg-accent/10"
+                              : "border-white/10 bg-black/30"
+                          }`}
+                          onClick={() => setPhotoType(type.id as any)}
+                        >
+                          <CardContent className="p-3">
+                            <h4 className={`font-medium text-sm ${photoType === type.id ? "text-accent" : "text-white"}`}>
+                              {type.name}
+                            </h4>
+                            <p className="text-xs text-white/60 mt-1">{type.description}</p>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
                     ))}
                   </div>
                 </div>
@@ -386,9 +409,16 @@ export function ProgressPhotoModal({ isOpen, onClose, onSuccess, recentPhotos, c
                 <ButtonGlow variant="outline-glow" onClick={onClose} className="flex-1" disabled={isPending}>
                   Cancel
                 </ButtonGlow>
-                <ButtonGlow variant="accent-glow" onClick={handleAdd} disabled={!selectedImage || isPending} className="flex-1">
+                <ButtonGlow
+                  variant="accent-glow"
+                  onClick={handleAdd}
+                  disabled={!selectedImage}
+                  isLoading={isPending}
+                  loadingText="Saving..."
+                  className="flex-1"
+                >
                   <Camera className="mr-2 h-4 w-4" />
-                  {isPending ? "Saving..." : "Save Photo"}
+                  Save Photo
                 </ButtonGlow>
               </div>
             </Card>

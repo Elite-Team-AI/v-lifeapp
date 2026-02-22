@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
+import { ButtonGlow } from "@/components/ui/button-glow"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -284,13 +284,14 @@ export default function SignUpPage() {
                     whileTap={{ scale: 0.98 }}
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
-                    <Button
+                    <ButtonGlow
                       type="submit"
                       className="relative w-full bg-accent text-black font-semibold tracking-wide hover:bg-accent/90 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transition-all duration-300"
-                      disabled={isLoading}
+                      isLoading={isLoading}
+                      loadingText="Creating account..."
                     >
-                      {isLoading ? "Creating account..." : "Sign up"}
-                    </Button>
+                      Sign up
+                    </ButtonGlow>
                   </motion.div>
                 </div>
                 <motion.div
