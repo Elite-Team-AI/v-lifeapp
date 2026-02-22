@@ -365,7 +365,7 @@ Return ONLY valid JSON (no markdown, no extra text) with this exact structure:
             body: JSON.stringify({
               model: 'gpt-4o',
               temperature: 0.7,
-              max_tokens: 16000, // Increased from 4000 to prevent truncation
+              max_tokens: 32000, // Increased to handle full 4-week plans with all exercises
               messages: [
                 {
                   role: 'system',
