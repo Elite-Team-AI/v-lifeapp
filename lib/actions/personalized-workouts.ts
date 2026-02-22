@@ -124,93 +124,254 @@ export interface WorkoutPlanPreferences {
 
 /**
  * Generate a new AI-powered workout plan
+ * Now calls OpenAI directly instead of using internal API route to avoid auth issues
  */
 export async function generateWorkoutPlan(preferences: WorkoutPlanPreferences) {
-  const { user, error } = await getAuthUser()
+  const { user, error: authError } = await getAuthUser()
 
-  // Debug logging for development
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[generateWorkoutPlan] Auth check:', {
-      hasUser: !!user,
-      userId: user?.id,
-      hasError: !!error,
-      errorMessage: error?.message
-    })
-  }
-
-  if (error || !user) {
-    console.error('[generateWorkoutPlan] Authentication failed:', error)
+  if (authError || !user) {
+    console.error('[generateWorkoutPlan] Authentication failed:', authError)
     return { success: false, error: 'Not authenticated' }
   }
 
   try {
-    // Get cookies to pass to internal API call
-    const cookieStore = await cookies()
-    const cookieString = cookieStore.getAll()
-      .map(cookie => `${cookie.name}=${cookie.value}`)
-      .join('; ')
+    // Check OpenAI API key
+    if (!env.OPENAI_API_KEY) {
+      return {
+        success: false,
+        error: 'AI workout generation is not configured. Please contact support.'
+      }
+    }
 
-    // Call the API route to generate the plan
-    // Use absolute URL in production, relative in development
-    // Vercel automatically provides VERCEL_URL (without protocol) in production
-    const baseUrl = env.NEXT_PUBLIC_APP_URL
-      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
-      || 'http://localhost:3000'
+    const supabase = await createClient()
 
-    const apiUrl = `${baseUrl}/api/workouts/generate-plan`
+    // Fetch user profile
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single()
 
-    console.log('[generateWorkoutPlan] Calling API:', apiUrl, {
-      hasAppUrl: !!env.NEXT_PUBLIC_APP_URL,
-      hasVercelUrl: !!process.env.VERCEL_URL,
-      vercelUrl: process.env.VERCEL_URL
+    if (profileError || !profile) {
+      return { success: false, error: 'User profile not found' }
+    }
+
+    // Fetch exercises filtered by modality
+    const trainingStyle = preferences.trainingStyle || profile.training_style || 'mixed'
+    const availableEquipment = preferences.availableEquipment || profile.available_equipment || []
+
+    let exercisesQuery = supabase
+      .from('exercise_library')
+      .select('*')
+      .eq('is_active', true)
+
+    // Filter by training modality (unless 'mixed')
+    if (trainingStyle !== 'mixed') {
+      exercisesQuery = exercisesQuery.eq('training_modality', trainingStyle)
+    }
+
+    const { data: exercises, error: exercisesError } = await exercisesQuery
+
+    if (exercisesError || !exercises || exercises.length === 0) {
+      return {
+        success: false,
+        error: 'No exercises found for the selected training modality'
+      }
+    }
+
+    // Filter exercises by equipment availability
+    const filteredExercises = exercises.filter(ex => {
+      if (!ex.equipment || ex.equipment.length === 0) return true
+      if (!availableEquipment || availableEquipment.length === 0) {
+        return ex.equipment.length === 0
+      }
+      return ex.equipment.some((eq: string) => availableEquipment.includes(eq))
     })
 
-    const response = await fetch(apiUrl, {
+    // Filter out excluded exercises
+    const excludedIds = preferences.excludeExercises || []
+    const finalExercises = filteredExercises.filter(ex => !excludedIds.includes(ex.id))
+
+    if (finalExercises.length < 20) {
+      return {
+        success: false,
+        error: `Not enough exercises available (found ${finalExercises.length}, need 20). Please select more equipment options or choose "Mixed" training style.`
+      }
+    }
+
+    // Build AI prompt
+    const daysPerWeek = preferences.daysPerWeek || profile.training_days_per_week || 5
+    const sessionDuration = preferences.sessionDurationMinutes || profile.available_time_minutes || 60
+    const experienceLevel = preferences.experienceLevel || profile.experience_level || 'intermediate'
+    const fitnessGoal = preferences.fitnessGoal || profile.primary_goal || 'general_fitness'
+
+    const availableExercises = finalExercises.slice(0, 100).map(ex =>
+      `ID: ${ex.id} | ${ex.name} (${ex.category})`
+    ).join('\n')
+
+    const prompt = `Generate a personalized 4-week workout plan for a ${experienceLevel} user focused on ${fitnessGoal}. Training ${daysPerWeek} days per week, ${sessionDuration} minutes per session. Training style: ${trainingStyle}.
+
+Available exercises:
+${availableExercises}
+
+Return ONLY valid JSON with this structure:
+{
+  "planName": "4-Week Plan Name",
+  "planType": "${trainingStyle}",
+  "daysPerWeek": ${daysPerWeek},
+  "splitPattern": "Brief split description",
+  "weeks": [
+    {
+      "weekNumber": 1,
+      "workouts": [
+        {
+          "dayOfWeek": 1,
+          "workoutName": "Workout Name",
+          "focusAreas": ["muscle1", "muscle2"],
+          "estimatedDuration": ${sessionDuration},
+          "exercises": [
+            {
+              "exerciseId": "EXACT UUID FROM LIST",
+              "exerciseOrder": 1,
+              "sets": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "restSeconds": 90,
+              "tempo": "3-0-1-1",
+              "rpe": 8.0,
+              "notes": "Form cue"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+
+Create 4 weeks with ${daysPerWeek} workouts each. Include 7-9 exercises per workout.`
+
+    // Call OpenAI API directly
+    console.log('[generateWorkoutPlan] Calling OpenAI API...')
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
-        'Cookie': cookieString,
       },
       body: JSON.stringify({
-        userId: user.id,
-        preferences,
+        model: 'gpt-4o',
+        temperature: 0.7,
+        max_tokens: 4000,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert fitness coach. Generate workout programs. Always return valid JSON.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        response_format: { type: 'json_object' },
       }),
     })
 
     if (!response.ok) {
-      const responseText = await response.text()
-      console.error('[generateWorkoutPlan] API error:', response.status, responseText.substring(0, 500))
+      console.error('[generateWorkoutPlan] OpenAI API error:', response.status)
+      return { success: false, error: 'Failed to generate workout plan. Please try again.' }
+    }
 
-      // Try to parse as JSON, fallback to text error
-      try {
-        const errorData = JSON.parse(responseText)
-        return { success: false, error: errorData.error || 'Failed to generate plan' }
-      } catch {
-        return { success: false, error: `Server error (${response.status}): ${responseText.substring(0, 100)}` }
+    const completion = await response.json()
+    const aiResponse = completion.choices?.[0]?.message?.content
+
+    if (!aiResponse) {
+      return { success: false, error: 'No response from AI. Please try again.' }
+    }
+
+    // Parse AI response
+    const generatedPlan = JSON.parse(aiResponse)
+
+    // Save plan to database
+    const startDate = new Date()
+    const endDate = new Date(startDate)
+    endDate.setDate(endDate.getDate() + 28) // 4 weeks
+
+    const { data: plan, error: planError } = await supabase
+      .from('workout_plans')
+      .insert({
+        user_id: user.id,
+        plan_name: generatedPlan.planName,
+        plan_type: generatedPlan.planType,
+        days_per_week: generatedPlan.daysPerWeek,
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+        is_active: true,
+        split_pattern: generatedPlan.splitPattern,
+      })
+      .select()
+      .single()
+
+    if (planError || !plan) {
+      console.error('[generateWorkoutPlan] Failed to save plan:', planError)
+      return { success: false, error: 'Failed to save workout plan' }
+    }
+
+    // Save weeks and workouts
+    for (const week of generatedPlan.weeks) {
+      for (const workout of week.workouts) {
+        const workoutDate = new Date(startDate)
+        workoutDate.setDate(workoutDate.getDate() + ((week.weekNumber - 1) * 7) + (workout.dayOfWeek - 1))
+
+        const { data: savedWorkout, error: workoutError } = await supabase
+          .from('workouts')
+          .insert({
+            user_id: user.id,
+            workout_plan_id: plan.id,
+            workout_date: workoutDate.toISOString(),
+            workout_name: workout.workoutName,
+            focus_areas: workout.focusAreas,
+            estimated_duration_minutes: workout.estimatedDuration,
+            status: 'planned',
+          })
+          .select()
+          .single()
+
+        if (!workoutError && savedWorkout) {
+          // Save exercises for this workout
+          for (const exercise of workout.exercises) {
+            await supabase
+              .from('workout_exercises')
+              .insert({
+                workout_id: savedWorkout.id,
+                exercise_id: exercise.exerciseId,
+                exercise_order: exercise.exerciseOrder,
+                planned_sets: exercise.sets,
+                planned_reps_min: exercise.repsMin,
+                planned_reps_max: exercise.repsMax,
+                rest_seconds: exercise.restSeconds,
+                tempo: exercise.tempo,
+                rpe: exercise.rpe,
+                notes: exercise.notes,
+              })
+          }
+        }
       }
     }
 
-    const resultText = await response.text()
-    console.log('[generateWorkoutPlan] Response:', resultText.substring(0, 200))
-
-    const result = JSON.parse(resultText)
-
+    // Revalidate paths
     revalidatePath('/fitness')
     revalidatePath('/dashboard')
 
     return {
       success: true,
-      planId: result.planId,
-      planName: result.planName,
-      startDate: result.startDate,
-      endDate: result.endDate,
+      planId: plan.id,
+      planName: generatedPlan.planName,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
     }
   } catch (error) {
     console.error('[generateWorkoutPlan] Unexpected error:', error)
-    // Provide more detailed error message
-    const errorMessage = error instanceof Error
-      ? `${error.message}${error.cause ? ` (${error.cause})` : ''}`
-      : 'Failed to generate workout plan'
+    const errorMessage = error instanceof Error ? error.message : 'Failed to generate workout plan'
     return {
       success: false,
       error: errorMessage,
