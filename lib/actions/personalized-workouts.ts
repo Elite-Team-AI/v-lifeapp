@@ -303,24 +303,33 @@ ${adaptiveInstructions}
 Available exercises:
 ${availableExercises}
 
-Return ONLY valid JSON with this structure:
+CRITICAL REQUIREMENTS:
+- Create 4 weeks with ${daysPerWeek} workouts per week
+- Include ${exercisesPerWorkout} exercises per workout
+- Use ONLY exercise IDs from the available exercises list above
+- Progressive overload: increase volume, intensity, or complexity across weeks
+- Ensure proper muscle group balance and recovery
+- Set RPE between 6.0-9.0 based on exercise difficulty and experience level
+- Use simple text in notes field (avoid quotes, apostrophes, special characters)
+
+Return ONLY valid JSON (no markdown, no extra text) with this exact structure:
 {
-  "planName": "4-Week [Goal/Style] Plan",
+  "planName": "4-Week Goal-Based Plan",
   "planType": "${trainingStyle}",
   "daysPerWeek": ${daysPerWeek},
-  "splitPattern": "Brief description of the training split",
+  "splitPattern": "training split description",
   "weeks": [
     {
       "weekNumber": 1,
       "workouts": [
         {
           "dayOfWeek": 1,
-          "workoutName": "Descriptive Workout Name",
-          "focusAreas": ["muscle_group_1", "muscle_group_2"],
+          "workoutName": "Workout Name",
+          "focusAreas": ["muscle1", "muscle2"],
           "estimatedDuration": ${sessionDuration},
           "exercises": [
             {
-              "exerciseId": "EXACT UUID FROM AVAILABLE EXERCISES LIST",
+              "exerciseId": "UUID-FROM-LIST",
               "exerciseOrder": 1,
               "sets": 3,
               "repsMin": 8,
@@ -328,64 +337,156 @@ Return ONLY valid JSON with this structure:
               "restSeconds": 90,
               "tempo": "3-0-1-1",
               "rpe": 7.5,
-              "notes": "Specific form cue or coaching point"
+              "notes": "form cue"
             }
           ]
         }
       ]
     }
   ]
-}
+}`
 
-REQUIREMENTS:
-- Create 4 weeks with ${daysPerWeek} workouts per week
-- Include ${exercisesPerWorkout} exercises per workout
-- Use ONLY exercise IDs from the available exercises list above
-- Progressive overload: increase volume, intensity, or complexity across weeks
-- Ensure proper muscle group balance and recovery
-- Set RPE between 6.0-9.0 based on exercise difficulty and experience level
-- Provide specific, actionable form cues in notes`
+    // Helper function to call OpenAI with retry logic
+    const callOpenAIWithRetry = async (maxRetries = 3): Promise<any> => {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`[generateWorkoutPlan] OpenAI API call attempt ${attempt}/${maxRetries}...`)
 
-    // Call OpenAI API directly
-    console.log('[generateWorkoutPlan] Calling OpenAI API...')
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        temperature: 0.7,
-        max_tokens: 4000,
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert fitness coach. Generate workout programs. Always return valid JSON.',
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        response_format: { type: 'json_object' },
-      }),
-    })
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o',
+              temperature: 0.7,
+              max_tokens: 16000, // Increased from 4000 to prevent truncation
+              messages: [
+                {
+                  role: 'system',
+                  content: `You are an expert fitness coach and program designer. Generate comprehensive workout programs.
 
-    if (!response.ok) {
-      console.error('[generateWorkoutPlan] OpenAI API error:', response.status)
-      return { success: false, error: 'Failed to generate workout plan. Please try again.' }
+CRITICAL JSON REQUIREMENTS:
+- Return ONLY valid, properly formatted JSON
+- All strings must have quotes escaped properly
+- No line breaks within string values
+- Ensure complete JSON structure (no truncation)
+- Use simple, plain text in all string fields (no special characters that need escaping)`,
+                },
+                {
+                  role: 'user',
+                  content: prompt,
+                },
+              ],
+              response_format: { type: 'json_object' },
+            }),
+          })
+
+          if (!response.ok) {
+            const errorText = await response.text()
+            console.error(`[generateWorkoutPlan] OpenAI API error (attempt ${attempt}):`, response.status, errorText)
+
+            if (attempt === maxRetries) {
+              throw new Error(`OpenAI API failed after ${maxRetries} attempts: ${response.status}`)
+            }
+
+            // Wait before retry (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+            continue
+          }
+
+          const completion = await response.json()
+          const aiResponse = completion.choices?.[0]?.message?.content
+
+          if (!aiResponse) {
+            console.error(`[generateWorkoutPlan] No AI response (attempt ${attempt})`)
+            if (attempt === maxRetries) {
+              throw new Error('No response from AI after multiple attempts')
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+            continue
+          }
+
+          // Attempt to parse JSON with detailed error handling
+          let generatedPlan: any
+          try {
+            generatedPlan = JSON.parse(aiResponse)
+          } catch (parseError) {
+            console.error(`[generateWorkoutPlan] JSON parse error (attempt ${attempt}):`, parseError)
+            console.error('[generateWorkoutPlan] AI response length:', aiResponse.length)
+            console.error('[generateWorkoutPlan] AI response preview:', aiResponse.substring(0, 500))
+            console.error('[generateWorkoutPlan] AI response ending:', aiResponse.substring(Math.max(0, aiResponse.length - 500)))
+
+            if (attempt === maxRetries) {
+              throw new Error(`Invalid JSON from AI: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`)
+            }
+
+            // Try next attempt with exponential backoff
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+            continue
+          }
+
+          // Validate the structure
+          if (!generatedPlan.planName || !generatedPlan.weeks || !Array.isArray(generatedPlan.weeks)) {
+            console.error(`[generateWorkoutPlan] Invalid plan structure (attempt ${attempt}):`, Object.keys(generatedPlan))
+
+            if (attempt === maxRetries) {
+              throw new Error('AI generated plan with invalid structure')
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+            continue
+          }
+
+          // Validate weeks structure
+          for (const week of generatedPlan.weeks) {
+            if (!week.weekNumber || !week.workouts || !Array.isArray(week.workouts)) {
+              console.error(`[generateWorkoutPlan] Invalid week structure (attempt ${attempt})`)
+
+              if (attempt === maxRetries) {
+                throw new Error('AI generated week with invalid structure')
+              }
+
+              await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+              continue
+            }
+
+            for (const workout of week.workouts) {
+              if (!workout.workoutName || !workout.exercises || !Array.isArray(workout.exercises)) {
+                console.error(`[generateWorkoutPlan] Invalid workout structure (attempt ${attempt})`)
+
+                if (attempt === maxRetries) {
+                  throw new Error('AI generated workout with invalid structure')
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+                continue
+              }
+            }
+          }
+
+          // Success! Return the validated plan
+          console.log(`[generateWorkoutPlan] Successfully generated plan on attempt ${attempt}`)
+          return generatedPlan
+
+        } catch (error) {
+          console.error(`[generateWorkoutPlan] Error on attempt ${attempt}:`, error)
+
+          if (attempt === maxRetries) {
+            throw error
+          }
+
+          // Exponential backoff before retry
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+        }
+      }
+
+      throw new Error('Failed to generate workout plan after all retries')
     }
 
-    const completion = await response.json()
-    const aiResponse = completion.choices?.[0]?.message?.content
-
-    if (!aiResponse) {
-      return { success: false, error: 'No response from AI. Please try again.' }
-    }
-
-    // Parse AI response
-    const generatedPlan = JSON.parse(aiResponse)
+    // Call OpenAI with retry logic
+    const generatedPlan = await callOpenAIWithRetry()
 
     // Save plan to database
     const startDate = new Date()
