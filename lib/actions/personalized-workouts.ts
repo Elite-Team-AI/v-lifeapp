@@ -178,12 +178,22 @@ export async function generateWorkoutPlan(preferences: WorkoutPlanPreferences) {
     })
 
     if (!response.ok) {
-      const errorData = await response.json()
-      console.error('[generateWorkoutPlan] API error:', response.status, errorData)
-      return { success: false, error: errorData.error || 'Failed to generate plan' }
+      const responseText = await response.text()
+      console.error('[generateWorkoutPlan] API error:', response.status, responseText.substring(0, 500))
+
+      // Try to parse as JSON, fallback to text error
+      try {
+        const errorData = JSON.parse(responseText)
+        return { success: false, error: errorData.error || 'Failed to generate plan' }
+      } catch {
+        return { success: false, error: `Server error (${response.status}): ${responseText.substring(0, 100)}` }
+      }
     }
 
-    const result = await response.json()
+    const resultText = await response.text()
+    console.log('[generateWorkoutPlan] Response:', resultText.substring(0, 200))
+
+    const result = JSON.parse(resultText)
 
     revalidatePath('/fitness')
     revalidatePath('/dashboard')
