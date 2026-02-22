@@ -611,63 +611,101 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 5. Fetch exercises filtered by modality
+    // 5. Fetch ALL active exercises first (smart filtering with fallback)
     const trainingStyle = preferences.trainingStyle || profile.training_style || 'mixed'
     const availableEquipment = preferences.availableEquipment || profile.available_equipment || []
+    const excludedIds = preferences.excludeExercises || []
 
-    let exercisesQuery = supabase
+    const { data: allExercises, error: exercisesError } = await supabase
       .from('exercise_library')
       .select('*')
       .eq('is_active', true)
 
-    // Filter by training modality (unless 'mixed')
-    if (trainingStyle !== 'mixed') {
-      exercisesQuery = exercisesQuery.eq('training_modality', trainingStyle)
-    }
-
-    const { data: exercises, error: exercisesError } = await exercisesQuery
-
-    if (exercisesError || !exercises || exercises.length === 0) {
+    if (exercisesError || !allExercises || allExercises.length === 0) {
       return NextResponse.json(
-        { error: 'No exercises found for the selected training modality' },
+        { error: 'No exercises found in the library. Please contact support.' },
         { status: 404 }
       )
     }
 
-    // 6. Filter exercises by equipment availability
-    console.log('[WorkoutGen] Total exercises after modality filter:', exercises.length)
-    console.log('[WorkoutGen] Available equipment:', availableEquipment)
+    // Helper function to filter exercises by equipment
+    const filterByEquipment = (exercises: any[]) => {
+      return exercises.filter(ex => {
+        // No equipment required = always included
+        if (!ex.equipment || ex.equipment.length === 0) return true
+        // No equipment available = only bodyweight exercises
+        if (!availableEquipment || availableEquipment.length === 0) {
+          return ex.equipment.length === 0
+        }
+        // Has equipment = check if any required equipment is available
+        return ex.equipment.some((eq: string) => availableEquipment.includes(eq))
+      })
+    }
 
-    const filteredExercises = exercises.filter(ex => {
-      // If exercise has no equipment requirements, it's always available (bodyweight)
-      if (!ex.equipment || ex.equipment.length === 0) return true
+    // Helper function to filter by modality
+    const filterByModality = (exercises: any[], modality: string) => {
+      if (modality === 'mixed') return exercises
+      return exercises.filter(ex => ex.training_modality === modality)
+    }
 
-      // If user has no equipment specified, skip equipment-based exercises
-      if (!availableEquipment || availableEquipment.length === 0) {
-        return ex.equipment.length === 0
+    // Helper function to remove excluded exercises
+    const removeExcluded = (exercises: any[]) => {
+      if (!excludedIds || excludedIds.length === 0) return exercises
+      return exercises.filter(ex => !excludedIds.includes(ex.id))
+    }
+
+    // 6. Smart filtering strategy with 4-tier fallback
+    let finalExercises: any[] = []
+    let filteringStrategy = ''
+
+    // Strategy 1: Try strict filtering (modality + equipment + exclusions)
+    let filtered = filterByModality(allExercises, trainingStyle)
+    filtered = filterByEquipment(filtered)
+    filtered = removeExcluded(filtered)
+
+    if (filtered.length >= 12) {
+      finalExercises = filtered
+      filteringStrategy = 'strict'
+      console.log('[WorkoutGen] Using strict filtering:', filtered.length, 'exercises')
+    }
+    // Strategy 2: Relax modality constraint if not enough exercises
+    else if (filtered.length < 12) {
+      console.log('[WorkoutGen] Only', filtered.length, 'with strict filter, relaxing modality...')
+      filtered = filterByEquipment(allExercises)
+      filtered = removeExcluded(filtered)
+
+      if (filtered.length >= 8) {
+        finalExercises = filtered
+        filteringStrategy = 'mixed-modality'
+        console.log('[WorkoutGen] Using mixed modality filtering:', filtered.length, 'exercises')
       }
+      // Strategy 3: Include ALL equipment-compatible exercises (ignore exclusions if needed)
+      else {
+        console.log('[WorkoutGen] Only', filtered.length, 'exercises, including all compatible...')
+        filtered = filterByEquipment(allExercises)
 
-      // Check if any required equipment is available
-      return ex.equipment.some((eq: string) => availableEquipment.includes(eq))
-    })
+        if (filtered.length >= 5) {
+          finalExercises = filtered
+          filteringStrategy = 'inclusive'
+          console.log('[WorkoutGen] Using inclusive filtering:', filtered.length, 'exercises')
+        }
+        // Strategy 4: Last resort - use what we have
+        else {
+          console.log('[WorkoutGen] Very limited exercises, using all available')
+          finalExercises = allExercises.slice(0, Math.max(filtered.length, 10))
+          filteringStrategy = 'minimal'
+        }
+      }
+    }
 
-    console.log('[WorkoutGen] Exercises after equipment filter:', filteredExercises.length)
-
-    // 7. Filter out excluded exercises
-    const excludedIds = preferences.excludeExercises || []
-    const finalExercises = filteredExercises.filter(ex => !excludedIds.includes(ex.id))
-
-    console.log('[WorkoutGen] Final exercises after exclusions:', finalExercises.length)
-
-    if (finalExercises.length < 20) {
+    // 7. Absolute minimum check (reduced from 20 to 5 for flexibility)
+    if (finalExercises.length < 5) {
       return NextResponse.json(
         {
-          error: `Not enough exercises available (found ${finalExercises.length}, need 20). After filtering by ${trainingStyle} modality and ${availableEquipment.length > 0 ? availableEquipment.join(', ') : 'bodyweight only'} equipment. Please select more equipment options or choose "Mixed" training style.`,
+          error: `Unable to generate a workout plan. Only ${finalExercises.length} exercises available. Please add more equipment options or contact support.`,
           details: {
-            totalAfterModality: exercises.length,
-            afterEquipment: filteredExercises.length,
             finalCount: finalExercises.length,
-            minimumRequired: 20,
+            minimumRequired: 5,
             trainingStyle,
             availableEquipment: availableEquipment.length > 0 ? availableEquipment : ['bodyweight only']
           }
