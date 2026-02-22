@@ -134,9 +134,13 @@ export async function generateWorkoutPlan(preferences: WorkoutPlanPreferences) {
     return { success: false, error: 'Not authenticated' }
   }
 
+  console.log('[generateWorkoutPlan] Starting plan generation for user:', user.id)
+  console.log('[generateWorkoutPlan] Preferences:', JSON.stringify(preferences, null, 2))
+
   try {
     // Check OpenAI API key
     if (!env.OPENAI_API_KEY) {
+      console.error('[generateWorkoutPlan] Missing OpenAI API key')
       return {
         success: false,
         error: 'AI workout generation is not configured. Please contact support.'
@@ -493,6 +497,18 @@ CRITICAL JSON REQUIREMENTS:
     const endDate = new Date(startDate)
     endDate.setDate(endDate.getDate() + 28) // 4 weeks
 
+    console.log('[generateWorkoutPlan] Saving plan to database...')
+    console.log('[generateWorkoutPlan] Plan data:', {
+      user_id: user.id,
+      plan_name: generatedPlan.planName,
+      plan_type: generatedPlan.planType,
+      days_per_week: generatedPlan.daysPerWeek,
+      start_date: startDate.toISOString(),
+      end_date: endDate.toISOString(),
+      is_active: true,
+      split_pattern: generatedPlan.splitPattern,
+    })
+
     const { data: plan, error: planError } = await supabase
       .from('workout_plans')
       .insert({
@@ -510,48 +526,91 @@ CRITICAL JSON REQUIREMENTS:
 
     if (planError || !plan) {
       console.error('[generateWorkoutPlan] Failed to save plan:', planError)
-      return { success: false, error: 'Failed to save workout plan' }
+      console.error('[generateWorkoutPlan] Error details:', JSON.stringify(planError, null, 2))
+      return { success: false, error: `Failed to save workout plan: ${planError?.message || 'Unknown error'}` }
     }
 
-    // Save weeks and workouts
+    console.log('[generateWorkoutPlan] Plan saved successfully:', plan.id)
+
+    // Save weeks and workouts (optimized with parallel saves)
+    console.log('[generateWorkoutPlan] Saving workouts and exercises...')
+
+    // Prepare all workout inserts
+    const workoutInserts = []
     for (const week of generatedPlan.weeks) {
       for (const workout of week.workouts) {
         const workoutDate = new Date(startDate)
         workoutDate.setDate(workoutDate.getDate() + ((week.weekNumber - 1) * 7) + (workout.dayOfWeek - 1))
 
-        const { data: savedWorkout, error: workoutError } = await supabase
-          .from('workouts')
-          .insert({
-            user_id: user.id,
-            workout_plan_id: plan.id,
-            workout_date: workoutDate.toISOString(),
-            workout_name: workout.workoutName,
-            focus_areas: workout.focusAreas,
-            estimated_duration_minutes: workout.estimatedDuration,
-            status: 'planned',
-          })
-          .select()
-          .single()
+        workoutInserts.push({
+          user_id: user.id,
+          workout_plan_id: plan.id,
+          workout_date: workoutDate.toISOString(),
+          workout_name: workout.workoutName,
+          focus_areas: workout.focusAreas,
+          estimated_duration_minutes: workout.estimatedDuration,
+          status: 'planned',
+          // Store exercises temporarily to map after insert
+          _exercises: workout.exercises,
+          _weekNumber: week.weekNumber,
+          _dayOfWeek: workout.dayOfWeek
+        })
+      }
+    }
 
-        if (!workoutError && savedWorkout) {
-          // Save exercises for this workout
-          for (const exercise of workout.exercises) {
-            await supabase
-              .from('workout_exercises')
-              .insert({
-                workout_id: savedWorkout.id,
-                exercise_id: exercise.exerciseId,
-                exercise_order: exercise.exerciseOrder,
-                planned_sets: exercise.sets,
-                planned_reps_min: exercise.repsMin,
-                planned_reps_max: exercise.repsMax,
-                rest_seconds: exercise.restSeconds,
-                tempo: exercise.tempo,
-                rpe: exercise.rpe,
-                notes: exercise.notes,
-              })
-          }
+    // Insert all workouts at once
+    const { data: savedWorkouts, error: workoutsError } = await supabase
+      .from('workouts')
+      .insert(workoutInserts.map(w => ({
+        user_id: w.user_id,
+        workout_plan_id: w.workout_plan_id,
+        workout_date: w.workout_date,
+        workout_name: w.workout_name,
+        focus_areas: w.focus_areas,
+        estimated_duration_minutes: w.estimated_duration_minutes,
+        status: w.status,
+      })))
+      .select()
+
+    if (workoutsError || !savedWorkouts) {
+      console.error('[generateWorkoutPlan] Failed to save workouts:', workoutsError)
+      return { success: false, error: 'Failed to save workouts' }
+    }
+
+    console.log('[generateWorkoutPlan] Saved', savedWorkouts.length, 'workouts')
+
+    // Now save all exercises in parallel
+    const exerciseInserts = []
+    savedWorkouts.forEach((savedWorkout, index) => {
+      const originalWorkout = workoutInserts[index]
+      if (originalWorkout._exercises) {
+        for (const exercise of originalWorkout._exercises) {
+          exerciseInserts.push({
+            workout_id: savedWorkout.id,
+            exercise_id: exercise.exerciseId,
+            exercise_order: exercise.exerciseOrder,
+            planned_sets: exercise.sets,
+            planned_reps_min: exercise.repsMin,
+            planned_reps_max: exercise.repsMax,
+            rest_seconds: exercise.restSeconds,
+            tempo: exercise.tempo,
+            rpe: exercise.rpe,
+            notes: exercise.notes,
+          })
         }
+      }
+    })
+
+    if (exerciseInserts.length > 0) {
+      const { error: exercisesError } = await supabase
+        .from('workout_exercises')
+        .insert(exerciseInserts)
+
+      if (exercisesError) {
+        console.error('[generateWorkoutPlan] Failed to save exercises:', exercisesError)
+        // Don't fail the whole operation if just exercises fail
+      } else {
+        console.log('[generateWorkoutPlan] Saved', exerciseInserts.length, 'exercises')
       }
     }
 
