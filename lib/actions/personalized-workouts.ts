@@ -156,90 +156,179 @@ export async function generateWorkoutPlan(preferences: WorkoutPlanPreferences) {
       return { success: false, error: 'User profile not found' }
     }
 
-    // Fetch exercises filtered by modality
+    // Fetch exercises with smart fallback strategy
     const trainingStyle = preferences.trainingStyle || profile.training_style || 'mixed'
     const availableEquipment = preferences.availableEquipment || profile.available_equipment || []
+    const excludedIds = preferences.excludeExercises || []
 
-    let exercisesQuery = supabase
+    // Fetch ALL active exercises first
+    const { data: allExercises, error: exercisesError } = await supabase
       .from('exercise_library')
       .select('*')
       .eq('is_active', true)
 
-    // Filter by training modality (unless 'mixed')
-    if (trainingStyle !== 'mixed') {
-      exercisesQuery = exercisesQuery.eq('training_modality', trainingStyle)
-    }
-
-    const { data: exercises, error: exercisesError } = await exercisesQuery
-
-    if (exercisesError || !exercises || exercises.length === 0) {
+    if (exercisesError || !allExercises || allExercises.length === 0) {
       return {
         success: false,
-        error: 'No exercises found for the selected training modality'
+        error: 'No exercises found in the library. Please contact support.'
       }
     }
 
-    // Filter exercises by equipment availability
-    const filteredExercises = exercises.filter(ex => {
-      if (!ex.equipment || ex.equipment.length === 0) return true
-      if (!availableEquipment || availableEquipment.length === 0) {
-        return ex.equipment.length === 0
+    // Helper function to filter exercises by equipment
+    const filterByEquipment = (exercises: any[]) => {
+      return exercises.filter(ex => {
+        // No equipment required = always included
+        if (!ex.equipment || ex.equipment.length === 0) return true
+        // No equipment available = only bodyweight exercises
+        if (!availableEquipment || availableEquipment.length === 0) {
+          return ex.equipment.length === 0
+        }
+        // Has equipment = check if any required equipment is available
+        return ex.equipment.some((eq: string) => availableEquipment.includes(eq))
+      })
+    }
+
+    // Helper function to filter by modality
+    const filterByModality = (exercises: any[], modality: string) => {
+      if (modality === 'mixed') return exercises
+      return exercises.filter(ex => ex.training_modality === modality)
+    }
+
+    // Helper function to remove excluded exercises
+    const removeExcluded = (exercises: any[]) => {
+      if (!excludedIds || excludedIds.length === 0) return exercises
+      return exercises.filter(ex => !excludedIds.includes(ex.id))
+    }
+
+    // Smart filtering strategy with fallback
+    let finalExercises: any[] = []
+    let filteringStrategy = ''
+
+    // Strategy 1: Try strict filtering (modality + equipment + exclusions)
+    let filtered = filterByModality(allExercises, trainingStyle)
+    filtered = filterByEquipment(filtered)
+    filtered = removeExcluded(filtered)
+
+    if (filtered.length >= 12) {
+      finalExercises = filtered
+      filteringStrategy = 'strict'
+      console.log('[generateWorkoutPlan] Using strict filtering:', filtered.length, 'exercises')
+    }
+    // Strategy 2: Relax modality constraint if not enough exercises
+    else if (filtered.length < 12) {
+      console.log('[generateWorkoutPlan] Only', filtered.length, 'with strict filter, relaxing modality...')
+      filtered = filterByEquipment(allExercises)
+      filtered = removeExcluded(filtered)
+
+      if (filtered.length >= 8) {
+        finalExercises = filtered
+        filteringStrategy = 'mixed-modality'
+        console.log('[generateWorkoutPlan] Using mixed modality filtering:', filtered.length, 'exercises')
       }
-      return ex.equipment.some((eq: string) => availableEquipment.includes(eq))
-    })
+      // Strategy 3: Include ALL equipment-compatible exercises (ignore exclusions if needed)
+      else {
+        console.log('[generateWorkoutPlan] Only', filtered.length, 'exercises, including all compatible...')
+        filtered = filterByEquipment(allExercises)
 
-    // Filter out excluded exercises
-    const excludedIds = preferences.excludeExercises || []
-    const finalExercises = filteredExercises.filter(ex => !excludedIds.includes(ex.id))
+        if (filtered.length >= 5) {
+          finalExercises = filtered
+          filteringStrategy = 'inclusive'
+          console.log('[generateWorkoutPlan] Using inclusive filtering:', filtered.length, 'exercises')
+        }
+        // Strategy 4: Last resort - use what we have
+        else {
+          console.log('[generateWorkoutPlan] Very limited exercises, using all available')
+          finalExercises = allExercises.slice(0, Math.max(filtered.length, 10))
+          filteringStrategy = 'minimal'
+        }
+      }
+    }
 
-    if (finalExercises.length < 20) {
+    // Absolute minimum check
+    if (finalExercises.length < 5) {
       return {
         success: false,
-        error: `Not enough exercises available (found ${finalExercises.length}, need 20). Please select more equipment options or choose "Mixed" training style.`
+        error: `Unable to generate a workout plan. Only ${finalExercises.length} exercises available. Please add more equipment options or contact support.`
       }
     }
 
-    // Build AI prompt
+    // Build AI prompt with adaptive guidance
     const daysPerWeek = preferences.daysPerWeek || profile.training_days_per_week || 5
     const sessionDuration = preferences.sessionDurationMinutes || profile.available_time_minutes || 60
     const experienceLevel = preferences.experienceLevel || profile.experience_level || 'intermediate'
     const fitnessGoal = preferences.fitnessGoal || profile.primary_goal || 'general_fitness'
 
-    const availableExercises = finalExercises.slice(0, 100).map(ex =>
-      `ID: ${ex.id} | ${ex.name} (${ex.category})`
+    // Calculate optimal exercises per workout based on available pool
+    const exercisesPerWorkout = Math.max(
+      4, // Minimum 4 exercises per workout
+      Math.min(
+        9, // Maximum 9 exercises per workout
+        Math.floor(finalExercises.length / (daysPerWeek * 0.7)) // Allow 70% reuse across workouts
+      )
+    )
+
+    // Provide top 100 exercises (or all if less than 100)
+    const exercisesToProvide = finalExercises.slice(0, 100)
+    const availableExercises = exercisesToProvide.map(ex =>
+      `ID: ${ex.id} | ${ex.name} (${ex.category}) - ${ex.primary_muscles?.join(', ') || 'full body'}`
     ).join('\n')
 
+    // Build adaptive instructions based on exercise pool size
+    let adaptiveInstructions = ''
+    if (finalExercises.length < 12) {
+      adaptiveInstructions = `
+IMPORTANT: Limited exercise pool (${finalExercises.length} exercises). Adapt by:
+- Reuse exercises across different workouts with varied set/rep schemes
+- Use different tempos (e.g., slow eccentric) to create variation
+- Vary rest periods and RPE targets
+- Include unilateral variations when possible
+- Focus on progressive overload across weeks`
+    } else if (finalExercises.length < 25) {
+      adaptiveInstructions = `
+NOTE: Moderate exercise pool (${finalExercises.length} exercises). Create variety by:
+- Strategic exercise reuse with different parameters
+- Progressive volume/intensity across weeks
+- Varied tempo and rest periods`
+    } else {
+      adaptiveInstructions = `
+NOTE: Good exercise variety (${finalExercises.length} exercises). Maximize quality by:
+- Minimizing exercise repetition across workouts
+- Optimal exercise selection for muscle groups
+- Progressive overload principles`
+    }
+
     const prompt = `Generate a personalized 4-week workout plan for a ${experienceLevel} user focused on ${fitnessGoal}. Training ${daysPerWeek} days per week, ${sessionDuration} minutes per session. Training style: ${trainingStyle}.
+${adaptiveInstructions}
 
 Available exercises:
 ${availableExercises}
 
 Return ONLY valid JSON with this structure:
 {
-  "planName": "4-Week Plan Name",
+  "planName": "4-Week [Goal/Style] Plan",
   "planType": "${trainingStyle}",
   "daysPerWeek": ${daysPerWeek},
-  "splitPattern": "Brief split description",
+  "splitPattern": "Brief description of the training split",
   "weeks": [
     {
       "weekNumber": 1,
       "workouts": [
         {
           "dayOfWeek": 1,
-          "workoutName": "Workout Name",
-          "focusAreas": ["muscle1", "muscle2"],
+          "workoutName": "Descriptive Workout Name",
+          "focusAreas": ["muscle_group_1", "muscle_group_2"],
           "estimatedDuration": ${sessionDuration},
           "exercises": [
             {
-              "exerciseId": "EXACT UUID FROM LIST",
+              "exerciseId": "EXACT UUID FROM AVAILABLE EXERCISES LIST",
               "exerciseOrder": 1,
               "sets": 3,
               "repsMin": 8,
               "repsMax": 12,
               "restSeconds": 90,
               "tempo": "3-0-1-1",
-              "rpe": 8.0,
-              "notes": "Form cue"
+              "rpe": 7.5,
+              "notes": "Specific form cue or coaching point"
             }
           ]
         }
@@ -248,7 +337,14 @@ Return ONLY valid JSON with this structure:
   ]
 }
 
-Create 4 weeks with ${daysPerWeek} workouts each. Include 7-9 exercises per workout.`
+REQUIREMENTS:
+- Create 4 weeks with ${daysPerWeek} workouts per week
+- Include ${exercisesPerWorkout} exercises per workout
+- Use ONLY exercise IDs from the available exercises list above
+- Progressive overload: increase volume, intensity, or complexity across weeks
+- Ensure proper muscle group balance and recovery
+- Set RPE between 6.0-9.0 based on exercise difficulty and experience level
+- Provide specific, actionable form cues in notes`
 
     // Call OpenAI API directly
     console.log('[generateWorkoutPlan] Calling OpenAI API...')
