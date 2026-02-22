@@ -500,7 +500,7 @@ CRITICAL JSON REQUIREMENTS:
     // Combine into full plan structure
     const generatedPlan = {
       planName: `4-Week ${trainingStyle.charAt(0).toUpperCase() + trainingStyle.slice(1)} Plan`,
-      planType: trainingStyle,
+      planType: 'custom', // AI-generated plans are always custom
       daysPerWeek: daysPerWeek,
       splitPattern: splitPattern || 'Progressive training split',
       weeks: allWeeks
