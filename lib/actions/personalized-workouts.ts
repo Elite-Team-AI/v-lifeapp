@@ -262,6 +262,12 @@ export async function generateWorkoutPlan(preferences: WorkoutPlanPreferences) {
     const experienceLevel = preferences.experienceLevel || profile.experience_level || 'intermediate'
     const fitnessGoal = preferences.fitnessGoal || profile.primary_goal || 'general_fitness'
 
+    // Map internal training style to user-friendly display name for AI prompts
+    const trainingStyleDisplay = trainingStyle === 'hypertrophy' ? 'Bodybuilding' :
+                                  trainingStyle === 'mind_body' ? 'Mind-Body' :
+                                  trainingStyle.toUpperCase() === 'HIIT' ? 'HIIT' :
+                                  trainingStyle.charAt(0).toUpperCase() + trainingStyle.slice(1)
+
     // Calculate optimal exercises per workout based on available pool
     const exercisesPerWorkout = Math.max(
       4, // Minimum 4 exercises per workout
@@ -310,7 +316,7 @@ NOTE: Good exercise variety (${finalExercises.length} exercises). Maximize quali
 - Adding exercise complexity or variation`
         : ''
 
-      const prompt = `Generate week ${weekNumber} of a personalized workout plan for a ${experienceLevel} user focused on ${fitnessGoal}. Training ${daysPerWeek} days per week, ${sessionDuration} minutes per session. Training style: ${trainingStyle}.${previousWeeksContext}
+      const prompt = `Generate week ${weekNumber} of a personalized workout plan for a ${experienceLevel} user focused on ${fitnessGoal}. Training ${daysPerWeek} days per week, ${sessionDuration} minutes per session. Training style: ${trainingStyleDisplay}.${previousWeeksContext}
 ${adaptiveInstructions}
 
 Available exercises:
@@ -499,7 +505,7 @@ CRITICAL JSON REQUIREMENTS:
 
     // Combine into full plan structure
     const generatedPlan = {
-      planName: `4-Week ${trainingStyle.charAt(0).toUpperCase() + trainingStyle.slice(1)} Plan`,
+      planName: `4-Week ${trainingStyleDisplay} Plan`,
       planType: 'custom', // AI-generated plans are always custom
       daysPerWeek: daysPerWeek,
       splitPattern: splitPattern || 'Progressive training split',
