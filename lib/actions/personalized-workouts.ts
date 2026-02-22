@@ -152,11 +152,18 @@ export async function generateWorkoutPlan(preferences: WorkoutPlanPreferences) {
 
     // Call the API route to generate the plan
     // Use absolute URL in production, relative in development
-    const apiUrl = env.NEXT_PUBLIC_APP_URL
-      ? `${env.NEXT_PUBLIC_APP_URL}/api/workouts/generate-plan`
-      : 'http://localhost:3000/api/workouts/generate-plan'
+    // Vercel automatically provides VERCEL_URL (without protocol) in production
+    const baseUrl = env.NEXT_PUBLIC_APP_URL
+      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+      || 'http://localhost:3000'
 
-    console.log('[generateWorkoutPlan] Calling API:', apiUrl)
+    const apiUrl = `${baseUrl}/api/workouts/generate-plan`
+
+    console.log('[generateWorkoutPlan] Calling API:', apiUrl, {
+      hasAppUrl: !!env.NEXT_PUBLIC_APP_URL,
+      hasVercelUrl: !!process.env.VERCEL_URL,
+      vercelUrl: process.env.VERCEL_URL
+    })
 
     const response = await fetch(apiUrl, {
       method: 'POST',
