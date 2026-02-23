@@ -130,24 +130,64 @@ export class ValidationError extends Error {
 export function createErrorResponse(error: unknown, status = 400) {
   if (error instanceof ValidationError) {
     return Response.json(
-      { 
-        error: error.message, 
-        fieldErrors: error.fieldErrors 
+      {
+        error: error.message,
+        fieldErrors: error.fieldErrors
       },
       { status }
     )
   }
-  
+
   if (error instanceof Error) {
     return Response.json(
       { error: error.message },
       { status }
     )
   }
-  
+
   return Response.json(
     { error: "An unexpected error occurred" },
     { status: 500 }
   )
 }
 
+/**
+ * Safe validation that returns success/error structure
+ * Compatible with existing error handling patterns
+ */
+export function safeValidate<T>(schema: z.ZodSchema<T>, data: unknown) {
+  const result = schema.safeParse(data)
+
+  if (result.success) {
+    return {
+      success: true as const,
+      data: result.data,
+    }
+  }
+
+  return {
+    success: false as const,
+    details: {
+      issues: result.error.issues.map(issue => ({
+        path: issue.path,
+        message: issue.message,
+      })),
+    },
+  }
+}
+
+// ============================================
+// Workout Generation API
+// ============================================
+
+export const workoutGenerationSchema = z.object({
+  userId: z.string().uuid("Invalid user ID"),
+  preferences: z.object({
+    trainingStyle: z.enum(["strength", "hypertrophy", "endurance", "mixed"]).optional(),
+    splitPreference: z.enum(["push_pull_legs", "upper_lower", "full_body", "auto"]).optional(),
+    exercisesToAvoid: z.array(z.string()).optional(),
+    specificGoals: z.string().max(500).optional(),
+  }).optional(),
+})
+
+export type WorkoutGenerationRequest = z.infer<typeof workoutGenerationSchema>

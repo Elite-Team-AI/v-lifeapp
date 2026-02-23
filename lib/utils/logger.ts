@@ -67,3 +67,35 @@ export const profileLog = createLogger('Profile')
 export const communityLog = createLogger('Community')
 export const apiLog = createLogger('API')
 
+/**
+ * Create an API-specific logger that includes request context
+ * Usage: const log = createApiLogger(request)
+ */
+export function createApiLogger(request: { method?: string; url?: string } | Request) {
+  const method = 'method' in request ? request.method : 'UNKNOWN'
+  const url = 'url' in request ? request.url : 'UNKNOWN'
+  const namespace = `API:${method}:${url}`
+
+  return {
+    debug: (message: string, _?: unknown, context?: Record<string, unknown>) => {
+      if (shouldLog('debug')) {
+        console.log(formatMessage(namespace, message), context || {})
+      }
+    },
+    info: (message: string, _?: unknown, context?: Record<string, unknown>) => {
+      if (shouldLog('info')) {
+        console.info(formatMessage(namespace, message), context || {})
+      }
+    },
+    warn: (message: string, _?: unknown, context?: Record<string, unknown>) => {
+      if (shouldLog('warn')) {
+        console.warn(formatMessage(namespace, message), context || {})
+      }
+    },
+    error: (message: string, error?: Error, _?: unknown, context?: Record<string, unknown>) => {
+      if (shouldLog('error')) {
+        console.error(formatMessage(namespace, message), error, context || {})
+      }
+    },
+  }
+}

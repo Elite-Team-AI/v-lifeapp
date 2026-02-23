@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { createApiLogger } from '@/lib/logger'
-import { workoutGenerationSchema, safeValidate } from '@/lib/api-validation'
+import { createApiLogger } from '@/lib/utils/logger'
+import { workoutGenerationSchema, safeValidate } from '@/lib/validations/api'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
