@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { createClient, getAuthUser } from "@/lib/supabase/server"
 import { env } from "@/lib/env"
+import OpenAI from "openai"
 
 // ========================
 // TYPES
@@ -277,8 +278,9 @@ export async function generateWorkoutPlan(preferences: WorkoutPlanPreferences) {
       )
     )
 
-    // Provide top 100 exercises (or all if less than 100)
-    const exercisesToProvide = finalExercises.slice(0, 100)
+    // Provide top 40 exercises (sufficient for 4-week plan variation while reducing prompt tokens)
+    // For a 4-week plan with 4-9 exercises per workout, 40 exercises allows ample variety
+    const exercisesToProvide = finalExercises.slice(0, 40)
     const availableExercises = exercisesToProvide.map(ex =>
       `ID: ${ex.id} | ${ex.name} (${ex.category}) - ${ex.primary_muscles?.join(', ') || 'full body'}`
     ).join('\n')
@@ -307,104 +309,240 @@ NOTE: Good exercise variety (${finalExercises.length} exercises). Maximize quali
 - Progressive overload principles`
     }
 
-    // Helper function to call OpenAI with retry logic for a single week
-    const callOpenAIForSingleWeek = async (weekNumber: number, maxRetries = 3): Promise<any> => {
-      const previousWeeksContext = weekNumber > 1
-        ? `\n\nIMPORTANT: This is week ${weekNumber} of a 4-week plan. Ensure progressive overload from previous weeks by:
-- Slightly increasing volume (more reps or sets)
-- Increasing intensity (heavier weight suggestions via RPE)
-- Adding exercise complexity or variation`
-        : ''
+    // Validation function for generated plan structure (adapted from Reborn)
+    const validatePlanStructure = (plan: any): string | null => {
+      if (!plan.planName || typeof plan.planName !== 'string') {
+        return 'Missing or invalid planName'
+      }
 
-      const prompt = `Generate week ${weekNumber} of a personalized workout plan for a ${experienceLevel} user focused on ${fitnessGoal}. Training ${daysPerWeek} days per week, ${sessionDuration} minutes per session. Training style: ${trainingStyleDisplay}.${previousWeeksContext}
-${adaptiveInstructions}
+      if (!plan.planType || typeof plan.planType !== 'string') {
+        return 'Missing or invalid planType'
+      }
 
-Available exercises:
-${availableExercises}
+      if (!plan.daysPerWeek || typeof plan.daysPerWeek !== 'number') {
+        return 'Missing or invalid daysPerWeek'
+      }
 
-CRITICAL REQUIREMENTS:
-- Create ${daysPerWeek} workouts for week ${weekNumber}
-- Include ${exercisesPerWorkout} exercises per workout
-- Use ONLY exercise IDs from the available exercises list above
-- Ensure proper muscle group balance and recovery
-- Set RPE between 6.0-9.0 based on exercise difficulty and experience level
-- Use simple text in notes field (avoid quotes, apostrophes, special characters)
+      if (!Array.isArray(plan.weeks) || plan.weeks.length !== 4) {
+        return 'Must have exactly 4 weeks'
+      }
 
-Return ONLY valid JSON (no markdown, no extra text) with this exact structure:
-{
-  "weekNumber": ${weekNumber},
-  "splitPattern": "training split description",
-  "workouts": [
-    {
-      "dayOfWeek": 1,
-      "workoutName": "Workout Name",
-      "focusAreas": ["muscle1", "muscle2"],
-      "estimatedDuration": ${sessionDuration},
-      "exercises": [
-        {
-          "exerciseId": "UUID-FROM-LIST",
-          "exerciseOrder": 1,
-          "sets": 3,
-          "repsMin": 8,
-          "repsMax": 12,
-          "restSeconds": 90,
-          "tempo": "3-0-1-1",
-          "rpe": 7.5,
-          "notes": "form cue"
+      for (let i = 0; i < plan.weeks.length; i++) {
+        const week = plan.weeks[i]
+
+        if (week.weekNumber !== i + 1) {
+          return `Week ${i + 1} has incorrect weekNumber`
         }
-      ]
-    }
-  ]
-}`
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          console.log(`[generateWorkoutPlan] OpenAI API call attempt ${attempt}/${maxRetries}...`)
 
-          const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gpt-4o',
-              temperature: 0.7,
-              max_tokens: 8000, // Reduced - generating one week at a time
-              messages: [
-                {
-                  role: 'system',
-                  content: `You are an expert fitness coach and program designer. Generate comprehensive workout programs.
+        if (!Array.isArray(week.workouts)) {
+          return `Week ${i + 1} missing workouts array`
+        }
 
-CRITICAL JSON REQUIREMENTS:
-- Return ONLY valid, properly formatted JSON
-- All strings must have quotes escaped properly
-- No line breaks within string values
-- Ensure complete JSON structure (no truncation)
-- Use simple, plain text in all string fields (no special characters that need escaping)`,
-                },
-                {
-                  role: 'user',
-                  content: prompt,
-                },
-              ],
-              response_format: { type: 'json_object' },
-            }),
-          })
-
-          if (!response.ok) {
-            const errorText = await response.text()
-            console.error(`[generateWorkoutPlan] OpenAI API error (attempt ${attempt}):`, response.status, errorText)
-
-            if (attempt === maxRetries) {
-              throw new Error(`OpenAI API failed after ${maxRetries} attempts: ${response.status}`)
-            }
-
-            // Wait before retry (exponential backoff)
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
-            continue
+        for (const workout of week.workouts) {
+          if (!workout.workoutName) {
+            return 'Workout missing name'
           }
 
-          const completion = await response.json()
+          if (!Array.isArray(workout.exercises)) {
+            return 'Workout missing exercises array'
+          }
+
+          // Validate minimum exercise count based on workout duration
+          const duration = workout.estimatedDuration || sessionDuration
+          let minExercises = 5 // Default minimum
+
+          if (duration >= 60) {
+            minExercises = 7 // 60+ minute workouts need at least 7 exercises
+          } else if (duration >= 45) {
+            minExercises = 6 // 45+ minute workouts need at least 6 exercises
+          }
+
+          if (workout.exercises.length < minExercises) {
+            return `Workout "${workout.workoutName}" (${duration} min) has only ${workout.exercises.length} exercises. Minimum ${minExercises} required for proper volume.`
+          }
+
+          // Validate total sets per workout
+          const totalSets = workout.exercises.reduce((sum: number, ex: any) => sum + (ex.sets || 0), 0)
+          const minSets = duration >= 60 ? 12 : duration >= 45 ? 12 : 10
+
+          if (totalSets < minSets) {
+            return `Workout "${workout.workoutName}" has only ${totalSets} total sets. Minimum ${minSets} required for ${duration}-minute workout.`
+          }
+
+          // Validate each exercise
+          for (const exercise of workout.exercises) {
+            if (!exercise.exerciseId || !exercise.exerciseName) {
+              return 'Exercise missing ID or name'
+            }
+
+            // Validate UUID format
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+            if (!uuidRegex.test(exercise.exerciseId)) {
+              return `Exercise "${exercise.exerciseName}" has invalid ID format. Must be a UUID from available exercises list.`
+            }
+
+            if (typeof exercise.sets !== 'number' || exercise.sets < 1) {
+              return `Exercise "${exercise.exerciseName}" has invalid sets count`
+            }
+          }
+        }
+      }
+
+      return null // Valid
+    }
+
+    // Enhanced prompt for generating complete 4-week plan
+    const buildCompletePlanPrompt = (): string => {
+      return `Generate a personalized 4-WEEK workout mesocycle for a user with the following profile:
+
+**USER PROFILE:**
+- Experience Level: ${experienceLevel}
+- Fitness Goal: ${fitnessGoal}
+- Days per Week: ${daysPerWeek}
+- Session Duration: ${sessionDuration} minutes
+- Training Style: ${trainingStyleDisplay}
+
+${adaptiveInstructions}
+
+**AVAILABLE EXERCISES (${exercisesToProvide.length} exercises):**
+${availableExercises}
+
+**CRITICAL MANDATORY REQUIREMENTS - FOLLOW EXACTLY:**
+
+⚠️ **BEFORE OUTPUT: COUNT EXERCISES IN EACH WORKOUT** ⚠️
+
+**VALIDATION CHECKLIST (MUST BE 100% CHECKED):**
+- [ ] Does EVERY ${sessionDuration}-minute workout have AT LEAST ${exercisesPerWorkout} exercises?
+- [ ] Does EVERY workout have AT LEAST ${sessionDuration >= 60 ? '12' : '10'} total sets?
+- [ ] Does each exercise have 2-3 sets (NOT just 1 set)?
+- [ ] Have I used EXACT UUIDs from the available exercises list?
+- [ ] Does my plan have EXACTLY 4 weeks?
+
+**IF ANY CHECKBOX IS UNCHECKED, GO BACK AND FIX IT NOW.**
+
+**REQUIREMENTS:**
+
+1. **4-Week Mesocycle Structure:**
+   - Week 1: Baseline (moderate volume)
+   - Week 2: Volume increase (+10%)
+   - Week 3: Peak intensity
+   - Week 4: Deload (60-70% volume for recovery)
+
+2. **Progressive Overload:**
+   - Increase weight OR reps OR sets each week (Weeks 1-3)
+   - Week 4 reduces volume for recovery
+
+3. **Exercise Selection - CRITICAL:**
+   - MUST use EXACT UUIDs from available exercises list
+   - DO NOT generate sequential numbers like "1", "2", "3"
+   - Include ${exercisesPerWorkout} exercises per workout minimum
+   - 2-3 sets per exercise (minimum 2 sets)
+   - Total sets per workout: ${sessionDuration >= 60 ? '12-16' : '10-14'}
+
+4. **Workout Structure:**
+   - Each week has ${daysPerWeek} workouts
+   - Each workout is approximately ${sessionDuration} minutes
+   - Balance muscle groups and recovery
+   - Progressive difficulty across weeks 1-3
+
+**FINAL PRE-OUTPUT CHECKLIST:**
+
+Before you output JSON, verify:
+1. Plan has EXACTLY 4 weeks in "weeks" array
+2. Each week has ${daysPerWeek} workouts
+3. Each ${sessionDuration}-min workout has ${exercisesPerWorkout}+ exercises
+4. Each workout has ${sessionDuration >= 60 ? '12' : '10'}+ total sets
+5. Exercise IDs are UUIDs from available list
+
+**OUTPUT FORMAT (JSON):**
+
+{
+  "planName": "${trainingStyleDisplay} 4-Week Plan",
+  "planType": "custom",
+  "daysPerWeek": ${daysPerWeek},
+  "splitPattern": "training split description",
+  "weeks": [
+    {
+      "weekNumber": 1,
+      "weekType": "baseline",
+      "workouts": [
+        {
+          "dayOfWeek": 1,
+          "workoutName": "Workout Name",
+          "focusAreas": ["muscle1", "muscle2"],
+          "estimatedDuration": ${sessionDuration},
+          "exercises": [
+            {
+              "exerciseId": "EXACT-UUID-FROM-LIST-ABOVE",
+              "exerciseName": "Exercise Name",
+              "exerciseOrder": 1,
+              "sets": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "restSeconds": 90,
+              "tempo": "3-0-1-1",
+              "rpe": 7.5,
+              "notes": "form cue"
+            }
+            // ${exercisesPerWorkout - 1} MORE EXERCISES HERE (total: ${exercisesPerWorkout}+ exercises)
+          ]
+        }
+        // ${daysPerWeek - 1} MORE WORKOUTS FOR WEEK 1
+      ]
+    }
+    // WEEKS 2, 3, AND 4 WITH SAME STRUCTURE
+  ]
+}
+
+⚠️ YOUR RESPONSE MUST INCLUDE ALL 4 WEEKS WITH COMPLETE WORKOUT DETAILS ⚠️
+
+Generate a complete, personalized 4-week workout plan following all requirements.`
+    }
+
+    // Helper function to call OpenAI for complete 4-week plan
+    const callOpenAIForCompletePlan = async (maxRetries = 3): Promise<any> => {
+      const prompt = buildCompletePlanPrompt()
+
+      // Initialize OpenAI client (following Reborn's pattern)
+      const openai = new OpenAI({
+        apiKey: env.OPENAI_API_KEY,
+      })
+
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`[generateWorkoutPlan] Generating complete 4-week plan (attempt ${attempt}/${maxRetries})...`)
+
+          // Use OpenAI SDK client instead of fetch (like Reborn)
+          const completion = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            temperature: 0.7,
+            max_tokens: 16000, // Explicitly set to ensure we get complete JSON
+            messages: [
+              {
+                role: 'system',
+                content: `You are an expert fitness coach. Create a personalized 4-WEEK workout program. Respond ONLY with valid JSON - NO other text.
+
+CRITICAL - COMPACT JSON FORMAT:
+- Use SHORT, concise notes (max 5-7 words per note)
+- Use MINIMAL string fields
+- Keep ALL property names SHORT
+- NO unnecessary whitespace
+
+PLAN STRUCTURE REQUIREMENTS:
+(1) EXACTLY 4 weeks in "weeks" array
+(2) For ${sessionDuration}-min workouts: minimum ${exercisesPerWorkout} exercises
+(3) Each exercise: 2-3 sets
+(4) Use EXACT exercise UUIDs from the provided list
+(5) Total sets per workout: at least ${sessionDuration >= 60 ? '12' : '10'}`,
+              },
+              {
+                role: 'user',
+                content: prompt,
+              },
+            ],
+            response_format: { type: 'json_object' },
+          })
+
           const aiResponse = completion.choices?.[0]?.message?.content
 
           if (!aiResponse) {
@@ -416,18 +554,28 @@ CRITICAL JSON REQUIREMENTS:
             continue
           }
 
+          // Detailed token usage logging to diagnose truncation
+          console.log('[generateWorkoutPlan] AI response received')
+          console.log('[generateWorkoutPlan] Response length:', aiResponse.length, 'characters')
+          console.log('[generateWorkoutPlan] Token usage:', {
+            prompt_tokens: completion.usage?.prompt_tokens,
+            completion_tokens: completion.usage?.completion_tokens,
+            total_tokens: completion.usage?.total_tokens,
+            finish_reason: completion.choices?.[0]?.finish_reason
+          })
+
           // Attempt to parse JSON with detailed error handling
-          let generatedWeek: any
+          let generatedPlan: any
           try {
-            generatedWeek = JSON.parse(aiResponse)
+            generatedPlan = JSON.parse(aiResponse)
           } catch (parseError) {
-            console.error(`[generateWorkoutPlan] JSON parse error for week ${weekNumber} (attempt ${attempt}):`, parseError)
+            console.error(`[generateWorkoutPlan] JSON parse error (attempt ${attempt}):`, parseError)
             console.error('[generateWorkoutPlan] AI response length:', aiResponse.length)
             console.error('[generateWorkoutPlan] AI response preview:', aiResponse.substring(0, 500))
             console.error('[generateWorkoutPlan] AI response ending:', aiResponse.substring(Math.max(0, aiResponse.length - 500)))
 
             if (attempt === maxRetries) {
-              throw new Error(`Invalid JSON from AI for week ${weekNumber}: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`)
+              throw new Error(`Invalid JSON from AI: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`)
             }
 
             // Try next attempt with exponential backoff
@@ -435,35 +583,23 @@ CRITICAL JSON REQUIREMENTS:
             continue
           }
 
-          // Validate the week structure
-          if (!generatedWeek.weekNumber || !generatedWeek.workouts || !Array.isArray(generatedWeek.workouts)) {
-            console.error(`[generateWorkoutPlan] Invalid week structure for week ${weekNumber} (attempt ${attempt}):`, Object.keys(generatedWeek))
+          // Validate the complete plan structure
+          const validationError = validatePlanStructure(generatedPlan)
+          if (validationError) {
+            console.error(`[generateWorkoutPlan] Plan validation failed (attempt ${attempt}):`, validationError)
 
             if (attempt === maxRetries) {
-              throw new Error(`AI generated week ${weekNumber} with invalid structure`)
+              throw new Error(`Generated plan failed validation: ${validationError}`)
             }
 
             await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
             continue
           }
 
-          // Validate workouts structure
-          for (const workout of generatedWeek.workouts) {
-            if (!workout.workoutName || !workout.exercises || !Array.isArray(workout.exercises)) {
-              console.error(`[generateWorkoutPlan] Invalid workout structure in week ${weekNumber} (attempt ${attempt})`)
-
-              if (attempt === maxRetries) {
-                throw new Error(`AI generated workout with invalid structure in week ${weekNumber}`)
-              }
-
-              await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
-              continue
-            }
-          }
-
-          // Success! Return the validated week
-          console.log(`[generateWorkoutPlan] Successfully generated week ${weekNumber} on attempt ${attempt}`)
-          return generatedWeek
+          // Success! Return the validated complete plan
+          console.log(`[generateWorkoutPlan] Successfully generated complete 4-week plan on attempt ${attempt}`)
+          console.log(`[generateWorkoutPlan] Plan contains ${generatedPlan.weeks.length} weeks, ${generatedPlan.weeks.reduce((sum: number, w: any) => sum + w.workouts.length, 0)} total workouts`)
+          return generatedPlan
 
         } catch (error) {
           console.error(`[generateWorkoutPlan] Error on attempt ${attempt}:`, error)
@@ -477,42 +613,14 @@ CRITICAL JSON REQUIREMENTS:
         }
       }
 
-      throw new Error(`Failed to generate week ${weekNumber} after all retries`)
+      throw new Error('Failed to generate complete plan after all retries')
     }
 
-    // Generate all 4 weeks sequentially
-    console.log('[generateWorkoutPlan] Starting week-by-week generation...')
-    const allWeeks: any[] = []
-    let splitPattern = ''
+    // Generate complete 4-week plan in one call
+    console.log('[generateWorkoutPlan] Generating complete 4-week plan...')
+    const generatedPlan = await callOpenAIForCompletePlan()
 
-    for (let weekNum = 1; weekNum <= 4; weekNum++) {
-      console.log(`[generateWorkoutPlan] Generating week ${weekNum}/4...`)
-      const weekData = await callOpenAIForSingleWeek(weekNum)
-
-      // Store split pattern from first week
-      if (weekNum === 1 && weekData.splitPattern) {
-        splitPattern = weekData.splitPattern
-      }
-
-      allWeeks.push(weekData)
-      console.log(`[generateWorkoutPlan] Week ${weekNum} completed successfully`)
-
-      // Small delay between API calls to avoid rate limiting
-      if (weekNum < 4) {
-        await new Promise(resolve => setTimeout(resolve, 500))
-      }
-    }
-
-    // Combine into full plan structure
-    const generatedPlan = {
-      planName: `4-Week ${trainingStyleDisplay} Plan`,
-      planType: 'custom', // AI-generated plans are always custom
-      daysPerWeek: daysPerWeek,
-      splitPattern: splitPattern || 'Progressive training split',
-      weeks: allWeeks
-    }
-
-    console.log('[generateWorkoutPlan] All 4 weeks generated successfully!')
+    console.log('[generateWorkoutPlan] Complete 4-week plan generated successfully!')
 
     // Save plan to database
     const startDate = new Date()
@@ -536,7 +644,7 @@ CRITICAL JSON REQUIREMENTS:
       .insert({
         user_id: user.id,
         plan_name: generatedPlan.planName,
-        plan_type: generatedPlan.planType,
+        plan_type: 'custom', // Always use 'custom' for AI-generated plans (not generatedPlan.planType which may return invalid values)
         days_per_week: generatedPlan.daysPerWeek,
         start_date: startDate.toISOString(),
         end_date: endDate.toISOString(),
