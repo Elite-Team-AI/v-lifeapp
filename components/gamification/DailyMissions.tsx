@@ -505,7 +505,7 @@ export function DailyMissions({ missions: initialMissions, onMissionComplete, cl
       
       {/* Info Modal */}
       <Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
-        <DialogContent className="max-w-md bg-black/95 border-accent/30">
+        <DialogContent className="bg-black/95 border-accent/30">
           <DialogHeader>
             <DialogTitle className="text-white flex items-center gap-2">
               <Trophy className="h-5 w-5 text-accent" />
@@ -553,7 +553,7 @@ export function DailyMissions({ missions: initialMissions, onMissionComplete, cl
 
       {/* Custom Mission Form Modal */}
       <Dialog open={showCustomForm} onOpenChange={setShowCustomForm}>
-        <DialogContent className="max-w-md bg-black/95 border-accent/30">
+        <DialogContent className="bg-black/95 border-accent/30">
           <DialogHeader>
             <DialogTitle className="text-white flex items-center gap-2">
               <Plus className="h-5 w-5 text-accent" />

@@ -80,7 +80,7 @@ export function ReportPostModal({ isOpen, onClose, postId, postTitle }: ReportPo
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md border-white/10 bg-gradient-to-b from-black to-charcoal">
+      <DialogContent className="border-white/10 bg-gradient-to-b from-black to-charcoal">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-white">
             <Flag className="h-5 w-5 text-red-400" />

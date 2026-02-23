@@ -83,7 +83,7 @@ export function WeeklyReflectionModal({ isOpen, onClose }: WeeklyReflectionModal
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Weekly Reflection</DialogTitle>
           <DialogDescription>

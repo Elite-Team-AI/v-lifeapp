@@ -652,7 +652,7 @@ export function FitnessClient() {
 
       {/* Rest Day & Workout Split Info Modal */}
       <Dialog open={showRestDayInfo} onOpenChange={setShowRestDayInfo}>
-        <DialogContent className="max-w-md backdrop-blur-xl bg-black/95 border-accent/30">
+        <DialogContent className="backdrop-blur-xl bg-black/95 border-accent/30">
           <DialogHeader>
             <DialogTitle className="text-white flex items-center gap-2">
               <Calendar className="h-5 w-5 text-accent" />

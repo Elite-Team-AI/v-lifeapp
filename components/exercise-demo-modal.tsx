@@ -103,7 +103,7 @@ export function ExerciseDemoModal({ isOpen, onClose, exerciseName }: ExerciseDem
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-black/95 border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-black/95 border-white/10 text-white">
         <DialogHeader>
           <DialogTitle className="text-white text-xl">{exerciseName}</DialogTitle>
           <DialogDescription className="text-white/70">
