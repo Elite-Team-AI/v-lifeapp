@@ -652,19 +652,19 @@ export function FitnessClient() {
 
       {/* Rest Day & Workout Split Info Modal */}
       <Dialog open={showRestDayInfo} onOpenChange={setShowRestDayInfo}>
-        <DialogContent className="backdrop-blur-xl bg-black/95 border-accent/30">
-          <DialogHeader>
-            <DialogTitle className="text-white flex items-start gap-2">
+        <DialogContent className="backdrop-blur-xl bg-black/95 border-accent/30 !w-[calc(100vw-2rem)] !max-w-[calc(100vw-2rem)]">
+          <DialogHeader className="max-w-full overflow-hidden">
+            <DialogTitle className="text-white flex items-start gap-2 max-w-full">
               <Calendar className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-              <span className="bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent break-words">
+              <span className="bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent break-words flex-1 min-w-0">
                 Workout Splits & Rest Days
               </span>
             </DialogTitle>
-            <DialogDescription className="text-white/70">
+            <DialogDescription className="text-white/70 max-w-full overflow-hidden text-ellipsis">
               Understanding your weekly workout structure
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 text-sm">
+          <div className="space-y-4 text-sm max-w-full overflow-hidden">
             <motion.div
               className="backdrop-blur-xl bg-white/5 border border-accent/20 rounded-lg p-3"
               initial={{ opacity: 0, x: -10 }}
