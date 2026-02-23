@@ -44,12 +44,38 @@ export const getAuthUser = cache(async () => {
  */
 export function createServiceClient() {
   return createServerClient(
-    env.NEXT_PUBLIC_SUPABASE_URL, 
+    env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll: () => [],
         setAll: () => {},
+      },
+    }
+  )
+}
+
+/**
+ * Create an admin client using the service role key
+ * This has full access to all data and admin APIs - use with caution
+ * Only use for admin operations like managing users
+ */
+export function createAdminClient() {
+  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set")
+  }
+
+  return createServerClient(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      cookies: {
+        getAll: () => [],
+        setAll: () => {},
+      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
       },
     }
   )

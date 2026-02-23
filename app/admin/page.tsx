@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 import { requireSuperAdmin } from "@/lib/utils/user-helpers"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Shield, Users, Crown, Settings, TrendingUp, Activity, Dumbbell, UtensilsCrossed, Heart, Calendar } from "lucide-react"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { formatDistanceToNow } from "date-fns"
 
 export default async function AdminPage() {
@@ -22,16 +22,16 @@ export default async function AdminPage() {
     .from("profiles")
     .select(`
       id,
-      email,
-      full_name,
+      name,
       user_role,
       created_at,
       updated_at
     `)
     .order("created_at", { ascending: false })
 
-  // Get auth users for last sign in data
-  const { data: { users: authUsers } } = await supabase.auth.admin.listUsers()
+  // Get auth users for last sign in data using admin client
+  const adminClient = createAdminClient()
+  const { data: { users: authUsers } } = await adminClient.auth.admin.listUsers()
 
   // Get engagement metrics for each user
   const userIds = users?.map(u => u.id) || []
@@ -67,6 +67,7 @@ export default async function AdminPage() {
 
     return {
       ...user,
+      email: authUser?.email || null,
       last_sign_in: authUser?.last_sign_in_at,
       workouts: workoutCount,
       meals: mealCount,
@@ -299,8 +300,8 @@ export default async function AdminPage() {
 
                     return (
                       <tr key={user.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                        <td className="py-3 px-4 text-sm">{user.email}</td>
-                        <td className="py-3 px-4 text-sm">{user.full_name || '-'}</td>
+                        <td className="py-3 px-4 text-sm">{user.email || '-'}</td>
+                        <td className="py-3 px-4 text-sm">{user.name || '-'}</td>
                         <td className="py-3 px-4">
                           <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${roleColor}`}>
                             {user.user_role === 'super_admin' && <Shield className="h-3 w-3 mr-1" />}

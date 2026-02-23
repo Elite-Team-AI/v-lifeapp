@@ -61,7 +61,7 @@ export async function POST(req: Request) {
     }
 
     // Revalidate cached data
-    revalidateTag("profile")
+    revalidateTag("profile", "max")
     revalidatePath("/settings")
     revalidatePath("/dashboard")
     revalidatePath("/onboarding")

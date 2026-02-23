@@ -19,30 +19,39 @@ export async function POST(req: Request) {
 
     const { name, email, phone } = validationResult.data
 
-    // Get authenticated user (optional for affiliate applications)
+    // Get authenticated user
     const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
 
     // Store the affiliate application
     const { error } = await supabase.from("affiliate_applications").insert({
-      user_id: user?.id || null,
       name,
       email,
       phone,
       status: "pending",
-      created_at: new Date().toISOString(),
     })
 
     if (error) {
+      console.error("[Affiliate Application DB Error]", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      })
+
       // If table doesn't exist, just log and return success
       // (application was received, will be processed via email)
       if (error.code === "42P01") {
         console.info("[Affiliate] Application received (table not setup):", { name, email })
         return Response.json({ success: true })
       }
-      throw error
+
+      return Response.json(
+        {
+          error: "Failed to submit application",
+          details: error.message
+        },
+        { status: 500 }
+      )
     }
 
     return Response.json({ success: true })

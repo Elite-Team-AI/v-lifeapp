@@ -1,6 +1,7 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, unstable_cache } from "next/cache"
+import { cache } from "react"
 import { cookies } from "next/headers"
 import { createClient, getAuthUser } from "@/lib/supabase/server"
 import { env } from "@/lib/env"
@@ -160,6 +161,54 @@ export async function generateWorkoutPlan(preferences: WorkoutPlanPreferences) {
 
     if (profileError || !profile) {
       return { success: false, error: 'User profile not found' }
+    }
+
+    // Update profile with new preferences if provided
+    // This ensures preferences persist across sessions and regenerations
+    const profileUpdates: any = {}
+    let shouldUpdateProfile = false
+
+    if (preferences.experienceLevel && preferences.experienceLevel !== profile.experience_level) {
+      profileUpdates.experience_level = preferences.experienceLevel
+      shouldUpdateProfile = true
+    }
+
+    if (preferences.availableEquipment && preferences.availableEquipment.length > 0) {
+      profileUpdates.available_equipment = preferences.availableEquipment
+      shouldUpdateProfile = true
+    }
+
+    if (preferences.daysPerWeek && preferences.daysPerWeek !== profile.weekly_workout_goal) {
+      profileUpdates.weekly_workout_goal = preferences.daysPerWeek
+      shouldUpdateProfile = true
+    }
+
+    if (preferences.sessionDurationMinutes && preferences.sessionDurationMinutes !== profile.preferred_workout_time) {
+      // Store as string like "45 minutes" or "60 minutes"
+      profileUpdates.preferred_workout_time = `${preferences.sessionDurationMinutes} minutes`
+      shouldUpdateProfile = true
+    }
+
+    if (preferences.fitnessGoal && preferences.fitnessGoal !== profile.fitness_goal) {
+      profileUpdates.fitness_goal = preferences.fitnessGoal
+      shouldUpdateProfile = true
+    }
+
+    if (shouldUpdateProfile) {
+      console.log('[generateWorkoutPlan] Updating profile with new preferences:', profileUpdates)
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update(profileUpdates)
+        .eq('id', user.id)
+
+      if (updateError) {
+        console.error('[generateWorkoutPlan] Failed to update profile:', updateError)
+        // Don't fail the whole operation, just log the error
+      } else {
+        console.log('[generateWorkoutPlan] Profile updated successfully')
+        // Update local profile object with new values
+        Object.assign(profile, profileUpdates)
+      }
     }
 
     // Fetch exercises with smart fallback strategy
@@ -776,16 +825,27 @@ PLAN STRUCTURE REQUIREMENTS:
     })
 
     if (exerciseInserts.length > 0) {
-      const { error: exercisesError } = await supabase
+      console.log('[generateWorkoutPlan] Attempting to save', exerciseInserts.length, 'exercises')
+      console.log('[generateWorkoutPlan] Sample exercise insert:', exerciseInserts[0])
+
+      const { data: savedExercises, error: exercisesError } = await supabase
         .from('plan_exercises')
         .insert(exerciseInserts)
+        .select()
 
       if (exercisesError) {
         console.error('[generateWorkoutPlan] Failed to save exercises:', exercisesError)
+        console.error('[generateWorkoutPlan] Error details:', JSON.stringify(exercisesError, null, 2))
+        console.error('[generateWorkoutPlan] Failed exercise IDs:', exerciseInserts.map(ex => ex.exercise_id).slice(0, 5))
         // Don't fail the whole operation if just exercises fail
       } else {
-        console.log('[generateWorkoutPlan] Saved', exerciseInserts.length, 'exercises')
+        console.log('[generateWorkoutPlan] Successfully saved', savedExercises?.length || 0, 'exercises')
+        if (savedExercises && savedExercises.length !== exerciseInserts.length) {
+          console.warn('[generateWorkoutPlan] WARNING: Saved', savedExercises.length, 'but tried to insert', exerciseInserts.length)
+        }
       }
+    } else {
+      console.warn('[generateWorkoutPlan] WARNING: No exercises to save! Check generateWeekFast output.')
     }
 
     // Revalidate paths
@@ -838,8 +898,9 @@ export async function getAllWorkoutPlans() {
 
 /**
  * Get the user's current active workout plan
+ * ✅ PERFORMANCE: Cached at request level to prevent duplicate DB calls
  */
-export async function getCurrentWorkoutPlan(): Promise<WorkoutPlanSummary | null> {
+export const getCurrentWorkoutPlan = cache(async (): Promise<WorkoutPlanSummary | null> => {
   const { user, error } = await getAuthUser()
   if (error || !user) {
     console.error('[getCurrentWorkoutPlan] Auth error:', error)
@@ -850,15 +911,7 @@ export async function getCurrentWorkoutPlan(): Promise<WorkoutPlanSummary | null
 
   const supabase = await createClient()
 
-  // First, log ALL plans for debugging
-  const { data: allPlans } = await supabase
-    .from('user_workout_plans')
-    .select('id, user_id, plan_name, status, created_at')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-
-  console.log('[getCurrentWorkoutPlan] ALL plans for this user:', allPlans)
-
+  // ✅ PERFORMANCE FIX: Removed debug query that fetched ALL plans
   const { data: plan, error: planError } = await supabase
     .from('user_workout_plans')
     .select('*')
@@ -898,12 +951,13 @@ export async function getCurrentWorkoutPlan(): Promise<WorkoutPlanSummary | null
     status: plan.status,
     progressPercentage,
   }
-}
+})
 
 /**
  * Get detailed workout plan with all workouts and exercises
+ * ✅ PERFORMANCE: Cached at request level to prevent duplicate DB calls
  */
-export async function getWorkoutPlanDetails(planId: string): Promise<WorkoutPlanDetails | null> {
+export const getWorkoutPlanDetails = cache(async (planId: string): Promise<WorkoutPlanDetails | null> => {
   const { user, error } = await getAuthUser()
   if (error || !user) {
     return null
@@ -911,73 +965,59 @@ export async function getWorkoutPlanDetails(planId: string): Promise<WorkoutPlan
 
   const supabase = await createClient()
 
-  // Get plan
+  // ✅ PERFORMANCE FIX: Single nested query with joins (RebornFitness pattern)
+  // Get plan with ALL workouts and exercises in ONE query
   const { data: plan, error: planError } = await supabase
     .from('user_workout_plans')
-    .select('*')
+    .select(`
+      *,
+      plan_workouts (
+        id,
+        workout_name,
+        week_number,
+        day_of_week,
+        scheduled_date,
+        is_completed,
+        estimated_duration_minutes,
+        muscle_groups,
+        plan_exercises (
+          id,
+          exercise_id,
+          exercise_order,
+          target_sets,
+          target_reps_min,
+          target_reps_max,
+          rest_seconds,
+          tempo,
+          target_rpe,
+          exercise_notes,
+          is_completed,
+          exercise_library (
+            id,
+            name,
+            primary_muscles,
+            category
+          )
+        )
+      )
+    `)
     .eq('id', planId)
     .eq('user_id', user.id)
+    .order('week_number', { foreignTable: 'plan_workouts', ascending: true })
+    .order('day_of_week', { foreignTable: 'plan_workouts', ascending: true })
+    .order('exercise_order', { foreignTable: 'plan_workouts.plan_exercises', ascending: true })
     .single()
 
   if (planError || !plan) {
+    console.error('[getWorkoutPlanDetails] Error:', planError)
     return null
   }
 
-  // Get all workouts for this plan
-  const { data: workouts, error: workoutsError } = await supabase
-    .from('plan_workouts')
-    .select(`
-      id,
-      workout_name,
-      week_number,
-      day_of_week,
-      scheduled_date,
-      is_completed,
-      estimated_duration_minutes,
-      muscle_groups
-    `)
-    .eq('plan_id', planId)
-    .order('week_number', { ascending: true })
-    .order('day_of_week', { ascending: true })
-
-  if (workoutsError || !workouts) {
-    return null
-  }
-
-  // Get all exercises for these workouts
-  const workoutIds = workouts.map(w => w.id)
-  const { data: exercises, error: exercisesError } = await supabase
-    .from('plan_exercises')
-    .select(`
-      id,
-      workout_id,
-      exercise_id,
-      exercise_order,
-      target_sets,
-      target_reps_min,
-      target_reps_max,
-      rest_seconds,
-      tempo,
-      target_rpe,
-      exercise_notes,
-      is_completed,
-      exercise_library (
-        id,
-        name,
-        primary_muscles,
-        category
-      )
-    `)
-    .in('workout_id', workoutIds)
-    .order('exercise_order', { ascending: true })
-
-  if (exercisesError) {
-    console.error('[getWorkoutPlanDetails] Error fetching exercises:', exercisesError)
-  }
-
+  // ✅ Pre-structure data on server (not client!)
   // Organize workouts by week
-  const weekMap = new Map<number, typeof workouts>()
-  workouts.forEach(workout => {
+  const weekMap = new Map<number, any[]>()
+
+  plan.plan_workouts?.forEach((workout: any) => {
     if (!weekMap.has(workout.week_number)) {
       weekMap.set(workout.week_number, [])
     }
@@ -988,46 +1028,41 @@ export async function getWorkoutPlanDetails(planId: string): Promise<WorkoutPlan
     .sort((a, b) => a[0] - b[0])
     .map(([weekNumber, weekWorkouts]) => ({
       weekNumber,
-      workouts: weekWorkouts.map(workout => {
-        const workoutExercises = (exercises || [])
-          .filter(ex => ex.workout_id === workout.id)
-          .map(ex => {
-            const exerciseData = Array.isArray(ex.exercise_library)
-              ? ex.exercise_library[0]
-              : ex.exercise_library
+      workouts: weekWorkouts.map((workout: any) => ({
+        id: workout.id,
+        workoutName: workout.workout_name,
+        dayOfWeek: workout.day_of_week,
+        scheduledDate: workout.scheduled_date,
+        status: workout.is_completed ? 'completed' : 'pending',
+        estimatedDuration: workout.estimated_duration_minutes,
+        focusAreas: workout.muscle_groups || [],
+        exercises: (workout.plan_exercises || []).map((ex: any) => {
+          const exerciseData = Array.isArray(ex.exercise_library)
+            ? ex.exercise_library[0]
+            : ex.exercise_library
 
-            return {
-              id: ex.id,
-              exerciseId: ex.exercise_id,
-              exerciseName: exerciseData?.name || 'Unknown Exercise',
-              primaryMuscles: exerciseData?.primary_muscles || [],
-              category: exerciseData?.category || 'strength',
-              exerciseOrder: ex.exercise_order,
-              targetSets: ex.target_sets,
-              targetRepsMin: ex.target_reps_min,
-              targetRepsMax: ex.target_reps_max,
-              restSeconds: ex.rest_seconds,
-              tempo: ex.tempo,
-              targetRpe: ex.target_rpe,
-              notes: ex.exercise_notes,
-              completedSets: 0, // Schema doesn't track partial completion
-              isCompleted: ex.is_completed || false,
-            }
-          })
-
-        return {
-          id: workout.id,
-          workoutName: workout.workout_name,
-          dayOfWeek: workout.day_of_week,
-          scheduledDate: workout.scheduled_date,
-          status: workout.is_completed ? 'completed' : 'pending',
-          estimatedDuration: workout.estimated_duration_minutes,
-          focusAreas: workout.muscle_groups || [],
-          exercises: workoutExercises,
-        }
-      }),
+          return {
+            id: ex.id,
+            exerciseId: ex.exercise_id,
+            exerciseName: exerciseData?.name || 'Unknown Exercise',
+            primaryMuscles: exerciseData?.primary_muscles || [],
+            category: exerciseData?.category || 'strength',
+            exerciseOrder: ex.exercise_order,
+            targetSets: ex.target_sets,
+            targetRepsMin: ex.target_reps_min,
+            targetRepsMax: ex.target_reps_max,
+            restSeconds: ex.rest_seconds,
+            tempo: ex.tempo,
+            targetRpe: ex.target_rpe,
+            notes: ex.exercise_notes,
+            completedSets: 0,
+            isCompleted: ex.is_completed || false,
+          }
+        }),
+      })),
     }))
 
+  // ✅ Pre-compute metrics on server
   const startDate = new Date(plan.start_date)
   const endDate = new Date(plan.end_date)
   const today = new Date()
@@ -1051,7 +1086,7 @@ export async function getWorkoutPlanDetails(planId: string): Promise<WorkoutPlan
     progressPercentage,
     weeks,
   }
-}
+})
 
 /**
  * Get today's workout session (if scheduled)
@@ -1065,7 +1100,7 @@ export async function getTodaysWorkout(): Promise<WorkoutSession | null> {
   const supabase = await createClient()
   const today = new Date().toISOString().split('T')[0]
 
-  // Find today's scheduled workout
+  // ✅ PERFORMANCE FIX: Single nested query for workout + exercises (RebornFitness pattern)
   const { data: workout, error: workoutError } = await supabase
     .from('plan_workouts')
     .select(`
@@ -1080,68 +1115,67 @@ export async function getTodaysWorkout(): Promise<WorkoutSession | null> {
       user_workout_plans!inner (
         user_id,
         status
+      ),
+      plan_exercises (
+        id,
+        exercise_id,
+        exercise_order,
+        target_sets,
+        target_reps_min,
+        target_reps_max,
+        rest_seconds,
+        tempo,
+        target_rpe,
+        exercise_notes,
+        is_completed,
+        exercise_library (
+          id,
+          name,
+          primary_muscles,
+          secondary_muscles,
+          category,
+          difficulty,
+          instructions,
+          form_cues
+        )
       )
     `)
     .eq('user_workout_plans.user_id', user.id)
     .eq('user_workout_plans.status', 'active')
     .eq('scheduled_date', today)
     .eq('is_completed', false)
+    .order('exercise_order', { foreignTable: 'plan_exercises', ascending: true })
     .maybeSingle()
 
   if (workoutError || !workout) {
     return null
   }
 
-  // Get exercises for this workout with full exercise details
-  const { data: exercises, error: exercisesError } = await supabase
-    .from('plan_exercises')
-    .select(`
-      id,
-      exercise_id,
-      exercise_order,
-      target_sets,
-      target_reps_min,
-      target_reps_max,
-      rest_seconds,
-      tempo,
-      target_rpe,
-      exercise_notes,
-      is_completed,
-      exercise_library (
-        id,
-        name,
-        primary_muscles,
-        secondary_muscles,
-        category,
-        difficulty,
-        instructions,
-        form_cues
-      )
-    `)
-    .eq('workout_id', workout.id)
-    .order('exercise_order', { ascending: true })
-
-  if (exercisesError || !exercises) {
+  const exercises = workout.plan_exercises || []
+  if (exercises.length === 0) {
     return null
   }
 
-  // Get exercise performance history
-  const exerciseIds = exercises.map(ex => ex.exercise_id)
-  const { data: performanceData } = await supabase
-    .from('exercise_logs')
-    .select('exercise_id, weight, reps, logged_at')
-    .eq('user_id', user.id)
-    .in('exercise_id', exerciseIds)
-    .order('logged_at', { ascending: false })
+  // ✅ PERFORMANCE FIX: Fetch performance history and PRs in PARALLEL
+  const exerciseIds = exercises.map((ex: any) => ex.exercise_id)
+  const [performanceResult, prResult] = await Promise.all([
+    supabase
+      .from('exercise_logs')
+      .select('exercise_id, weight, reps, logged_at')
+      .eq('user_id', user.id)
+      .in('exercise_id', exerciseIds)
+      .order('logged_at', { ascending: false }),
+    supabase
+      .from('exercise_pr_history')
+      .select('exercise_id, weight, reps, achieved_at')
+      .eq('user_id', user.id)
+      .eq('pr_type', 'strength')
+      .in('exercise_id', exerciseIds)
+      .order('achieved_at', { ascending: false })
+  ])
 
-  // Get personal records
-  const { data: prData } = await supabase
-    .from('exercise_pr_history')
-    .select('exercise_id, weight, reps, achieved_at')
-    .eq('user_id', user.id)
-    .eq('pr_type', 'strength')
-    .in('exercise_id', exerciseIds)
-    .order('achieved_at', { ascending: false })
+  const performanceData = performanceResult.data
+  const prData = prResult.data
 
   // Build performance maps
   const performanceMap = new Map<string, { weight: number; reps: number }>()

@@ -178,8 +178,8 @@ export function ReferralsSection({ loading, stats, onOpenAffiliateModal }: Refer
                 <h3 className="font-bold text-white">Affiliate Program</h3>
               </div>
               <p className="mb-4 text-sm text-white/70">
-                Earn more by becoming an official V-Life affiliate. Get exclusive benefits, higher commissions,
-                and marketing materials.
+                Earn more by becoming an official V-Life affiliate. Get 2x credits per referral, priority support,
+                and monthly referral stats.
               </p>
               <ButtonGlow variant="glow" className="w-full" onClick={onOpenAffiliateModal}>
                 <Briefcase className="mr-2 h-4 w-4" />

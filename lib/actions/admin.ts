@@ -1,6 +1,6 @@
 "use server"
 
-import { createClient, getAuthUser } from "@/lib/supabase/server"
+import { createClient, createAdminClient, getAuthUser } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 
 interface Challenge {
@@ -204,6 +204,7 @@ export async function getAdminUsers(): Promise<{
     email: string | null
     avatar_url: string | null
     is_admin: boolean
+    user_role: string
     created_at: string
   }>
   error?: string
@@ -214,26 +215,64 @@ export async function getAdminUsers(): Promise<{
   }
 
   const supabase = await createClient()
-  
-  // Get profiles with auth user emails
+
+  // Get profiles
   const { data: profiles, error } = await supabase
     .from("profiles")
-    .select("id, name, avatar_url, is_admin, created_at")
+    .select("id, name, avatar_url, is_admin, user_role, created_at")
     .order("created_at", { ascending: false })
 
   if (error) {
     return { error: error.message }
   }
 
-  // Get emails from auth.users (requires service role, so we'll use a workaround)
-  // For now, return profiles without emails
-  const users = (profiles || []).map(p => ({
-    ...p,
-    email: null as string | null,
-    is_admin: p.is_admin || false,
-  }))
+  // Get emails from auth.users using admin client
+  try {
+    const adminClient = createAdminClient()
+    const { data: { users: authUsers }, error: authError } = await adminClient.auth.admin.listUsers()
 
-  return { users }
+    if (authError) {
+      console.error("Error fetching auth users:", authError)
+      // If we can't get emails, still return users without them
+      return {
+        users: (profiles || []).map(p => ({
+          ...p,
+          email: null as string | null,
+          is_admin: p.is_admin || false,
+          user_role: p.user_role || 'user',
+        }))
+      }
+    }
+
+    // Create a map of user IDs to emails
+    const emailMap = new Map<string, string>()
+    authUsers?.forEach(user => {
+      if (user.email) {
+        emailMap.set(user.id, user.email)
+      }
+    })
+
+    // Combine profiles with emails
+    const users = (profiles || []).map(p => ({
+      ...p,
+      email: emailMap.get(p.id) || null,
+      is_admin: p.is_admin || false,
+      user_role: p.user_role || 'user',
+    }))
+
+    return { users }
+  } catch (err) {
+    console.error("Error creating admin client:", err)
+    // If admin client fails, return users without emails
+    return {
+      users: (profiles || []).map(p => ({
+        ...p,
+        email: null as string | null,
+        is_admin: p.is_admin || false,
+        user_role: p.user_role || 'user',
+      }))
+    }
+  }
 }
 
 // Toggle admin status for a user
@@ -270,6 +309,35 @@ export async function toggleUserAdmin(userId: string): Promise<{ success?: boole
 
   revalidatePath("/admin/users")
   return { success: true, isAdmin: newAdminStatus }
+}
+
+// Update user role (user, chosen, super_admin)
+export async function updateUserRole(
+  userId: string,
+  newRole: "user" | "chosen" | "super_admin"
+): Promise<{ success?: boolean; error?: string }> {
+  const { isAdmin, error: adminError } = await checkIsAdmin()
+  if (!isAdmin) {
+    return { error: adminError || "Unauthorized" }
+  }
+
+  const supabase = await createClient()
+
+  // Update user role and is_admin flag
+  const { error: updateError } = await supabase
+    .from("profiles")
+    .update({
+      user_role: newRole,
+      is_admin: newRole === "super_admin"
+    })
+    .eq("id", userId)
+
+  if (updateError) {
+    return { error: updateError.message }
+  }
+
+  revalidatePath("/admin/users")
+  return { success: true }
 }
 
 // Get all app ratings for admin
@@ -392,5 +460,193 @@ export async function getAdminStats(): Promise<{
       totalWorkouts: workoutsResult.count || 0,
     },
   }
+}
+
+// Get all referral data for admin
+export async function getAdminReferrals(): Promise<{
+  referrals?: Array<{
+    id: string
+    user_id: string
+    user_name: string | null
+    user_email: string | null
+    referral_code: string
+    credits_balance: number
+    total_referrals: number
+    total_credits_earned: number
+    share_count: number
+    successful_signups: number
+    is_affiliate: boolean | null
+  }>
+  error?: string
+}> {
+  const { isAdmin, error: adminError } = await checkIsAdmin()
+  if (!isAdmin) {
+    return { error: adminError || "Unauthorized" }
+  }
+
+  const supabase = await createClient()
+
+  // Get all users with referral codes
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, name, referral_code, credits, is_affiliate")
+    .order("credits", { ascending: false })
+
+  if (profilesError) {
+    return { error: profilesError.message }
+  }
+
+  // Get emails from auth.users using admin client
+  try {
+    const adminClient = createAdminClient()
+    const { data: { users: authUsers }, error: authError } = await adminClient.auth.admin.listUsers()
+
+    if (authError) {
+      console.error("Error fetching auth users:", authError)
+    }
+
+    // Create email map
+    const emailMap = new Map<string, string>()
+    authUsers?.forEach(user => {
+      if (user.email) {
+        emailMap.set(user.id, user.email)
+      }
+    })
+
+    // Get referral counts for each user
+    const { data: referrals, error: referralsError } = await supabase
+      .from("referrals")
+      .select("referrer_id, credits_earned, status")
+
+    if (referralsError) {
+      console.error("Error fetching referrals:", referralsError)
+    }
+
+    // Calculate referral stats per user
+    const referralStats = (profiles || []).map(profile => {
+      const userReferrals = (referrals || []).filter(r => r.referrer_id === profile.id)
+      const successfulReferrals = userReferrals.filter(r => r.status === "completed")
+      const totalCreditsEarned = successfulReferrals.reduce((sum, r) => sum + (r.credits_earned || 0), 0)
+
+      return {
+        id: profile.id,
+        user_id: profile.id,
+        user_name: profile.name,
+        user_email: emailMap.get(profile.id) || null,
+        referral_code: profile.referral_code || "",
+        credits_balance: profile.credits || 0,
+        total_referrals: userReferrals.length,
+        total_credits_earned: totalCreditsEarned,
+        share_count: 0, // This would need tracking implementation
+        successful_signups: successfulReferrals.length,
+        is_affiliate: profile.is_affiliate || false,
+      }
+    }).filter(r => r.referral_code) // Only include users with referral codes
+
+    return { referrals: referralStats }
+  } catch (err) {
+    console.error("Error creating admin client:", err)
+    return { error: "Failed to fetch referral data" }
+  }
+}
+
+// Get all affiliate applications for admin
+export async function getAdminAffiliateApplications(): Promise<{
+  applications?: Array<{
+    id: string
+    name: string
+    email: string
+    phone: string
+    status: string
+    created_at: string
+    reviewed_at: string | null
+  }>
+  error?: string
+}> {
+  const { isAdmin, error: adminError } = await checkIsAdmin()
+  if (!isAdmin) {
+    return { error: adminError || "Unauthorized" }
+  }
+
+  const supabase = await createClient()
+
+  // Get all affiliate applications
+  const { data: applications, error } = await supabase
+    .from("affiliate_applications")
+    .select("id, name, email, phone, status, created_at, reviewed_at")
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  return { applications: applications || [] }
+}
+
+// Update affiliate application status
+export async function updateAffiliateApplicationStatus(
+  applicationId: string,
+  newStatus: "pending" | "approved" | "rejected"
+): Promise<{ success?: boolean; error?: string }> {
+  const { isAdmin, error: adminError } = await checkIsAdmin()
+  if (!isAdmin) {
+    return { error: adminError || "Unauthorized" }
+  }
+
+  const supabase = await createClient()
+
+  // Get the application to retrieve the email
+  const { data: application, error: fetchError } = await supabase
+    .from("affiliate_applications")
+    .select("email")
+    .eq("id", applicationId)
+    .single()
+
+  if (fetchError || !application) {
+    return { error: "Application not found" }
+  }
+
+  // Update the application status
+  const { error } = await supabase
+    .from("affiliate_applications")
+    .update({
+      status: newStatus,
+      reviewed_at: new Date().toISOString()
+    })
+    .eq("id", applicationId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  // If approved, set the user as an affiliate in their profile
+  if (newStatus === "approved") {
+    // Find the user by email in auth.users
+    const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers()
+
+    if (usersError) {
+      return { error: "Failed to find user account" }
+    }
+
+    const targetUser = users?.find(u => u.email === application.email)
+
+    if (targetUser) {
+      // Update the profile to set affiliate status
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          is_affiliate: true,
+          affiliate_approved_at: new Date().toISOString()
+        })
+        .eq("id", targetUser.id)
+
+      if (profileError) {
+        return { error: "Failed to update affiliate status: " + profileError.message }
+      }
+    }
+  }
+
+  revalidatePath("/admin/referrals")
+  return { success: true }
 }
 

@@ -64,10 +64,19 @@ export async function updateProfile(profileData: {
   customRestrictions?: string[]
   programType?: string
   customProgramType?: string
+  experienceLevel?: string
   availableTimeMinutes?: number
   trainingDaysPerWeek?: number
   timezone?: string
   onboardingCompleted?: boolean
+  preferredWorkoutTime?: string
+  shoulderMobility?: number
+  hipMobility?: number
+  ankleMobility?: number
+  pushUps?: number
+  pullUps?: number
+  squatDepth?: string
+  plankTime?: number
 }): Promise<{ success?: boolean; error?: string }> {
   const { user, error: authError } = await getAuthUser()
 
@@ -126,8 +135,17 @@ export async function updateProfile(profileData: {
       training_style: profileData.programType === "other" && profileData.customProgramType
         ? `other:${profileData.customProgramType}`
         : profileData.programType,
+      experience_level: profileData.experienceLevel,
       available_time_minutes: profileData.availableTimeMinutes,
       training_days_per_week: profileData.trainingDaysPerWeek,
+      preferred_workout_time: profileData.preferredWorkoutTime,
+      shoulder_mobility: profileData.shoulderMobility,
+      hip_mobility: profileData.hipMobility,
+      ankle_mobility: profileData.ankleMobility,
+      push_ups: profileData.pushUps,
+      pull_ups: profileData.pullUps,
+      squat_depth: profileData.squatDepth,
+      plank_time: profileData.plankTime,
       timezone: profileData.timezone,
       onboarding_completed: profileData.onboardingCompleted,
       updated_at: new Date().toISOString(),
@@ -150,7 +168,7 @@ export async function updateProfile(profileData: {
       { maxAttempts: 3 }
     )
 
-    revalidateTag("profile")
+    revalidateTag("profile", "max")
     revalidatePath("/settings")
     revalidatePath("/dashboard")
 

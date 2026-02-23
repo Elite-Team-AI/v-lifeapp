@@ -301,8 +301,13 @@ export default function Community() {
     try {
       const { createPost } = await import("@/lib/actions/community")
       const result = await createPost(newPost)
-      if (result.success) {
-        await loadPosts()
+      if (result.success && result.post) {
+        // Optimistically add the new post to the UI immediately
+        setPosts((prevPosts) => [result.post!, ...prevPosts])
+
+        // Refresh posts in background to ensure consistency
+        setTimeout(() => loadPosts(), 500)
+
         toast({
           title: "Post created!",
           description: "Your post has been shared with the community.",

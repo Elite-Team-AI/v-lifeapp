@@ -236,7 +236,7 @@ export async function createDefaultHabits(skipRevalidation = false): Promise<{ s
 
   // Skip revalidation when called during render (e.g., from Server Components)
   if (!skipRevalidation) {
-    revalidateTag("user-habits")
+    revalidateTag("user-habits", "max")
   }
   return { success: true, error: null }
 }
@@ -272,10 +272,10 @@ export async function createHabit(
     return { success: false, error: error.message }
   }
 
-  revalidateTag("user-habits")
-  return { 
-    success: true, 
-    habit: { ...data, completed: false, logId: null }, 
+  revalidateTag("user-habits", "max")
+  return {
+    success: true,
+    habit: { ...data, completed: false, logId: null },
     error: null 
   }
 }
@@ -311,10 +311,10 @@ export async function updateHabit(
     return { success: false, error: error.message }
   }
 
-  revalidateTag("user-habits")
-  return { 
-    success: true, 
-    habit: { ...data, completed: false, logId: null }, 
+  revalidateTag("user-habits", "max")
+  return {
+    success: true,
+    habit: { ...data, completed: false, logId: null },
     error: null 
   }
 }
@@ -343,7 +343,7 @@ export async function deleteHabit(habitId: string): Promise<{ success: boolean; 
     return { success: false, error: error.message }
   }
 
-  revalidateTag("user-habits")
+  revalidateTag("user-habits", "max")
   return { success: true, error: null }
 }
 

@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { NavigationLoading } from "@/components/navigation-loading"
 import { AppDataProvider } from "@/lib/contexts/app-data-context"
 import { PageTransition } from "@/components/ui/page-transition"
+import { Toaster } from "@/components/ui/toaster"
 
 export function Providers({
   children,
@@ -69,6 +70,7 @@ export function Providers({
         <PageTransition>
           {children}
         </PageTransition>
+        <Toaster />
       </AppDataProvider>
     </ThemeProvider>
   )

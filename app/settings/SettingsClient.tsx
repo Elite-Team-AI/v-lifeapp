@@ -692,10 +692,9 @@ export default function SettingsClient() {
             <div className="rounded-lg backdrop-blur-xl bg-accent/10 border border-accent/30 p-3 text-sm text-white/70">
               <p className="mb-2 font-bold text-accent">Affiliate Benefits:</p>
               <ul className="space-y-1 text-xs">
-                <li>• Higher commission rates (up to 30%)</li>
-                <li>• Exclusive marketing materials</li>
-                <li>• Dedicated affiliate dashboard</li>
+                <li>• <span className="text-accent font-semibold">2x credits per referral</span> (2 credits instead of 1)</li>
                 <li>• Priority support</li>
+                <li>• Monthly notifications with referral stats</li>
               </ul>
             </div>
           </motion.div>

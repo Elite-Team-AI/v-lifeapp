@@ -8,7 +8,8 @@ const envSchema = z.object({
   // Supabase
   NEXT_PUBLIC_SUPABASE_URL: z.string().url("NEXT_PUBLIC_SUPABASE_URL must be a valid URL"),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, "NEXT_PUBLIC_SUPABASE_ANON_KEY is required"),
-  
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+
   // OpenAI (optional in development)
   OPENAI_API_KEY: z.string().optional(),
   
@@ -43,6 +44,7 @@ function validateEnv(): Env {
   const parsed = envSchema.safeParse({
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || (isBuildContext ? "https://placeholder.supabase.co" : undefined),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || (isBuildContext ? "placeholder-key" : undefined),
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
     NEXT_PUBLIC_GOOGLE_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_API_KEY,
@@ -59,6 +61,7 @@ function validateEnv(): Env {
       return {
         NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co",
         NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-key",
+        SUPABASE_SERVICE_ROLE_KEY: undefined,
         OPENAI_API_KEY: undefined,
         GOOGLE_API_KEY: undefined,
         NEXT_PUBLIC_GOOGLE_API_KEY: undefined,

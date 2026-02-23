@@ -78,8 +78,21 @@ export interface Profile {
   allergies: string[] | null
   custom_restrictions: string[] | null
   training_style: string | null
+  experience_level: 'beginner' | 'intermediate' | 'advanced' | null
+  available_equipment: string[] | null
+  workout_location: string | null
+  preferred_workout_time: 'morning' | 'afternoon' | 'evening' | 'flexible' | null
   available_time_minutes: number | null
   training_days_per_week: number | null
+  weekly_workout_goal: number | null
+  shoulder_mobility: number | null
+  hip_mobility: number | null
+  ankle_mobility: number | null
+  push_ups: number | null
+  pull_ups: number | null
+  squat_depth: 'parallel' | 'below_parallel' | 'partial' | null
+  plank_time: number | null
+  fitness_goal: string | null
   timezone: string | null
   referral_code: string | null
   credits: number

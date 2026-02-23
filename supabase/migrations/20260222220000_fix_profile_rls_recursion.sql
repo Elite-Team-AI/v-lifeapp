@@ -9,6 +9,7 @@ DROP POLICY IF EXISTS "Super admins can view all profiles" ON public.profiles;
 
 -- Recreate a simple SELECT policy that doesn't cause recursion
 -- Users can only view their own profile
+DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
 CREATE POLICY "Users can view own profile"
 ON public.profiles
 FOR SELECT
@@ -38,7 +39,8 @@ WITH CHECK (id = auth.uid());
 
 -- Service role still has full access (for admin operations)
 -- This policy already exists but let's ensure it's there
-CREATE POLICY IF NOT EXISTS "Service role full access"
+DROP POLICY IF EXISTS "Service role full access" ON public.profiles;
+CREATE POLICY "Service role full access"
 ON public.profiles
 FOR ALL
 TO service_role

@@ -120,7 +120,7 @@ export async function applyReferralCode(code: string) {
     // Find the referrer by code
     const { data: referrerProfile, error: referrerError } = await supabase
       .from("profiles")
-      .select("id")
+      .select("id, is_affiliate")
       .eq("referral_code", code)
       .single()
 
@@ -133,8 +133,9 @@ export async function applyReferralCode(code: string) {
       return { error: "You cannot use your own referral code", success: false }
     }
 
-    // Create referral record
-    const creditsToAward = 3
+    // Award credits based on affiliate status
+    // Affiliates get 2 credits per referral, regular users get 1 credit
+    const creditsToAward = referrerProfile.is_affiliate ? 2 : 1
     const { error: createError } = await supabase.from("referrals").insert({
       referrer_id: referrerProfile.id,
       referred_user_id: user.id,
@@ -171,11 +172,15 @@ export async function applyReferralCode(code: string) {
     }
 
     // Create credit transaction record
+    const transactionDescription = referrerProfile.is_affiliate
+      ? `Affiliate referral bonus for inviting a new user (2x)`
+      : `Referral bonus for inviting a new user`
+
     await supabase.from("credit_transactions").insert({
       user_id: referrerProfile.id,
       amount: creditsToAward,
       transaction_type: "referral",
-      description: `Referral bonus for inviting a new user`,
+      description: transactionDescription,
     })
 
     return { error: null, success: true }

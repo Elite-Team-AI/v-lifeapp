@@ -6,9 +6,15 @@ import { ButtonGlow } from "@/components/ui/button-glow"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Shield, ShieldOff, Search, Users } from "lucide-react"
+import { Shield, ShieldOff, Search, Users, Crown, UserCircle, ChevronDown } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { DEFAULT_AVATAR } from "@/lib/stock-images"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface User {
   id: string
@@ -16,6 +22,7 @@ interface User {
   email: string | null
   avatar_url: string | null
   is_admin: boolean
+  user_role: string
   created_at: string
 }
 
@@ -50,34 +57,47 @@ export default function AdminUsers() {
     }
   }
 
-  const handleToggleAdmin = async (userId: string, userName: string | null) => {
+  const handleUpdateRole = async (
+    userId: string,
+    userName: string | null,
+    newRole: "user" | "chosen" | "super_admin"
+  ) => {
     setTogglingUserId(userId)
     try {
-      const { toggleUserAdmin } = await import("@/lib/actions/admin")
-      const result = await toggleUserAdmin(userId)
-      
+      const { updateUserRole } = await import("@/lib/actions/admin")
+      const result = await updateUserRole(userId, newRole)
+
       if (result.success) {
         setUsers((prev) =>
           prev.map((u) =>
-            u.id === userId ? { ...u, is_admin: result.isAdmin ?? false } : u
+            u.id === userId
+              ? { ...u, user_role: newRole, is_admin: newRole === "super_admin" }
+              : u
           )
         )
+
+        const roleLabels = {
+          user: "Regular User",
+          chosen: "The Chosen (Free Access)",
+          super_admin: "Super Admin"
+        }
+
         toast({
-          title: result.isAdmin ? "Admin Added" : "Admin Removed",
-          description: `${userName || "User"} is ${result.isAdmin ? "now an admin" : "no longer an admin"}.`,
+          title: "Role Updated",
+          description: `${userName || "User"} is now a ${roleLabels[newRole]}.`,
         })
       } else {
         toast({
           title: "Error",
-          description: result.error || "Failed to update admin status",
+          description: result.error || "Failed to update user role",
           variant: "destructive",
         })
       }
     } catch (error) {
-      console.error("Error toggling admin:", error)
+      console.error("Error updating role:", error)
       toast({
         title: "Error",
-        description: "Failed to update admin status",
+        description: "Failed to update user role",
         variant: "destructive",
       })
     } finally {
@@ -107,7 +127,7 @@ export default function AdminUsers() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Manage Users</h1>
-        <p className="text-white/70">View users and manage admin privileges</p>
+        <p className="text-white/70">View users and manage roles (User, Chosen, Super Admin)</p>
       </div>
 
       {/* Search */}
@@ -122,7 +142,7 @@ export default function AdminUsers() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-white/10 bg-black/50">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -137,12 +157,38 @@ export default function AdminUsers() {
         <Card className="border-white/10 bg-black/50">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <Shield className="h-8 w-8 text-accent" />
+              <UserCircle className="h-8 w-8 text-blue-400" />
               <div>
                 <p className="text-2xl font-bold text-white">
-                  {users.filter((u) => u.is_admin).length}
+                  {users.filter((u) => u.user_role === "user").length}
                 </p>
-                <p className="text-sm text-white/60">Admins</p>
+                <p className="text-sm text-white/60">Regular Users</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-white/10 bg-black/50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Crown className="h-8 w-8 text-yellow-400" />
+              <div>
+                <p className="text-2xl font-bold text-white">
+                  {users.filter((u) => u.user_role === "chosen").length}
+                </p>
+                <p className="text-sm text-white/60">The Chosen</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-white/10 bg-black/50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Shield className="h-8 w-8 text-purple-400" />
+              <div>
+                <p className="text-2xl font-bold text-white">
+                  {users.filter((u) => u.user_role === "super_admin").length}
+                </p>
+                <p className="text-sm text-white/60">Super Admins</p>
               </div>
             </div>
           </CardContent>
@@ -177,40 +223,77 @@ export default function AdminUsers() {
                       <span className="font-medium text-white">
                         {user.name || "Unnamed User"}
                       </span>
-                      {user.is_admin && (
-                        <Badge className="bg-accent/20 text-accent text-xs">
-                          Admin
+                      {user.user_role === "super_admin" && (
+                        <Badge className="bg-purple-500/20 text-purple-400 text-xs border-purple-500/30">
+                          <Shield className="h-3 w-3 mr-1" />
+                          Super Admin
+                        </Badge>
+                      )}
+                      {user.user_role === "chosen" && (
+                        <Badge className="bg-yellow-500/20 text-yellow-400 text-xs border-yellow-500/30">
+                          <Crown className="h-3 w-3 mr-1" />
+                          The Chosen
+                        </Badge>
+                      )}
+                      {user.user_role === "user" && (
+                        <Badge className="bg-blue-500/20 text-blue-400 text-xs border-blue-500/30">
+                          <UserCircle className="h-3 w-3 mr-1" />
+                          User
                         </Badge>
                       )}
                     </div>
-                    <p className="text-xs text-white/50 font-mono">
-                      {user.id.slice(0, 8)}...
+                    <p className="text-xs text-white/60">
+                      {user.email || "No email"}
                     </p>
                     <p className="text-xs text-white/40 mt-0.5">
                       Joined {new Date(user.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
-                <ButtonGlow
-                  variant={user.is_admin ? "outline-glow" : "accent-glow"}
-                  size="sm"
-                  onClick={() => handleToggleAdmin(user.id, user.name)}
-                  disabled={togglingUserId === user.id}
-                >
-                  {togglingUserId === user.id ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  ) : user.is_admin ? (
-                    <>
-                      <ShieldOff className="h-4 w-4 mr-1" />
-                      Remove Admin
-                    </>
-                  ) : (
-                    <>
-                      <Shield className="h-4 w-4 mr-1" />
-                      Make Admin
-                    </>
-                  )}
-                </ButtonGlow>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <ButtonGlow
+                      variant="accent-glow"
+                      size="sm"
+                      disabled={togglingUserId === user.id}
+                    >
+                      {togglingUserId === user.id ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      ) : (
+                        <>
+                          Change Role
+                          <ChevronDown className="h-4 w-4 ml-1" />
+                        </>
+                      )}
+                    </ButtonGlow>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-black/95 border-white/10">
+                    <DropdownMenuItem
+                      onClick={() => handleUpdateRole(user.id, user.name, "user")}
+                      disabled={user.user_role === "user"}
+                      className="cursor-pointer"
+                    >
+                      <UserCircle className="h-4 w-4 mr-2 text-blue-400" />
+                      <span>Regular User</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleUpdateRole(user.id, user.name, "chosen")}
+                      disabled={user.user_role === "chosen"}
+                      className="cursor-pointer"
+                    >
+                      <Crown className="h-4 w-4 mr-2 text-yellow-400" />
+                      <span>The Chosen (Free Access)</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleUpdateRole(user.id, user.name, "super_admin")}
+                      disabled={user.user_role === "super_admin"}
+                      className="cursor-pointer"
+                    >
+                      <Shield className="h-4 w-4 mr-2 text-purple-400" />
+                      <span>Super Admin</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             ))
           )}

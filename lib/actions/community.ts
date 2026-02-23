@@ -11,9 +11,24 @@ function getUserAvatar(avatarUrl: string | null | undefined): string {
 }
 
 // Helper to get display name with friendly fallback
-function getDisplayName(name: string | null | undefined): string {
+function getDisplayName(name: string | null | undefined, userId?: string, debugContext?: string): string {
   if (name && name.trim()) return name.trim()
-  return "V-Life Member"
+
+  // Debug logging to help diagnose missing names
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[Community] Missing name for user in ${debugContext}:`, {
+      name,
+      userId,
+      hasName: !!name,
+      trimmedName: name?.trim()
+    })
+  }
+
+  // Show partial user ID instead of generic "User"
+  if (userId) {
+    return `User ${userId.substring(0, 8)}`
+  }
+  return "Anonymous"
 }
 
 interface PostReaction {
@@ -166,8 +181,10 @@ function isWithinRange(value: string | null | undefined, start: number, end: num
 // Cached posts fetch - revalidates every 30 seconds
 const getCachedPosts = unstable_cache(
   async (category?: string) => {
-    // Use service client (doesn't require cookies) for cached queries
-    const supabase = createServiceClient()
+    // Use admin client to bypass RLS and read all profiles
+    const supabase = createAdminClient()
+
+    console.log(`[Community] Fetching posts from database (category: ${category || 'all'})`)
 
     let query = supabase
       .from("posts")
@@ -203,7 +220,24 @@ const getCachedPosts = unstable_cache(
 
     const { data: posts, error } = await query
 
-    if (error) throw error
+    if (error) {
+      console.error(`[Community] Error fetching posts:`, error)
+      throw error
+    }
+
+    console.log(`[Community] Successfully fetched ${posts?.length || 0} posts from database`)
+
+    // Debug logging to check profile data
+    if (posts && posts.length > 0) {
+      console.log(`[Community] Sample post profile data:`, {
+        postId: posts[0].id,
+        userId: posts[0].user_id,
+        hasProfiles: !!posts[0].profiles,
+        profileName: posts[0].profiles?.name,
+        fullProfileData: posts[0].profiles
+      })
+    }
+
     return posts as PostWithRelations[] | null
   },
   ["community-posts"],
@@ -297,7 +331,7 @@ export async function getPosts(
           time: getTimeAgo(new Date(comment.created_at)),
           user: {
             id: comment.profiles?.id || "",
-            name: getDisplayName(comment.profiles?.name),
+            name: getDisplayName(comment.profiles?.name, comment.profiles?.id, 'comment'),
             avatar: getUserAvatar(comment.profiles?.avatar_url),
           },
         }))
@@ -306,7 +340,7 @@ export async function getPosts(
         id: post.id,
         user: {
           id: post.user_id,
-          name: getDisplayName(post.profiles?.name),
+          name: getDisplayName(post.profiles?.name, post.profiles?.id, 'post'),
           avatar: getUserAvatar(post.profiles?.avatar_url),
           isFollowing: followingSet.has(post.user_id),
         },
@@ -341,12 +375,12 @@ export async function getPosts(
   }
 }
 
-export async function createPost(data: { 
+export async function createPost(data: {
   title: string
   content: string
   image?: string
-  category: string 
-}): Promise<{ success?: boolean; error?: string }> {
+  category: string
+}): Promise<{ success?: boolean; error?: string; post?: TransformedPost }> {
   const { user, error: authError } = await getAuthUser()
 
   if (authError || !user) {
@@ -355,22 +389,65 @@ export async function createPost(data: {
 
   const supabase = await createClient()
 
-  const { error } = await supabase.from("posts").insert({
-    user_id: user.id,
-    title: data.title,
-    content: data.content,
-    image_url: data.image,
-    category: data.category,
-    likes_count: 0,
-    comments_count: 0,
-  })
+  // Insert the post and return the created data
+  const { data: newPost, error } = await supabase
+    .from("posts")
+    .insert({
+      user_id: user.id,
+      title: data.title,
+      content: data.content,
+      image_url: data.image,
+      category: data.category,
+      likes_count: 0,
+      comments_count: 0,
+    })
+    .select(`
+      *,
+      profiles:user_id (
+        id,
+        name,
+        avatar_url
+      )
+    `)
+    .single()
 
-  if (error) {
-    return { error: error.message }
+  if (error || !newPost) {
+    console.error("[Community] Error creating post:", error)
+    return { error: error?.message || "Failed to create post" }
   }
 
-  revalidateTag("community-posts")
-  return { success: true }
+  // Transform the post to match the UI's expected format (TransformedPost)
+  const transformedPost: TransformedPost = {
+    id: newPost.id,
+    user: {
+      id: newPost.user_id,
+      name: getDisplayName(newPost.profiles?.name, newPost.profiles?.id, 'createPost'),
+      avatar: getUserAvatar(newPost.profiles?.avatar_url),
+      isFollowing: false, // User's own post, can't follow yourself
+    },
+    title: newPost.title,
+    content: newPost.content,
+    image: newPost.image_url,
+    likes: newPost.likes_count || 0,
+    comments: newPost.comments_count || 0,
+    commentsList: [], // No comments yet on a new post
+    time: getTimeAgo(new Date(newPost.created_at)),
+    category: newPost.category,
+    reactions: {
+      heart: 0,
+      celebrate: 0,
+      support: 0,
+      fire: 0,
+    },
+    userReaction: null, // No reactions yet on a new post
+  }
+
+  // Force cache revalidation with Next.js 16 API
+  revalidateTag("community-posts", "max")
+
+  console.log("[Community] Post created successfully, cache invalidated")
+
+  return { success: true, post: transformedPost }
 }
 
 export async function toggleReaction(
@@ -461,7 +538,7 @@ export async function toggleFollow(userId: string): Promise<{ success?: boolean;
     if (error) return { error: error.message }
   }
 
-  revalidateTag("user-follows")
+  revalidateTag("user-follows", "max")
   return { success: true }
 }
 
@@ -571,7 +648,7 @@ export async function getLeaderboard(): Promise<{ leaderboard?: LeaderboardUser[
   // Transform and sort by engagement
   const leaderboard: LeaderboardUser[] = (users as UserWithCounts[] || [])
     .map((user) => ({
-      name: getDisplayName(user.name),
+      name: getDisplayName(user.name, user.id, 'leaderboard'),
       avatar: getUserAvatar(user.avatar_url),
       posts: user.posts?.[0]?.count || 0,
       likes: user.post_reactions?.reduce(
@@ -895,7 +972,7 @@ export async function blockUser(blockedUserId: string): Promise<{ success?: bool
     return { error: "Failed to block user" }
   }
 
-  revalidateTag("community-posts")
+  revalidateTag("community-posts", "max")
   return { success: true }
 }
 
@@ -921,7 +998,7 @@ export async function unblockUser(blockedUserId: string): Promise<{ success?: bo
     return { error: "Failed to unblock user" }
   }
 
-  revalidateTag("community-posts")
+  revalidateTag("community-posts", "max")
   return { success: true }
 }
 
