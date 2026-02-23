@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
-import { createApiLogger } from '@/lib/logger'
-import { workoutLogStartSchema, safeValidate } from '@/lib/api-validation'
+import { createApiLogger } from '@/lib/utils/logger'
+import { workoutLogStartSchema, safeValidate } from '@/lib/validations/api'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!

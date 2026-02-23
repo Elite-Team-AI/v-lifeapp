@@ -10,7 +10,7 @@ import {
   validateRegeneratedPlan,
   generateCyclePlan
 } from '@/lib/adaptive-progression'
-import { createApiLogger } from '@/lib/logger'
+import { createApiLogger } from '@/lib/utils/logger'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!

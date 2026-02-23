@@ -191,3 +191,89 @@ export const workoutGenerationSchema = z.object({
 })
 
 export type WorkoutGenerationRequest = z.infer<typeof workoutGenerationSchema>
+
+// Workout Logging API Schemas
+export const workoutLogStartSchema = z.object({
+  userId: z.string().uuid("Invalid user ID"),
+  workoutId: z.string().uuid("Invalid workout ID"),
+})
+
+export type WorkoutLogStart = z.infer<typeof workoutLogStartSchema>
+
+export const workoutLogCompleteSchema = z.object({
+  userId: z.string().uuid("Invalid user ID"),
+  workoutLogId: z.string().uuid("Invalid workout log ID"),
+  notes: z.string().max(1000).optional(),
+  perceivedDifficulty: z.number().int().min(1).max(10).optional(),
+  energyLevel: z.number().int().min(1).max(10).optional(),
+})
+
+export type WorkoutLogComplete = z.infer<typeof workoutLogCompleteSchema>
+
+export const exerciseLogSchema = z.object({
+  userId: z.string().uuid("Invalid user ID"),
+  workoutLogId: z.string().uuid("Invalid workout log ID"),
+  exerciseId: z.string().uuid("Invalid exercise ID"),
+  exerciseType: z.enum(["strength", "cardio", "flexibility", "bodyweight", "plyometric", "swimming", "sports"]),
+  planExerciseId: z.string().uuid("Invalid plan exercise ID").optional(),
+  // Strength/Bodyweight/Plyometric
+  sets: z.array(z.object({
+    reps: z.number().int().positive(),
+    weight: z.number().nonnegative(),
+    rpe: z.number().int().min(1).max(10).optional(),
+  })).optional(),
+  // Cardio
+  durationSeconds: z.number().int().positive().optional(),
+  distanceMiles: z.number().positive().optional(),
+  avgHeartRate: z.number().int().positive().optional(),
+  caloriesBurned: z.number().int().positive().optional(),
+  pacePerMileSeconds: z.number().int().positive().optional(),
+  // Swimming
+  swimStroke: z.string().max(50).optional(),
+  lapsCompleted: z.number().int().positive().optional(),
+  poolLengthMeters: z.number().positive().optional(),
+  pacePer100mSeconds: z.number().int().positive().optional(),
+  // Flexibility
+  holdTimeSeconds: z.number().int().positive().optional(),
+  stretchIntensity: z.number().int().min(1).max(10).optional(),
+  // Common fields
+  notes: z.string().max(1000).optional(),
+  formQuality: z.number().int().min(1).max(5).optional(),
+  difficultyAdjustment: z.enum(["easier", "same", "harder"]).optional(),
+  perceivedExertion: z.number().int().min(1).max(10).optional(),
+})
+
+export type ExerciseLog = z.infer<typeof exerciseLogSchema>
+
+export const weeklyAdjustmentsSchema = z.object({
+  userId: z.string().uuid("Invalid user ID"),
+  planId: z.string().uuid("Invalid plan ID"),
+  weeks: z.number().int().min(1).max(12).optional().default(1),
+})
+
+export type WeeklyAdjustments = z.infer<typeof weeklyAdjustmentsSchema>
+
+/**
+ * Helper to validate query parameters from URLSearchParams
+ */
+export function validateQueryParams<T>(schema: z.ZodSchema<T>, searchParams: URLSearchParams): T {
+  const params: Record<string, string | number> = {}
+
+  searchParams.forEach((value, key) => {
+    // Try to parse numeric values
+    const numValue = Number(value)
+    params[key] = isNaN(numValue) ? value : numValue
+  })
+
+  const result = schema.safeParse(params)
+
+  if (!result.success) {
+    const errors = result.error.flatten()
+    throw new ValidationError(
+      "Query parameter validation failed",
+      errors.fieldErrors as Record<string, string[]>
+    )
+  }
+
+  return result.data
+}
