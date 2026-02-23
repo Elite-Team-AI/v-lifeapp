@@ -77,6 +77,8 @@ export function WorkoutPlanGeneratorModal({ isOpen, onClose, onSuccess }: Workou
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [generationProgress, setGenerationProgress] = useState(0) // 0-100
+  const [currentWeek, setCurrentWeek] = useState(1) // 1-4
 
   // Form state
   const [trainingStyle, setTrainingStyle] = useState<string>("hypertrophy")
@@ -90,6 +92,36 @@ export function WorkoutPlanGeneratorModal({ isOpen, onClose, onSuccess }: Workou
   const handleGenerate = async () => {
     setIsLoading(true)
     setError(null)
+    setGenerationProgress(0)
+    setCurrentWeek(1)
+
+    // Track previous week to detect week changes
+    let previousWeek = 1
+
+    // Simulate progress updates (each week fills 0-100% in ~23 seconds)
+    const progressInterval = setInterval(() => {
+      setCurrentWeek((currentWeekValue) => {
+        // Reset progress when week changes
+        if (currentWeekValue !== previousWeek) {
+          previousWeek = currentWeekValue
+          setGenerationProgress(0)
+        }
+        return currentWeekValue
+      })
+
+      setGenerationProgress((prev) => {
+        const newProgress = prev + 4.35 // ~23 seconds per week = 4.35% per 250ms
+        if (newProgress >= 100) {
+          return 100
+        }
+        return newProgress
+      })
+    }, 250)
+
+    // Update week indicator every ~23 seconds
+    const weekInterval = setInterval(() => {
+      setCurrentWeek((prev) => (prev < 4 ? prev + 1 : 4))
+    }, 23000)
 
     try {
       const preferences: WorkoutPlanPreferences = {
@@ -106,17 +138,29 @@ export function WorkoutPlanGeneratorModal({ isOpen, onClose, onSuccess }: Workou
 
       if (!result.success) {
         setError(result.error || "Failed to generate workout plan")
+        clearInterval(progressInterval)
+        clearInterval(weekInterval)
         return
       }
+
+      // Complete progress bar
+      clearInterval(progressInterval)
+      clearInterval(weekInterval)
+      setGenerationProgress(100)
+      setCurrentWeek(4)
 
       // Reset form
       resetForm()
       onSuccess(result.planId!)
       onClose()
     } catch (err) {
+      clearInterval(progressInterval)
+      clearInterval(weekInterval)
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
     } finally {
       setIsLoading(false)
+      setGenerationProgress(0)
+      setCurrentWeek(1)
     }
   }
 
@@ -502,17 +546,35 @@ export function WorkoutPlanGeneratorModal({ isOpen, onClose, onSuccess }: Workou
                     Next
                   </ButtonGlow>
                 ) : (
-                  <ButtonGlow
-                    variant="accent-glow"
-                    onClick={handleGenerate}
-                    disabled={!canProceed() || isLoading}
-                    isLoading={isLoading}
-                    loadingText="Generating..."
-                    className="flex-1"
-                  >
-                    <Zap className="mr-2 h-4 w-4" />
-                    Generate Plan
-                  </ButtonGlow>
+                  <div className="flex-1 space-y-2">
+                    {isLoading && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs text-accent">
+                          <span>Generating Week {currentWeek} of 4...</span>
+                          <span>{Math.round(generationProgress)}%</span>
+                        </div>
+                        <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                          <motion.div
+                            className="h-full bg-gradient-to-r from-accent to-yellow-300"
+                            initial={{ width: "0%" }}
+                            animate={{ width: `${generationProgress}%` }}
+                            transition={{ duration: 0.3 }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <ButtonGlow
+                      variant="accent-glow"
+                      onClick={handleGenerate}
+                      disabled={!canProceed() || isLoading}
+                      isLoading={isLoading}
+                      loadingText={`Week ${currentWeek}/4`}
+                      className="w-full"
+                    >
+                      <Zap className="mr-2 h-4 w-4" />
+                      Generate Plan
+                    </ButtonGlow>
+                  </div>
                 )}
               </div>
             </Card>

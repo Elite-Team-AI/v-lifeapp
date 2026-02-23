@@ -5,6 +5,7 @@ import { cookies } from "next/headers"
 import { createClient, getAuthUser } from "@/lib/supabase/server"
 import { env } from "@/lib/env"
 import OpenAI from "openai"
+import { generateWeekFast } from "./generate-week-fast"
 
 // ========================
 // TYPES
@@ -616,11 +617,43 @@ PLAN STRUCTURE REQUIREMENTS:
       throw new Error('Failed to generate complete plan after all retries')
     }
 
-    // Generate complete 4-week plan in one call
-    console.log('[generateWorkoutPlan] Generating complete 4-week plan...')
-    const generatedPlan = await callOpenAIForCompletePlan()
+    // Generate plan week-by-week (MUCH faster and more reliable)
+    console.log('[generateWorkoutPlan] Generating 4-week plan (week-by-week approach)...')
 
-    console.log('[generateWorkoutPlan] Complete 4-week plan generated successfully!')
+    // Prepare parameters for week generation
+    const weekGenerationParams = {
+      trainingStyle,
+      daysPerWeek,
+      sessionDuration,
+      exercisesPerWorkout,
+    }
+
+    // Debug: Log exercise data being passed
+    console.log('[generateWorkoutPlan] Passing', exercisesToProvide.length, 'exercises to generateWeekFast')
+    console.log('[generateWorkoutPlan] Sample exercise:', exercisesToProvide[0] ? {
+      id: exercisesToProvide[0].id,
+      name: exercisesToProvide[0].name,
+      category: exercisesToProvide[0].category,
+    } : 'NONE')
+
+    const weeks = []
+    for (let weekNum = 1; weekNum <= 4; weekNum++) {
+      console.log(`[generateWorkoutPlan] Generating Week ${weekNum}/4...`)
+      const weekData = await generateWeekFast(weekNum, exercisesToProvide, weekGenerationParams)
+      weeks.push(weekData)
+      console.log(`[generateWorkoutPlan] Week ${weekNum} generated successfully!`)
+    }
+
+    // Combine weeks into the expected plan structure
+    const generatedPlan = {
+      planName: `AI ${trainingStyleDisplay} Plan`,
+      planType: trainingStyle,
+      daysPerWeek: daysPerWeek,
+      splitPattern: weeks[0].workouts.map((w: any) => w.focusAreas).join(', '),
+      weeks: weeks
+    }
+
+    console.log('[generateWorkoutPlan] All 4 weeks generated successfully!')
 
     // Save plan to database
     const startDate = new Date()
@@ -640,7 +673,7 @@ PLAN STRUCTURE REQUIREMENTS:
     })
 
     const { data: plan, error: planError } = await supabase
-      .from('workout_plans')
+      .from('user_workout_plans')
       .insert({
         user_id: user.id,
         plan_name: generatedPlan.planName,
@@ -648,7 +681,7 @@ PLAN STRUCTURE REQUIREMENTS:
         days_per_week: generatedPlan.daysPerWeek,
         start_date: startDate.toISOString(),
         end_date: endDate.toISOString(),
-        is_active: true,
+        status: 'active',
         split_pattern: generatedPlan.splitPattern,
       })
       .select()
@@ -673,29 +706,29 @@ PLAN STRUCTURE REQUIREMENTS:
         workoutDate.setDate(workoutDate.getDate() + ((week.weekNumber - 1) * 7) + (workout.dayOfWeek - 1))
 
         workoutInserts.push({
-          user_id: user.id,
-          workout_plan_id: plan.id,
-          workout_date: workoutDate.toISOString(),
+          plan_id: plan.id,
+          scheduled_date: workoutDate.toISOString(),
           workout_name: workout.workoutName,
+          week_number: week.weekNumber,
+          day_of_week: workout.dayOfWeek,
           focus_areas: workout.focusAreas,
           estimated_duration_minutes: workout.estimatedDuration,
-          status: 'planned',
+          status: 'pending',
           // Store exercises temporarily to map after insert
           _exercises: workout.exercises,
-          _weekNumber: week.weekNumber,
-          _dayOfWeek: workout.dayOfWeek
         })
       }
     }
 
     // Insert all workouts at once
     const { data: savedWorkouts, error: workoutsError } = await supabase
-      .from('workouts')
+      .from('plan_workouts')
       .insert(workoutInserts.map(w => ({
-        user_id: w.user_id,
-        workout_plan_id: w.workout_plan_id,
-        workout_date: w.workout_date,
+        plan_id: w.plan_id,
+        scheduled_date: w.scheduled_date,
         workout_name: w.workout_name,
+        week_number: w.week_number,
+        day_of_week: w.day_of_week,
         focus_areas: w.focus_areas,
         estimated_duration_minutes: w.estimated_duration_minutes,
         status: w.status,
@@ -719,12 +752,12 @@ PLAN STRUCTURE REQUIREMENTS:
             workout_id: savedWorkout.id,
             exercise_id: exercise.exerciseId,
             exercise_order: exercise.exerciseOrder,
-            planned_sets: exercise.sets,
-            planned_reps_min: exercise.repsMin,
-            planned_reps_max: exercise.repsMax,
+            target_sets: exercise.sets,
+            target_reps_min: exercise.repsMin,
+            target_reps_max: exercise.repsMax,
             rest_seconds: exercise.restSeconds,
             tempo: exercise.tempo,
-            rpe: exercise.rpe,
+            target_rpe: exercise.rpe,
             notes: exercise.notes,
           })
         }
@@ -733,7 +766,7 @@ PLAN STRUCTURE REQUIREMENTS:
 
     if (exerciseInserts.length > 0) {
       const { error: exercisesError } = await supabase
-        .from('workout_exercises')
+        .from('plan_exercises')
         .insert(exerciseInserts)
 
       if (exercisesError) {
