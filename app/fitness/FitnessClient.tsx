@@ -654,9 +654,9 @@ export function FitnessClient() {
       <Dialog open={showRestDayInfo} onOpenChange={setShowRestDayInfo}>
         <DialogContent className="backdrop-blur-xl bg-black/95 border-accent/30">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-accent" />
-              <span className="bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent">
+            <DialogTitle className="text-white flex items-start gap-2">
+              <Calendar className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+              <span className="bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent break-words">
                 Workout Splits & Rest Days
               </span>
             </DialogTitle>
