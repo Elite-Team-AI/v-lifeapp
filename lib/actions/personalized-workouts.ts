@@ -672,18 +672,21 @@ PLAN STRUCTURE REQUIREMENTS:
       split_pattern: generatedPlan.splitPattern,
     })
 
+    const planInsertData = {
+      user_id: user.id,
+      plan_name: generatedPlan.planName,
+      plan_type: 'custom', // Always use 'custom' for AI-generated plans (not generatedPlan.planType which may return invalid values)
+      days_per_week: generatedPlan.daysPerWeek,
+      start_date: startDate.toISOString(),
+      end_date: endDate.toISOString(),
+      status: 'active',
+      split_pattern: generatedPlan.splitPattern,
+    }
+    console.log('[generateWorkoutPlan] Inserting plan:', planInsertData)
+
     const { data: plan, error: planError } = await supabase
       .from('user_workout_plans')
-      .insert({
-        user_id: user.id,
-        plan_name: generatedPlan.planName,
-        plan_type: 'custom', // Always use 'custom' for AI-generated plans (not generatedPlan.planType which may return invalid values)
-        days_per_week: generatedPlan.daysPerWeek,
-        start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
-        status: 'active',
-        split_pattern: generatedPlan.splitPattern,
-      })
+      .insert(planInsertData)
       .select()
       .single()
 
@@ -693,7 +696,12 @@ PLAN STRUCTURE REQUIREMENTS:
       return { success: false, error: `Failed to save workout plan: ${planError?.message || 'Unknown error'}` }
     }
 
-    console.log('[generateWorkoutPlan] Plan saved successfully:', plan.id)
+    console.log('[generateWorkoutPlan] Plan saved successfully:', {
+      id: plan.id,
+      user_id: plan.user_id,
+      status: plan.status,
+      plan_name: plan.plan_name
+    })
 
     // Save weeks and workouts (optimized with parallel saves)
     console.log('[generateWorkoutPlan] Saving workouts and exercises...')
@@ -707,13 +715,14 @@ PLAN STRUCTURE REQUIREMENTS:
 
         workoutInserts.push({
           plan_id: plan.id,
+          user_id: user.id,
           scheduled_date: workoutDate.toISOString(),
           workout_name: workout.workoutName,
+          workout_type: 'mixed', // Default to mixed for AI-generated workouts
           week_number: week.weekNumber,
           day_of_week: workout.dayOfWeek,
-          focus_areas: workout.focusAreas,
+          muscle_groups: workout.focusAreas,
           estimated_duration_minutes: workout.estimatedDuration,
-          status: 'pending',
           // Store exercises temporarily to map after insert
           _exercises: workout.exercises,
         })
@@ -725,13 +734,14 @@ PLAN STRUCTURE REQUIREMENTS:
       .from('plan_workouts')
       .insert(workoutInserts.map(w => ({
         plan_id: w.plan_id,
+        user_id: w.user_id,
         scheduled_date: w.scheduled_date,
         workout_name: w.workout_name,
+        workout_type: w.workout_type,
         week_number: w.week_number,
         day_of_week: w.day_of_week,
-        focus_areas: w.focus_areas,
+        muscle_groups: w.muscle_groups,
         estimated_duration_minutes: w.estimated_duration_minutes,
-        status: w.status,
       })))
       .select()
 
@@ -750,6 +760,7 @@ PLAN STRUCTURE REQUIREMENTS:
         for (const exercise of originalWorkout._exercises) {
           exerciseInserts.push({
             workout_id: savedWorkout.id,
+            user_id: user.id,
             exercise_id: exercise.exerciseId,
             exercise_order: exercise.exerciseOrder,
             target_sets: exercise.sets,
@@ -758,7 +769,7 @@ PLAN STRUCTURE REQUIREMENTS:
             rest_seconds: exercise.restSeconds,
             tempo: exercise.tempo,
             target_rpe: exercise.rpe,
-            notes: exercise.notes,
+            exercise_notes: exercise.notes,
           })
         }
       }
@@ -799,15 +810,54 @@ PLAN STRUCTURE REQUIREMENTS:
 }
 
 /**
+ * DEBUG: Get all workout plans for the user (for debugging purposes)
+ */
+export async function getAllWorkoutPlans() {
+  const { user, error } = await getAuthUser()
+  if (error || !user) {
+    console.error('[getAllWorkoutPlans] Auth error:', error)
+    return { user_id: null, plans: [], error: error?.message }
+  }
+
+  const supabase = await createClient()
+
+  const { data: plans, error: plansError } = await supabase
+    .from('user_workout_plans')
+    .select('id, user_id, plan_name, plan_type, status, start_date, end_date, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  console.log('[getAllWorkoutPlans] All plans for user', user.id, ':', plans)
+
+  return {
+    user_id: user.id,
+    plans: plans || [],
+    error: plansError?.message
+  }
+}
+
+/**
  * Get the user's current active workout plan
  */
 export async function getCurrentWorkoutPlan(): Promise<WorkoutPlanSummary | null> {
   const { user, error } = await getAuthUser()
   if (error || !user) {
+    console.error('[getCurrentWorkoutPlan] Auth error:', error)
     return null
   }
 
+  console.log('[getCurrentWorkoutPlan] Fetching plan for user:', user.id)
+
   const supabase = await createClient()
+
+  // First, log ALL plans for debugging
+  const { data: allPlans } = await supabase
+    .from('user_workout_plans')
+    .select('id, user_id, plan_name, status, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  console.log('[getCurrentWorkoutPlan] ALL plans for this user:', allPlans)
 
   const { data: plan, error: planError } = await supabase
     .from('user_workout_plans')
@@ -818,7 +868,10 @@ export async function getCurrentWorkoutPlan(): Promise<WorkoutPlanSummary | null
     .limit(1)
     .maybeSingle()
 
+  console.log('[getCurrentWorkoutPlan] Query result:', { plan, error: planError })
+
   if (planError || !plan) {
+    console.log('[getCurrentWorkoutPlan] No active plan found or error:', planError?.message)
     return null
   }
 
@@ -879,9 +932,9 @@ export async function getWorkoutPlanDetails(planId: string): Promise<WorkoutPlan
       week_number,
       day_of_week,
       scheduled_date,
-      status,
+      is_completed,
       estimated_duration_minutes,
-      focus_areas
+      muscle_groups
     `)
     .eq('plan_id', planId)
     .order('week_number', { ascending: true })
@@ -906,8 +959,7 @@ export async function getWorkoutPlanDetails(planId: string): Promise<WorkoutPlan
       rest_seconds,
       tempo,
       target_rpe,
-      notes,
-      completed_sets,
+      exercise_notes,
       is_completed,
       exercise_library (
         id,
@@ -957,8 +1009,8 @@ export async function getWorkoutPlanDetails(planId: string): Promise<WorkoutPlan
               restSeconds: ex.rest_seconds,
               tempo: ex.tempo,
               targetRpe: ex.target_rpe,
-              notes: ex.notes,
-              completedSets: ex.completed_sets || 0,
+              notes: ex.exercise_notes,
+              completedSets: 0, // Schema doesn't track partial completion
               isCompleted: ex.is_completed || false,
             }
           })
@@ -968,9 +1020,9 @@ export async function getWorkoutPlanDetails(planId: string): Promise<WorkoutPlan
           workoutName: workout.workout_name,
           dayOfWeek: workout.day_of_week,
           scheduledDate: workout.scheduled_date,
-          status: workout.status,
+          status: workout.is_completed ? 'completed' : 'pending',
           estimatedDuration: workout.estimated_duration_minutes,
-          focusAreas: workout.focus_areas || [],
+          focusAreas: workout.muscle_groups || [],
           exercises: workoutExercises,
         }
       }),
@@ -1023,7 +1075,8 @@ export async function getTodaysWorkout(): Promise<WorkoutSession | null> {
       week_number,
       scheduled_date,
       estimated_duration_minutes,
-      focus_areas,
+      muscle_groups,
+      is_completed,
       user_workout_plans!inner (
         user_id,
         status
@@ -1032,7 +1085,7 @@ export async function getTodaysWorkout(): Promise<WorkoutSession | null> {
     .eq('user_workout_plans.user_id', user.id)
     .eq('user_workout_plans.status', 'active')
     .eq('scheduled_date', today)
-    .eq('status', 'pending')
+    .eq('is_completed', false)
     .maybeSingle()
 
   if (workoutError || !workout) {
@@ -1052,8 +1105,7 @@ export async function getTodaysWorkout(): Promise<WorkoutSession | null> {
       rest_seconds,
       tempo,
       target_rpe,
-      notes,
-      completed_sets,
+      exercise_notes,
       is_completed,
       exercise_library (
         id,
@@ -1063,7 +1115,7 @@ export async function getTodaysWorkout(): Promise<WorkoutSession | null> {
         category,
         difficulty,
         instructions,
-        cues
+        form_cues
       )
     `)
     .eq('workout_id', workout.id)
@@ -1140,11 +1192,11 @@ export async function getTodaysWorkout(): Promise<WorkoutSession | null> {
       restSeconds: ex.rest_seconds,
       tempo: ex.tempo,
       targetRpe: ex.target_rpe,
-      notes: ex.notes,
-      completedSets: ex.completed_sets || 0,
+      notes: ex.exercise_notes,
+      completedSets: 0, // Schema doesn't track partial completion
       isCompleted: ex.is_completed || false,
       instructions: exerciseData?.instructions,
-      cues: exerciseData?.cues || [],
+      cues: exerciseData?.form_cues || [],
       lastWeight: lastPerformance?.weight,
       lastReps: lastPerformance?.reps,
       estimatedOneRepMax,
@@ -1163,13 +1215,14 @@ export async function getTodaysWorkout(): Promise<WorkoutSession | null> {
     weekNumber: workout.week_number,
     scheduledDate: workout.scheduled_date,
     estimatedDuration: workout.estimated_duration_minutes,
-    focusAreas: workout.focus_areas || [],
+    focusAreas: workout.muscle_groups || [],
     exercises: formattedExercises,
   }
 }
 
 /**
- * Start a workout session (marks workout as in_progress)
+ * Start a workout session
+ * Note: Schema uses workout_logs table for detailed tracking, but for now we keep it simple
  */
 export async function startWorkoutSession(workoutId: string) {
   const { user, error } = await getAuthUser()
@@ -1177,22 +1230,7 @@ export async function startWorkoutSession(workoutId: string) {
     return { success: false, error: 'Not authenticated' }
   }
 
-  const supabase = await createClient()
-
-  const { error: updateError } = await supabase
-    .from('plan_workouts')
-    .update({
-      status: 'in_progress',
-      started_at: new Date().toISOString(),
-    })
-    .eq('id', workoutId)
-    .eq('user_id', user.id)
-
-  if (updateError) {
-    console.error('[startWorkoutSession] Error:', updateError)
-    return { success: false, error: 'Failed to start workout' }
-  }
-
+  // For now, just return success. Future: Create workout_logs entry
   revalidatePath('/fitness')
   return { success: true }
 }
@@ -1208,10 +1246,10 @@ export async function logExerciseSet(input: ExerciseLogInput) {
 
   const supabase = await createClient()
 
-  // Get plan exercise details to determine total sets
+  // Get plan exercise details
   const { data: planExercise, error: planExError } = await supabase
     .from('plan_exercises')
-    .select('target_sets, completed_sets')
+    .select('target_sets')
     .eq('id', input.planExerciseId)
     .single()
 
@@ -1219,41 +1257,22 @@ export async function logExerciseSet(input: ExerciseLogInput) {
     return { success: false, error: 'Exercise not found' }
   }
 
-  // Insert exercise log
-  const { error: logError } = await supabase
-    .from('exercise_logs')
-    .insert({
-      user_id: user.id,
-      workout_id: input.workoutId,
-      exercise_id: input.exerciseId,
-      set_number: input.setNumber,
-      reps: input.reps,
-      weight: input.weight,
-      rpe: input.rpe,
-      notes: input.notes || `${input.weight}${input.unit}`,
-    })
+  // Note: Full exercise logging requires workout_logs entry first
+  // For now, just mark as completed when all sets are done
+  const isComplete = input.setNumber >= planExercise.target_sets
 
-  if (logError) {
-    console.error('[logExerciseSet] Error:', logError)
-    return { success: false, error: 'Failed to log set' }
-  }
+  if (isComplete) {
+    const { error: updateError } = await supabase
+      .from('plan_exercises')
+      .update({
+        is_completed: true,
+      })
+      .eq('id', input.planExerciseId)
 
-  // Update plan_exercises with new completed_sets count
-  const newCompletedSets = input.setNumber
-  const isComplete = newCompletedSets >= planExercise.target_sets
-
-  const { error: updateError } = await supabase
-    .from('plan_exercises')
-    .update({
-      completed_sets: newCompletedSets,
-      is_completed: isComplete,
-      last_updated: new Date().toISOString(),
-    })
-    .eq('id', input.planExerciseId)
-
-  if (updateError) {
-    console.error('[logExerciseSet] Update error:', updateError)
-    return { success: false, error: 'Failed to update exercise progress' }
+    if (updateError) {
+      console.error('[logExerciseSet] Update error:', updateError)
+      return { success: false, error: 'Failed to update exercise progress' }
+    }
   }
 
   revalidatePath('/fitness')
@@ -1271,12 +1290,11 @@ export async function completeWorkoutSession(workoutId: string) {
 
   const supabase = await createClient()
 
-  // Update workout status
+  // Mark workout as completed
   const { error: updateError } = await supabase
     .from('plan_workouts')
     .update({
-      status: 'completed',
-      completed_at: new Date().toISOString(),
+      is_completed: true,
     })
     .eq('id', workoutId)
     .eq('user_id', user.id)
@@ -1302,7 +1320,7 @@ export async function completeWorkoutSession(workoutId: string) {
 }
 
 /**
- * Skip a workout (marks as skipped)
+ * Skip a workout (marks as not completed, but user can continue with plan)
  */
 export async function skipWorkout(workoutId: string, reason?: string) {
   const { user, error } = await getAuthUser()
@@ -1312,11 +1330,11 @@ export async function skipWorkout(workoutId: string, reason?: string) {
 
   const supabase = await createClient()
 
+  // For now, just mark as not completed. Future: Track skip reason in workout_logs
   const { error: updateError } = await supabase
     .from('plan_workouts')
     .update({
-      status: 'skipped',
-      notes: reason || 'Skipped by user',
+      is_completed: false,
     })
     .eq('id', workoutId)
     .eq('user_id', user.id)
@@ -1374,16 +1392,16 @@ export async function getWorkoutStatistics(planId: string) {
   // Get all workouts for this plan
   const { data: workouts } = await supabase
     .from('plan_workouts')
-    .select('id, status, week_number')
+    .select('id, is_completed, week_number')
     .eq('plan_id', planId)
     .eq('user_id', user.id)
 
   if (!workouts) return null
 
   const totalWorkouts = workouts.length
-  const completedWorkouts = workouts.filter(w => w.status === 'completed').length
-  const skippedWorkouts = workouts.filter(w => w.status === 'skipped').length
-  const pendingWorkouts = workouts.filter(w => w.status === 'pending').length
+  const completedWorkouts = workouts.filter(w => w.is_completed === true).length
+  const skippedWorkouts = 0 // Schema doesn't differentiate skipped from pending
+  const pendingWorkouts = workouts.filter(w => w.is_completed === false).length
   const completionRate = totalWorkouts > 0 ? Math.round((completedWorkouts / totalWorkouts) * 100) : 0
 
   // Get total volume (weight × reps) for this plan

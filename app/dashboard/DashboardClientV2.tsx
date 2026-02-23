@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { ArrowRight, Settings, Dumbbell, Zap } from "lucide-react"
+import { ArrowRight, Settings, Dumbbell, Zap, Shield } from "lucide-react"
 import { ButtonGlow } from "@/components/ui/button-glow"
 import { BottomNav } from "@/components/bottom-nav"
 import { AmbientBackground } from "@/components/ambient-background"
@@ -257,20 +257,40 @@ function DashboardClientV2() {
                 </motion.div>
               )}
             </div>
-            <motion.div
-              whileHover={{ scale: 1.1, rotate: 90 }}
-              whileTap={{ scale: 0.9 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            >
-              <ButtonGlow
-                variant="outline-glow"
-                size="icon"
-                onClick={() => router.push("/settings")}
-                className="h-10 w-10 backdrop-blur-xl bg-white/5 border-white/10 hover:border-accent/30"
+            <div className="flex items-center gap-2">
+              {/* Admin Link - Only visible to Super Admins */}
+              {appData?.profile?.user_role === 'super_admin' && (
+                <motion.div
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                >
+                  <ButtonGlow
+                    variant="outline-glow"
+                    size="icon"
+                    onClick={() => router.push("/admin")}
+                    className="h-10 w-10 backdrop-blur-xl bg-purple-500/10 border-purple-500/30 hover:border-purple-400/50"
+                  >
+                    <Shield className="h-5 w-5 text-purple-400" />
+                  </ButtonGlow>
+                </motion.div>
+              )}
+              {/* Settings Link */}
+              <motion.div
+                whileHover={{ scale: 1.1, rotate: 90 }}
+                whileTap={{ scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <Settings className="h-5 w-5" />
-              </ButtonGlow>
-            </motion.div>
+                <ButtonGlow
+                  variant="outline-glow"
+                  size="icon"
+                  onClick={() => router.push("/settings")}
+                  className="h-10 w-10 backdrop-blur-xl bg-white/5 border-white/10 hover:border-accent/30"
+                >
+                  <Settings className="h-5 w-5" />
+                </ButtonGlow>
+              </motion.div>
+            </div>
           </div>
         </motion.div>
 

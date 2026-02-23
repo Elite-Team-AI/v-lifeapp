@@ -15,6 +15,7 @@ import { PersonalizedWorkoutPlan } from "@/components/fitness/PersonalizedWorkou
 import { WorkoutSessionTracker } from "@/components/fitness/WorkoutSessionTracker"
 import {
   getCurrentWorkoutPlan,
+  getAllWorkoutPlans,
   getWorkoutPlanDetails,
   getTodaysWorkout,
   startWorkoutSession,
@@ -45,18 +46,31 @@ export function FitnessClient() {
     async function loadWorkoutPlan() {
       setIsLoadingPlan(true)
       try {
+        // DEBUG: Call getAllWorkoutPlans first to see ALL plans for debugging
+        console.log('[FitnessClient] === DEBUG: Fetching ALL workout plans ===')
+        const allPlansData = await getAllWorkoutPlans()
+        console.log('[FitnessClient] === DEBUG: All plans data ===', allPlansData)
+
+        console.log('[FitnessClient] Loading workout plan...')
         const plan = await getCurrentWorkoutPlan()
+        console.log('[FitnessClient] Workout plan loaded:', plan)
         setWorkoutPlan(plan)
 
         if (plan?.id) {
+          console.log('[FitnessClient] Loading plan details for plan:', plan.id)
           const details = await getWorkoutPlanDetails(plan.id)
+          console.log('[FitnessClient] Plan details loaded:', details)
           setPlanDetails(details)
+        } else {
+          console.log('[FitnessClient] No active plan found')
         }
 
+        console.log('[FitnessClient] Loading today\'s workout...')
         const todayWorkout = await getTodaysWorkout()
+        console.log('[FitnessClient] Today\'s workout:', todayWorkout)
         setTodaysWorkout(todayWorkout)
       } catch (error) {
-        console.error("Failed to load workout plan:", error)
+        console.error("[FitnessClient] Failed to load workout plan:", error)
       } finally {
         setIsLoadingPlan(false)
       }
@@ -99,21 +113,38 @@ export function FitnessClient() {
   }
 
   const handlePlanGenerated = async (planId: string) => {
+    console.log('[FitnessClient] Plan generated successfully with ID:', planId)
     setShowPlanGenerator(false)
     // Refresh plan data after generation
     try {
+      console.log('[FitnessClient] Refreshing plan data after generation...')
+
+      // DEBUG: Call getAllWorkoutPlans to see ALL plans after generation
+      console.log('[FitnessClient] === DEBUG: Fetching ALL plans after generation ===')
+      const allPlansData = await getAllWorkoutPlans()
+      console.log('[FitnessClient] === DEBUG: All plans after generation ===', allPlansData)
+
       const plan = await getCurrentWorkoutPlan()
+      console.log('[FitnessClient] Refreshed workout plan:', plan)
       setWorkoutPlan(plan)
 
       if (plan?.id) {
+        console.log('[FitnessClient] Loading plan details for:', plan.id)
         const details = await getWorkoutPlanDetails(plan.id)
+        console.log('[FitnessClient] Refreshed plan details:', details)
         setPlanDetails(details)
+      } else {
+        console.warn('[FitnessClient] No plan returned from getCurrentWorkoutPlan after generation!')
+        console.warn('[FitnessClient] Generated plan ID was:', planId)
+        console.warn('[FitnessClient] Check if this plan ID matches any plan in the debug output above')
       }
 
+      console.log('[FitnessClient] Refreshing today\'s workout...')
       const todayWorkout = await getTodaysWorkout()
+      console.log('[FitnessClient] Refreshed today\'s workout:', todayWorkout)
       setTodaysWorkout(todayWorkout)
     } catch (error) {
-      console.error("Failed to refresh workout plan:", error)
+      console.error("[FitnessClient] Failed to refresh workout plan:", error)
     }
   }
 

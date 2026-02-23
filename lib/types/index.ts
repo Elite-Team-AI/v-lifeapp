@@ -55,6 +55,9 @@ export const GEMINI_VOICES: VoiceOption[] = [
   { name: 'Sulafat', style: 'Warm' },
 ]
 
+// User Role Types
+export type UserRole = 'user' | 'chosen' | 'super_admin'
+
 // User & Profile Types
 export interface Profile {
   id: string
@@ -82,6 +85,7 @@ export interface Profile {
   credits: number
   onboarding_completed: boolean | null
   is_admin: boolean | null
+  user_role: UserRole
   voice_preferences?: VoicePreferences | null
   created_at: string
   updated_at: string

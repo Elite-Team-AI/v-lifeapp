@@ -62,6 +62,10 @@ export function PersonalizedWorkoutPlan({
             Generate your personalized workout plan to get started with AI-powered training tailored to your goals and
             equipment.
           </CardDescription>
+          <div className="mt-2 text-xs text-white/50 max-w-md mx-auto">
+            <p>Debug info: Check browser console for detailed logs</p>
+            <p>If you recently generated a plan and it's not showing, check the console logs for any errors.</p>
+          </div>
           <div className="mt-6">
             <Button onClick={onRegeneratePlan} size="lg" className="bg-accent hover:bg-accent/90">
               <Zap className="h-4 w-4 mr-2" />

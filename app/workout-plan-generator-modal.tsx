@@ -95,6 +95,8 @@ export function WorkoutPlanGeneratorModal({ isOpen, onClose, onSuccess }: Workou
     setGenerationProgress(0)
     setCurrentWeek(1)
 
+    console.log('[WorkoutPlanGenerator] Starting plan generation...')
+
     // Track previous week to detect week changes
     let previousWeek = 1
 
@@ -134,14 +136,20 @@ export function WorkoutPlanGeneratorModal({ isOpen, onClose, onSuccess }: Workou
         focusAreas,
       }
 
+      console.log('[WorkoutPlanGenerator] Calling generateWorkoutPlan with preferences:', preferences)
       const result = await generateWorkoutPlan(preferences)
+      console.log('[WorkoutPlanGenerator] Result received:', result)
 
       if (!result.success) {
-        setError(result.error || "Failed to generate workout plan")
+        const errorMsg = result.error || "Failed to generate workout plan"
+        console.error('[WorkoutPlanGenerator] Plan generation failed:', errorMsg)
+        setError(errorMsg)
         clearInterval(progressInterval)
         clearInterval(weekInterval)
         return
       }
+
+      console.log('[WorkoutPlanGenerator] Plan generated successfully! Plan ID:', result.planId)
 
       // Complete progress bar
       clearInterval(progressInterval)
@@ -154,9 +162,12 @@ export function WorkoutPlanGeneratorModal({ isOpen, onClose, onSuccess }: Workou
       onSuccess(result.planId!)
       onClose()
     } catch (err) {
+      console.error('[WorkoutPlanGenerator] Exception during plan generation:', err)
       clearInterval(progressInterval)
       clearInterval(weekInterval)
-      setError(err instanceof Error ? err.message : "An unexpected error occurred")
+      const errorMsg = err instanceof Error ? err.message : "An unexpected error occurred"
+      console.error('[WorkoutPlanGenerator] Error message:', errorMsg)
+      setError(errorMsg)
     } finally {
       setIsLoading(false)
       setGenerationProgress(0)
@@ -562,6 +573,17 @@ export function WorkoutPlanGeneratorModal({ isOpen, onClose, onSuccess }: Workou
                           />
                         </div>
                       </div>
+                    )}
+                    {error && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="rounded-lg bg-red-500/10 border border-red-500/30 p-3 text-sm text-red-400"
+                      >
+                        <p className="font-medium mb-1">Generation Failed</p>
+                        <p className="text-xs text-red-300/80">{error}</p>
+                        <p className="text-xs text-red-300/60 mt-2">Check browser console for details</p>
+                      </motion.div>
                     )}
                     <ButtonGlow
                       variant="accent-glow"

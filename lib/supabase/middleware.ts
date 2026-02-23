@@ -6,7 +6,7 @@ import { env } from "@/lib/env"
 const PUBLIC_ROUTES = ["/auth", "/privacy", "/privacy-policy", "/terms-of-service", "/help-support", "/health-sources", "/download"]
 
 // Protected routes within the app (for checking referer)
-const PROTECTED_ROUTES = ["/dashboard", "/fitness", "/nutrition", "/community", "/settings", "/vbot", "/workout", "/ai-coach", "/tools", "/grocery-list", "/delete"]
+const PROTECTED_ROUTES = ["/dashboard", "/fitness", "/nutrition", "/community", "/settings", "/vbot", "/workout", "/ai-coach", "/tools", "/grocery-list", "/delete", "/admin"]
 
 // Supabase auth cookie name pattern
 const AUTH_COOKIE_PREFIX = "sb-"
