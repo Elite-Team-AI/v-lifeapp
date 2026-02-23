@@ -87,33 +87,33 @@ export function PersonalizedWorkoutPlan({
       {/* Plan Header */}
       <Card className="border-white/10 backdrop-blur-xl bg-white/5">
         <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <CardTitle className="text-2xl text-white flex items-center gap-2">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1 flex-1">
+              <CardTitle className="text-xl sm:text-2xl text-white flex flex-wrap items-center gap-2">
                 {plan.planName}
-                <Badge variant="outline" className="bg-accent/20 text-accent border-accent/30">
+                <Badge variant="outline" className="bg-accent/20 text-accent border-accent/30 text-xs">
                   {plan.planType}
                 </Badge>
               </CardTitle>
-              <CardDescription className="text-white/70">
+              <CardDescription className="text-sm text-white/70">
                 {plan.splitPattern} • {plan.daysPerWeek} days per week
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               {plan.status === 'active' ? (
-                <Button variant="outline" size="sm" onClick={onPausePlan} className="border-white/10">
-                  <Pause className="h-4 w-4 mr-2" />
-                  Pause
+                <Button variant="outline" size="sm" onClick={onPausePlan} className="border-white/10 text-xs sm:text-sm">
+                  <Pause className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Pause</span>
                 </Button>
               ) : (
-                <Button variant="outline" size="sm" onClick={onPausePlan} className="border-white/10">
-                  <Play className="h-4 w-4 mr-2" />
-                  Resume
+                <Button variant="outline" size="sm" onClick={onPausePlan} className="border-white/10 text-xs sm:text-sm">
+                  <Play className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Resume</span>
                 </Button>
               )}
-              <Button variant="outline" size="sm" onClick={onRegeneratePlan} className="border-white/10">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Regenerate
+              <Button variant="outline" size="sm" onClick={onRegeneratePlan} className="border-white/10 text-xs sm:text-sm whitespace-nowrap">
+                <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Regenerate</span>
               </Button>
             </div>
           </div>
@@ -230,7 +230,7 @@ export function PersonalizedWorkoutPlan({
         <CardHeader>
           <CardTitle className="text-xl text-white">4-Week Mesocycle</CardTitle>
           <CardDescription className="text-white/70">
-            Progressive training plan with built-in deload week
+            Progressive training plan with built-in deload week. Tap weeks to view workouts.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -412,33 +412,37 @@ function WorkoutCard({ workout, weekNumber, onStartWorkout, onSkipWorkout }: Wor
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-white/70 hover:text-white p-0 h-auto"
+              className="text-accent hover:text-accent/80 p-0 h-auto font-medium flex items-center gap-1"
             >
+              <Dumbbell className="h-3.5 w-3.5" />
               {isExpanded ? '− Hide' : '+ View'} {workout.exercises.length} exercises
               {completedExercises > 0 && ` (${completedExercises} completed)`}
             </Button>
 
             {isExpanded && (
-              <div className="space-y-2 pl-4 border-l border-white/10">
+              <div className="space-y-2 pl-4 border-l-2 border-accent/30">
                 {workout.exercises.map((exercise, idx) => (
-                  <div key={exercise.id} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
+                  <div key={exercise.id} className="flex items-center justify-between text-sm py-1.5">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
                       {exercise.isCompleted ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-400" />
+                        <CheckCircle2 className="h-4 w-4 text-green-400 flex-shrink-0" />
                       ) : (
-                        <Circle className="h-4 w-4 text-white/40" />
+                        <Circle className="h-4 w-4 text-white/40 flex-shrink-0" />
                       )}
-                      <span className="text-white">{exercise.exerciseName}</span>
-                      <Badge variant="outline" className="text-xs border-white/10 capitalize">
+                      <span className="text-white truncate">{exercise.exerciseName}</span>
+                      <Badge variant="outline" className="text-xs border-white/10 capitalize hidden sm:inline-flex flex-shrink-0">
                         {exercise.category}
                       </Badge>
                     </div>
-                    <span className="text-white/50 font-mono">
+                    <span className="text-white/50 font-mono text-xs sm:text-sm ml-2 flex-shrink-0">
                       {exercise.targetSets} × {exercise.targetRepsMin}
                       {exercise.targetRepsMax !== exercise.targetRepsMin && `-${exercise.targetRepsMax}`}
                     </span>
                   </div>
                 ))}
+                <div className="pt-2 text-xs text-white/50 italic">
+                  💡 Tap "Start" above to begin workout and log sets/reps
+                </div>
               </div>
             )}
           </div>

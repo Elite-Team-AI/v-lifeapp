@@ -580,19 +580,7 @@ export function FitnessClient() {
                 </CardContent>
               </Card>
             </motion.div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.95 }}
-            >
-              <Card className="border-white/10 backdrop-blur-xl bg-white/5">
-                <CardContent className="p-4">
-                  <p className="text-sm text-white/60">Loading your AI-generated workout...</p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
+          ) : null}
         </div>
 
         <motion.div
