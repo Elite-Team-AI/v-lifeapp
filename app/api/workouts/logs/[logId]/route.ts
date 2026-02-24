@@ -94,25 +94,27 @@ export async function GET(
       .select(`
         id,
         exercise_id,
+        plan_exercise_id,
         exercise_type,
-        sets_planned,
         sets_completed,
-        set_data,
-        total_reps,
-        total_volume_lbs,
-        avg_weight_lbs,
-        max_weight_lbs,
-        avg_reps,
-        max_reps,
+        reps_per_set,
+        weight_per_set,
+        rpe_per_set,
         distance_miles,
         duration_seconds,
-        avg_pace_min_per_mile,
-        calories_burned,
+        pace_per_mile_seconds,
         avg_heart_rate,
         max_heart_rate,
+        swim_stroke,
+        laps_completed,
+        pool_length_meters,
+        pace_per_100m_seconds,
+        hold_time_seconds,
+        stretch_intensity,
         notes,
-        rpe,
         form_quality,
+        difficulty_adjustment,
+        perceived_exertion,
         exercise_library (
           id,
           name,
@@ -179,41 +181,81 @@ export async function GET(
       stressToday: workoutLog.stress_today,
 
       // Exercise details
-      exercises: exerciseLogs?.map(ex => ({
-        id: ex.id,
-        exerciseName: ex.exercise_library?.name || 'Exercise',
-        exerciseCategory: ex.exercise_library?.category,
-        exerciseType: ex.exercise_type,
-        primaryMuscles: ex.exercise_library?.primary_muscles || [],
-        equipment: ex.exercise_library?.equipment || [],
-        difficulty: ex.exercise_library?.difficulty,
+      exercises: exerciseLogs?.map(ex => {
+        // Calculate aggregate metrics from arrays
+        const reps = ex.reps_per_set || []
+        const weights = ex.weight_per_set || []
+        const rpes = ex.rpe_per_set || []
 
-        // Set data
-        setsPlanned: ex.sets_planned,
-        setsCompleted: ex.sets_completed,
-        setData: ex.set_data, // Array of {weight, reps, rpe, completed}
+        const totalReps = reps.reduce((sum: number, r: number) => sum + r, 0)
+        const totalVolumeLbs = reps.reduce((sum: number, r: number, idx: number) =>
+          sum + (r * (weights[idx] || 0)), 0)
+        const avgWeightLbs = weights.length > 0
+          ? weights.reduce((sum: number, w: number) => sum + w, 0) / weights.length
+          : 0
+        const maxWeightLbs = weights.length > 0 ? Math.max(...weights) : 0
+        const avgReps = reps.length > 0
+          ? reps.reduce((sum: number, r: number) => sum + r, 0) / reps.length
+          : 0
+        const maxReps = reps.length > 0 ? Math.max(...reps) : 0
+        const avgRpe = rpes.filter((r: number | null) => r !== null).length > 0
+          ? rpes.filter((r: number | null) => r !== null).reduce((sum: number, r: number) => sum + r, 0) /
+            rpes.filter((r: number | null) => r !== null).length
+          : null
 
-        // Aggregated metrics
-        totalReps: ex.total_reps,
-        totalVolumeLbs: ex.total_volume_lbs,
-        avgWeightLbs: ex.avg_weight_lbs,
-        maxWeightLbs: ex.max_weight_lbs,
-        avgReps: ex.avg_reps,
-        maxReps: ex.max_reps,
+        // Transform set arrays into structured set data
+        const setData = reps.map((r: number, idx: number) => ({
+          reps: r,
+          weight: weights[idx] || 0,
+          rpe: rpes[idx] || null,
+          completed: true
+        }))
 
-        // Cardio metrics
-        distanceMiles: ex.distance_miles,
-        durationSeconds: ex.duration_seconds,
-        avgPaceMinPerMile: ex.avg_pace_min_per_mile,
-        caloriesBurned: ex.calories_burned,
-        avgHeartRate: ex.avg_heart_rate,
-        maxHeartRate: ex.max_heart_rate,
+        return {
+          id: ex.id,
+          exerciseName: ex.exercise_library?.name || 'Exercise',
+          exerciseCategory: ex.exercise_library?.category,
+          exerciseType: ex.exercise_type,
+          primaryMuscles: ex.exercise_library?.primary_muscles || [],
+          equipment: ex.exercise_library?.equipment || [],
+          difficulty: ex.exercise_library?.difficulty,
 
-        // Performance feedback
-        notes: ex.notes,
-        rpe: ex.rpe,
-        formQuality: ex.form_quality
-      })) || []
+          // Set data
+          setsCompleted: ex.sets_completed,
+          setData, // Array of {weight, reps, rpe, completed}
+
+          // Aggregated metrics (calculated from arrays)
+          totalReps,
+          totalVolumeLbs,
+          avgWeightLbs,
+          maxWeightLbs,
+          avgReps,
+          maxReps,
+
+          // Cardio metrics
+          distanceMiles: ex.distance_miles,
+          durationSeconds: ex.duration_seconds,
+          avgPaceMinPerMile: ex.pace_per_mile_seconds ? ex.pace_per_mile_seconds / 60 : null,
+          avgHeartRate: ex.avg_heart_rate,
+          maxHeartRate: ex.max_heart_rate,
+
+          // Swimming metrics
+          swimStroke: ex.swim_stroke,
+          lapsCompleted: ex.laps_completed,
+          poolLengthMeters: ex.pool_length_meters,
+
+          // Flexibility metrics
+          holdTimeSeconds: ex.hold_time_seconds,
+          stretchIntensity: ex.stretch_intensity,
+
+          // Performance feedback
+          notes: ex.notes,
+          rpe: avgRpe,
+          formQuality: ex.form_quality,
+          difficultyAdjustment: ex.difficulty_adjustment,
+          perceivedExertion: ex.perceived_exertion
+        }
+      }) || []
     }
 
     return NextResponse.json({
