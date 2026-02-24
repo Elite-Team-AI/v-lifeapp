@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
         user_id,
         exercise_id,
         pr_type,
-        weight,
+        weight_lbs,
         reps,
         achieved_at,
         exercise_library (
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
       exerciseName: pr.exercise_library?.name || 'Exercise',
       exerciseCategory: pr.exercise_library?.category,
       prType: pr.pr_type,
-      weight: pr.weight,
+      weight: pr.weight_lbs,
       reps: pr.reps,
       achievedAt: pr.achieved_at,
       metric: pr.pr_type === 'max_weight' ? 'Max Weight' :

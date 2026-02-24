@@ -45,11 +45,11 @@ export async function GET(request: NextRequest) {
         plan_workouts (
           id,
           workout_name,
-          target_muscles
+          muscle_groups
         )
       `)
       .eq('user_id', userId)
-      .eq('status', 'completed')
+      .eq('completion_status', 'completed')
       .order('completed_at', { ascending: false })
       .limit(limit)
 
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       totalVolume: log.total_volume_lbs,
       averageRpe: log.perceived_difficulty,
       exercisesCompleted: log.exercises_completed,
-      targetMuscles: log.plan_workouts?.target_muscles || []
+      targetMuscles: log.plan_workouts?.muscle_groups || []
     })) || []
 
     return NextResponse.json({
