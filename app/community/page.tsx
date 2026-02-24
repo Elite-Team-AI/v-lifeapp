@@ -154,11 +154,26 @@ export default function Community() {
     try {
       const { getPosts } = await import("@/lib/actions/community")
       const result = await getPosts(selectedCategory, sortBy)
+
+      if (result.error) {
+        console.error("Error from getPosts:", result.error)
+        toast({
+          title: "Error loading posts",
+          description: result.error,
+          variant: "destructive"
+        })
+      }
+
       if (result.posts) {
         setPosts(result.posts as any)
       }
     } catch (error) {
       console.error("Error loading posts:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load community posts",
+        variant: "destructive"
+      })
     } finally {
       setIsLoading(false)
     }

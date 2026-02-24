@@ -61,7 +61,14 @@ export function createServiceClient() {
  * Only use for admin operations like managing users
  */
 export function createAdminClient() {
+  console.log('[createAdminClient] Checking SUPABASE_SERVICE_ROLE_KEY:', {
+    exists: !!env.SUPABASE_SERVICE_ROLE_KEY,
+    length: env.SUPABASE_SERVICE_ROLE_KEY?.length || 0,
+    preview: env.SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20) + '...'
+  })
+
   if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('[createAdminClient] SUPABASE_SERVICE_ROLE_KEY is not set!')
     throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set")
   }
 
