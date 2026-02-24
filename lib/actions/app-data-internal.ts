@@ -694,6 +694,50 @@ export async function getVitalFlowSuggestionsInternal(
       return []
     }
 
+    // If no suggestions exist for today, generate them automatically
+    if (!data || data.length === 0) {
+      console.log("[getVitalFlowSuggestionsInternal] No suggestions found for today, auto-generating...")
+
+      try {
+        // Get user's session token for Edge Function auth
+        const { data: { session } } = await supabase.auth.getSession()
+
+        if (session?.access_token) {
+          // Call the Edge Function to generate suggestions
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/vitalflow-daily-habits`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                context: "It's a regular day.",
+                regenerate: false,
+              }),
+            }
+          )
+
+          if (response.ok) {
+            const result = await response.json()
+            const generatedSuggestions = (result.suggestions as VitalFlowSuggestion[]) || []
+            console.log("[getVitalFlowSuggestionsInternal] ✅ Generated", generatedSuggestions.length, "suggestions")
+            return generatedSuggestions
+          } else {
+            const errorText = await response.text()
+            console.error("[getVitalFlowSuggestionsInternal] Edge Function error:", errorText)
+          }
+        } else {
+          console.warn("[getVitalFlowSuggestionsInternal] No session token available for Edge Function call")
+        }
+      } catch (genError) {
+        console.error("[getVitalFlowSuggestionsInternal] Error generating suggestions:", genError)
+      }
+
+      return []
+    }
+
     return (data as VitalFlowSuggestion[]) || []
   } catch (error) {
     console.error("[getVitalFlowSuggestionsInternal] Exception:", error)

@@ -795,6 +795,7 @@ function FitnessProfileSection() {
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isEquipmentExpanded, setIsEquipmentExpanded] = useState(false)
   const [customEquipmentInput, setCustomEquipmentInput] = useState('')
 
   const profile = appData?.profile
@@ -1250,14 +1251,14 @@ function FitnessProfileSection() {
                 <div className="space-y-2">
                   <button
                     type="button"
-                    onClick={() => setIsExpanded(!isExpanded)}
+                    onClick={() => setIsEquipmentExpanded(!isEquipmentExpanded)}
                     className="flex items-center gap-2 text-xs text-neutral-400 hover:text-white transition-colors"
                   >
                     <span>Quick Select ({COMMON_EQUIPMENT.length} options)</span>
-                    {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    {isEquipmentExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                   </button>
 
-                  {isExpanded && (
+                  {isEquipmentExpanded && (
                     <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-3 bg-neutral-900/50 rounded-lg">
                       {COMMON_EQUIPMENT.map((item) => (
                         <label

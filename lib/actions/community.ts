@@ -1,6 +1,6 @@
 "use server"
 
-import { createClient, getAuthUser, createAdminClient } from "@/lib/supabase/server"
+import { createClient, getAuthUser, createAdminClient, createServiceClient } from "@/lib/supabase/server"
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache"
 import type { TransformedPost, TransformedComment } from "@/lib/types"
 import { DEFAULT_AVATAR } from "@/lib/stock-images"
@@ -276,18 +276,16 @@ export async function getPosts(
   category?: string,
   sortBy?: "recent" | "popular" | "trending"
 ): Promise<{ posts?: TransformedPost[]; error?: string }> {
-  const { user, error: authError } = await getAuthUser()
-
-  if (authError || !user) {
-    return { error: "Not authenticated" }
-  }
+  // Authentication is optional - unauthenticated users can view posts
+  // but won't see personalized features (follows, reactions, blocked users)
+  const { user } = await getAuthUser()
 
   try {
-    // Fetch posts, follows, and blocked users in parallel
+    // Fetch posts and user-specific data in parallel (if authenticated)
     const [posts, followingIds, blockedIds] = await Promise.all([
       getCachedPosts(category),
-      getCachedFollows(user.id),
-      getCachedBlockedUsers(user.id)
+      user ? getCachedFollows(user.id) : Promise.resolve([]),
+      user ? getCachedBlockedUsers(user.id) : Promise.resolve([])
     ])
 
     if (!posts) {
@@ -297,8 +295,10 @@ export async function getPosts(
     const followingSet = new Set(followingIds)
     const blockedSet = new Set(blockedIds)
 
-    // Filter out posts from blocked users, then transform
-    const filteredPosts = posts.filter(post => !blockedSet.has(post.user_id))
+    // Filter out posts from blocked users (only if authenticated)
+    const filteredPosts = user
+      ? posts.filter(post => !blockedSet.has(post.user_id))
+      : posts
 
     // Transform posts
     const transformedPosts: TransformedPost[] = filteredPosts.map((post) => {
@@ -316,7 +316,8 @@ export async function getPosts(
         if (reactions[type] !== undefined) {
           reactions[type]++
         }
-        if (reaction.user_id === user.id) {
+        // Only check for user reactions if authenticated
+        if (user && reaction.user_id === user.id) {
           userReaction = type
         }
       })
@@ -342,7 +343,8 @@ export async function getPosts(
           id: post.user_id,
           name: getDisplayName(post.profiles?.name, post.profiles?.id, 'post'),
           avatar: getUserAvatar(post.profiles?.avatar_url),
-          isFollowing: followingSet.has(post.user_id),
+          // Only show following status if authenticated
+          isFollowing: user ? followingSet.has(post.user_id) : false,
         },
         title: post.title,
         content: post.content,
