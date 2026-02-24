@@ -4,13 +4,6 @@ import OpenAI from 'openai'
 import { createApiLogger } from '@/lib/utils/logger'
 import { workoutGenerationSchema, safeValidate } from '@/lib/validations/api'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-})
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
 /**
  * Generate a personalized 4-week workout plan using AI
  *
@@ -57,6 +50,14 @@ export async function POST(request: NextRequest) {
       userId,
       preferences
     })
+
+    // Initialize clients at runtime, not build time
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY!,
+    })
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
