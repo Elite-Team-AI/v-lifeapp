@@ -226,27 +226,56 @@ export async function getAdminUsers(): Promise<{
     return { error: error.message }
   }
 
-  // Get emails from auth.users using admin client
+  // Get emails from auth.users using admin client with pagination
   try {
     const adminClient = createAdminClient()
-    const { data: { users: authUsers }, error: authError } = await adminClient.auth.admin.listUsers()
 
-    if (authError) {
-      console.error("Error fetching auth users:", authError)
-      // If we can't get emails, still return users without them
-      return {
-        users: (profiles || []).map(p => ({
-          ...p,
-          email: null as string | null,
-          is_admin: p.is_admin || false,
-          user_role: p.user_role || 'user',
-        }))
+    // Fetch all users with pagination (Supabase has a max of 1000 per page)
+    const allAuthUsers: any[] = []
+    let page = 1
+    let hasMore = true
+
+    while (hasMore) {
+      const { data: { users: authUsers }, error: authError } = await adminClient.auth.admin.listUsers({
+        page,
+        perPage: 1000
+      })
+
+      if (authError) {
+        console.error(`Error fetching auth users page ${page}:`, authError)
+        // If we can't get emails on first page, return users without them
+        if (page === 1) {
+          return {
+            users: (profiles || []).map(p => ({
+              ...p,
+              email: null as string | null,
+              is_admin: p.is_admin || false,
+              user_role: p.user_role || 'user',
+            }))
+          }
+        }
+        // If error on subsequent pages, break and use what we have
+        break
+      }
+
+      if (authUsers && authUsers.length > 0) {
+        allAuthUsers.push(...authUsers)
+        // If we got fewer than 1000 users, we've reached the end
+        if (authUsers.length < 1000) {
+          hasMore = false
+        } else {
+          page++
+        }
+      } else {
+        hasMore = false
       }
     }
 
+    console.log(`[Admin] Fetched ${allAuthUsers.length} auth users across ${page} page(s)`)
+
     // Create a map of user IDs to emails
     const emailMap = new Map<string, string>()
-    authUsers?.forEach(user => {
+    allAuthUsers.forEach(user => {
       if (user.email) {
         emailMap.set(user.id, user.email)
       }
@@ -496,18 +525,43 @@ export async function getAdminReferrals(): Promise<{
     return { error: profilesError.message }
   }
 
-  // Get emails from auth.users using admin client
+  // Get emails from auth.users using admin client with pagination
   try {
     const adminClient = createAdminClient()
-    const { data: { users: authUsers }, error: authError } = await adminClient.auth.admin.listUsers()
 
-    if (authError) {
-      console.error("Error fetching auth users:", authError)
+    // Fetch all users with pagination
+    const allAuthUsers: any[] = []
+    let page = 1
+    let hasMore = true
+
+    while (hasMore) {
+      const { data: { users: authUsers }, error: authError } = await adminClient.auth.admin.listUsers({
+        page,
+        perPage: 1000
+      })
+
+      if (authError) {
+        console.error(`Error fetching auth users page ${page}:`, authError)
+        break
+      }
+
+      if (authUsers && authUsers.length > 0) {
+        allAuthUsers.push(...authUsers)
+        if (authUsers.length < 1000) {
+          hasMore = false
+        } else {
+          page++
+        }
+      } else {
+        hasMore = false
+      }
     }
+
+    console.log(`[Admin Referrals] Fetched ${allAuthUsers.length} auth users across ${page} page(s)`)
 
     // Create email map
     const emailMap = new Map<string, string>()
-    authUsers?.forEach(user => {
+    allAuthUsers.forEach(user => {
       if (user.email) {
         emailMap.set(user.id, user.email)
       }
