@@ -181,8 +181,8 @@ function isWithinRange(value: string | null | undefined, start: number, end: num
 // Cached posts fetch - revalidates every 30 seconds
 const getCachedPosts = unstable_cache(
   async (category?: string) => {
-    // Use admin client to bypass RLS and read all profiles
-    const supabase = createAdminClient()
+    // Use service client to bypass RLS and read all profiles
+    const supabase = createServiceClient()
 
     console.log(`[Community] Fetching posts from database (category: ${category || 'all'})`)
 

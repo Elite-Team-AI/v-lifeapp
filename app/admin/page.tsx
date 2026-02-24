@@ -15,7 +15,7 @@ export default async function AdminPage() {
   }
 
   // Fetch comprehensive user data with engagement metrics
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // Get all users with their profile data and linked auth data
   const { data: users } = await supabase
@@ -30,8 +30,7 @@ export default async function AdminPage() {
     .order("created_at", { ascending: false })
 
   // Get auth users for last sign in data using admin client
-  const adminClient = createAdminClient()
-  const { data: { users: authUsers } } = await adminClient.auth.admin.listUsers()
+  const { data: { users: authUsers } } = await supabase.auth.admin.listUsers()
 
   // Get engagement metrics for each user
   const userIds = users?.map(u => u.id) || []
