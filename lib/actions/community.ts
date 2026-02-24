@@ -1,6 +1,6 @@
 "use server"
 
-import { createClient, getAuthUser, createServiceClient } from "@/lib/supabase/server"
+import { createClient, getAuthUser, createAdminClient } from "@/lib/supabase/server"
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache"
 import type { TransformedPost, TransformedComment } from "@/lib/types"
 import { DEFAULT_AVATAR } from "@/lib/stock-images"
@@ -181,8 +181,8 @@ function isWithinRange(value: string | null | undefined, start: number, end: num
 // Cached posts fetch - revalidates every 30 seconds
 const getCachedPosts = unstable_cache(
   async (category?: string) => {
-    // Use service client to bypass RLS and read all profiles
-    const supabase = createServiceClient()
+    // Use admin client to bypass RLS and read all profiles
+    const supabase = createAdminClient()
 
     console.log(`[Community] Fetching posts from database (category: ${category || 'all'})`)
 

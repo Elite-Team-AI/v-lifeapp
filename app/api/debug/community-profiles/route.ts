@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 
 /**
  * GET /api/debug/community-profiles
@@ -7,7 +7,7 @@ import { createServiceClient } from '@/lib/supabase/server'
  */
 export async function GET() {
   try {
-    const supabase = createServiceClient()
+    const supabase = createAdminClient()
 
     // Fetch recent posts with profile data
     const { data: posts, error } = await supabase
