@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
             category,
             equipment,
             difficulty,
-            target_muscles,
+            primary_muscles,
             instructions,
             video_url,
             exercise_type

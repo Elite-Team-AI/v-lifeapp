@@ -332,6 +332,9 @@ function AnalyticsTab() {
   const [workoutLogs, setWorkoutLogs] = useState<any[]>([])
   const [personalRecords, setPersonalRecords] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null)
+  const [workoutDetails, setWorkoutDetails] = useState<any>(null)
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false)
 
   useEffect(() => {
     if (user?.id) {
@@ -359,6 +362,34 @@ function AnalyticsTab() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const fetchWorkoutDetails = async (logId: string) => {
+    try {
+      setIsLoadingDetails(true)
+      const res = await fetch(`/api/workouts/logs/${logId}`)
+      const data = await res.json()
+
+      if (data.success) {
+        setWorkoutDetails(data.workoutLog)
+      } else {
+        console.error('Failed to fetch workout details:', data.error)
+      }
+    } catch (error) {
+      console.error('Error fetching workout details:', error)
+    } finally {
+      setIsLoadingDetails(false)
+    }
+  }
+
+  const handleWorkoutClick = (logId: string) => {
+    setSelectedWorkoutId(logId)
+    fetchWorkoutDetails(logId)
+  }
+
+  const closeWorkoutDetails = () => {
+    setSelectedWorkoutId(null)
+    setWorkoutDetails(null)
   }
 
   return (
@@ -484,7 +515,8 @@ function AnalyticsTab() {
               {workoutLogs.map((log: any, index: number) => (
                 <div
                   key={log.id || index}
-                  className="p-4 bg-neutral-800/50 rounded-lg"
+                  onClick={() => handleWorkoutClick(log.id)}
+                  className="p-4 bg-neutral-800/50 rounded-lg cursor-pointer hover:bg-neutral-800 transition-colors"
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div>
@@ -545,6 +577,211 @@ function AnalyticsTab() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Workout Details Modal */}
+      <AlertDialog open={selectedWorkoutId !== null} onOpenChange={closeWorkoutDetails}>
+        <AlertDialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-neutral-900 border-white/10">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white flex items-center gap-3">
+              <Dumbbell className="w-5 h-5 text-cyan-400" />
+              {workoutDetails?.workoutName || 'Workout Details'}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-neutral-400">
+              {workoutDetails?.workoutDate && new Date(workoutDetails.workoutDate).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {isLoadingDetails ? (
+            <div className="space-y-3 py-4">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+            </div>
+          ) : workoutDetails ? (
+            <div className="space-y-4 py-4">
+              {/* Workout Summary */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3 bg-neutral-800/50 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Clock className="w-3 h-3 text-cyan-400" />
+                    <span className="text-xs text-neutral-400">Duration</span>
+                  </div>
+                  <p className="text-lg font-bold text-white">
+                    {workoutDetails.duration || '--'} <span className="text-xs text-neutral-400">min</span>
+                  </p>
+                </div>
+                <div className="p-3 bg-neutral-800/50 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Dumbbell className="w-3 h-3 text-purple-400" />
+                    <span className="text-xs text-neutral-400">Volume</span>
+                  </div>
+                  <p className="text-lg font-bold text-white">
+                    {workoutDetails.totalVolumeLbs ? (workoutDetails.totalVolumeLbs / 1000).toFixed(1) : '0'}
+                    <span className="text-xs text-neutral-400"> tons</span>
+                  </p>
+                </div>
+                <div className="p-3 bg-neutral-800/50 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Activity className="w-3 h-3 text-orange-400" />
+                    <span className="text-xs text-neutral-400">RPE</span>
+                  </div>
+                  <p className="text-lg font-bold text-white">
+                    {workoutDetails.perceivedDifficulty || '--'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Muscle Groups */}
+              {workoutDetails.muscleGroups && workoutDetails.muscleGroups.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {workoutDetails.muscleGroups.map((muscle: string, idx: number) => (
+                    <span
+                      key={idx}
+                      className="px-2 py-1 text-xs rounded-md bg-blue-500/20 text-blue-300"
+                    >
+                      {muscle}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Exercises */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-yellow-400" />
+                  Exercises ({workoutDetails.exercises?.length || 0})
+                </h4>
+
+                {workoutDetails.exercises?.map((exercise: any, idx: number) => (
+                  <div key={idx} className="p-4 bg-neutral-800/50 rounded-lg space-y-3">
+                    {/* Exercise Header */}
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-white">
+                          {exercise.exerciseName}
+                        </p>
+                        <p className="text-xs text-neutral-400">
+                          {exercise.exerciseCategory} • {exercise.difficulty}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-semibold text-cyan-400">
+                          {exercise.setsCompleted}/{exercise.setsPlanned} sets
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Primary Muscles */}
+                    {exercise.primaryMuscles && exercise.primaryMuscles.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {exercise.primaryMuscles.map((muscle: string, mIdx: number) => (
+                          <span
+                            key={mIdx}
+                            className="px-2 py-0.5 text-xs rounded-md bg-purple-500/20 text-purple-300"
+                          >
+                            {muscle}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Set Data */}
+                    {exercise.setData && exercise.setData.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-neutral-400">Sets:</p>
+                        {exercise.setData.map((set: any, setIdx: number) => (
+                          <div
+                            key={setIdx}
+                            className={`flex items-center justify-between p-2 rounded ${
+                              set.completed
+                                ? 'bg-green-500/10 border border-green-500/20'
+                                : 'bg-neutral-900/50 border border-neutral-700/20'
+                            }`}
+                          >
+                            <span className="text-xs text-neutral-400">
+                              Set {setIdx + 1}
+                            </span>
+                            <div className="flex items-center gap-3 text-xs">
+                              {set.weight && (
+                                <span className="text-white font-medium">
+                                  {set.weight} lbs
+                                </span>
+                              )}
+                              {set.reps && (
+                                <span className="text-neutral-300">
+                                  {set.reps} reps
+                                </span>
+                              )}
+                              {set.rpe && (
+                                <span className="text-orange-400">
+                                  RPE {set.rpe}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Exercise Stats */}
+                    <div className="grid grid-cols-3 gap-2 pt-2 border-t border-neutral-700/30">
+                      <div className="text-center">
+                        <p className="text-xs text-neutral-500">Total Reps</p>
+                        <p className="text-sm font-semibold text-white">
+                          {exercise.totalReps || 0}
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-neutral-500">Max Weight</p>
+                        <p className="text-sm font-semibold text-white">
+                          {exercise.maxWeightLbs ? `${exercise.maxWeightLbs} lbs` : 'N/A'}
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-neutral-500">Volume</p>
+                        <p className="text-sm font-semibold text-white">
+                          {exercise.totalVolumeLbs ? `${(exercise.totalVolumeLbs / 1000).toFixed(1)}t` : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Exercise Notes */}
+                    {exercise.notes && (
+                      <div className="pt-2 border-t border-neutral-700/30">
+                        <p className="text-xs text-neutral-400">
+                          <span className="font-medium">Notes:</span> {exercise.notes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Workout Notes */}
+              {workoutDetails.notes && (
+                <div className="p-3 bg-neutral-800/50 rounded-lg">
+                  <p className="text-xs font-medium text-neutral-400 mb-1">Workout Notes:</p>
+                  <p className="text-sm text-white">{workoutDetails.notes}</p>
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          <AlertDialogFooter>
+            <AlertDialogAction
+              onClick={closeWorkoutDetails}
+              className="bg-cyan-500 hover:bg-cyan-600 text-black"
+            >
+              Close
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   )
 }

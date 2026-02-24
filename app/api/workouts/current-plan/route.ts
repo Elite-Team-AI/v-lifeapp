@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
             category,
             equipment,
             difficulty,
-            target_muscles,
+            primary_muscles,
             instructions,
             video_url
           )

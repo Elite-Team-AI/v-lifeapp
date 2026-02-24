@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
               name,
               category,
               exercise_type,
-              target_muscles,
+              primary_muscles,
               difficulty
             )
           )
@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
       // Fetch exercises for the new training modality
       const { data: allExercises, error: exercisesError } = await supabase
         .from('exercise_library')
-        .select('id, name, category, equipment, difficulty, target_muscles, training_modality, recommended_sets_min, recommended_sets_max, recommended_reps_min, recommended_reps_max, recommended_rest_seconds_min, recommended_rest_seconds_max')
+        .select('id, name, category, equipment, difficulty, primary_muscles, training_modality, recommended_sets_min, recommended_sets_max, recommended_reps_min, recommended_reps_max, recommended_rest_seconds_min, recommended_rest_seconds_max')
         .eq('is_active', true)
         .eq('training_modality', trainingStyle)
 
@@ -261,9 +261,9 @@ export async function POST(request: NextRequest) {
         // Get exercises appropriate for this workout type
         const workoutExercises = workout.plan_exercises.map((planExercise: any, index: number) => {
           // Find a similar exercise from the new modality
-          const targetMuscles = planExercise.exercise?.target_muscles || []
+          const targetMuscles = planExercise.exercise?.primary_muscles || []
           const matchingExercise = newExercises.find(ex =>
-            ex.target_muscles?.some((muscle: string) => targetMuscles.includes(muscle))
+            ex.primary_muscles?.some((muscle: string) => targetMuscles.includes(muscle))
           ) || newExercises[index % newExercises.length]
 
           return {

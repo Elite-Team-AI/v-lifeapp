@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
 
     const { data: exercises, error: exercisesError } = await supabase
       .from('exercise_library')
-      .select('id, name, category, equipment, difficulty, target_muscles, training_modality, recommended_sets_min, recommended_sets_max, recommended_reps_min, recommended_reps_max, recommended_rest_seconds_min, recommended_rest_seconds_max')
+      .select('id, name, category, equipment, difficulty, primary_muscles, training_modality, recommended_sets_min, recommended_sets_max, recommended_reps_min, recommended_reps_max, recommended_rest_seconds_min, recommended_rest_seconds_max')
       .eq('is_active', true)
       .eq('training_modality', trainingStyle) // Filter by user's preferred modality
 
@@ -382,7 +382,7 @@ ${specificGoals ? `- Specific Goals: ${specificGoals}` : ''}
 🎯 **IMPORTANT:** These exercises are already optimized for ${userTrainingStyle} training with modality-specific recommendations built-in. Use the recommended sets/reps/rest values provided with each exercise.
 
 ${availableExercises.slice(0, 100).map(ex =>
-  `- ID: ${ex.id} | Name: ${ex.name} | Category: ${ex.category} | Difficulty: ${ex.difficulty} | Targets: ${ex.target_muscles?.join(', ')}
+  `- ID: ${ex.id} | Name: ${ex.name} | Category: ${ex.category} | Difficulty: ${ex.difficulty} | Targets: ${ex.primary_muscles?.join(', ')}
   ${ex.recommended_sets_min && ex.recommended_sets_max ? `  📊 Sets: ${ex.recommended_sets_min}-${ex.recommended_sets_max}` : ''}
   ${ex.recommended_reps_min && ex.recommended_reps_max ? `  🔢 Reps: ${ex.recommended_reps_min}-${ex.recommended_reps_max}` : ''}
   ${ex.recommended_rest_seconds_min && ex.recommended_rest_seconds_max ? `  ⏱️ Rest: ${ex.recommended_rest_seconds_min}-${ex.recommended_rest_seconds_max}s` : ''}`

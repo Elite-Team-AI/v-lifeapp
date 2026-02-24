@@ -18,7 +18,7 @@ interface Exercise {
   name: string
   category: string
   exercise_type: string
-  target_muscles: string[]
+  primary_muscles: string[]
   difficulty: string
 }
 
