@@ -360,21 +360,60 @@ export async function POST(request: NextRequest) {
       tokensUsed: completion.usage?.total_tokens
     })
 
-    // Parse AI response with detailed error handling
+    // Parse AI response with detailed error handling and JSON sanitization
     let generatedPlan
+    let sanitizedResponse = aiResponse
+
     try {
       log.debug("Attempting to parse AI response", undefined, {
         userId,
         responsePreview: aiResponse.substring(0, 200), // First 200 chars
         responseLength: aiResponse.length
       })
-      generatedPlan = JSON.parse(aiResponse)
+
+      // Step 1: Try direct parsing first
+      try {
+        generatedPlan = JSON.parse(aiResponse)
+      } catch (initialError) {
+        // Step 2: Sanitize the response if direct parsing fails
+        log.debug("Direct JSON parse failed, attempting sanitization", undefined, {
+          userId,
+          parseError: initialError.message
+        })
+
+        // Remove any markdown code blocks (```json ... ```)
+        sanitizedResponse = aiResponse.replace(/^```json\s*/i, '').replace(/\s*```$/i, '')
+
+        // Remove any leading/trailing whitespace
+        sanitizedResponse = sanitizedResponse.trim()
+
+        // Extract JSON object if there's text before/after it
+        const jsonMatch = sanitizedResponse.match(/\{[\s\S]*\}/)
+        if (jsonMatch) {
+          sanitizedResponse = jsonMatch[0]
+          log.debug("Extracted JSON from response", undefined, {
+            userId,
+            originalLength: aiResponse.length,
+            sanitizedLength: sanitizedResponse.length
+          })
+        }
+
+        // Try parsing the sanitized response
+        generatedPlan = JSON.parse(sanitizedResponse)
+
+        log.info("JSON parsing succeeded after sanitization", undefined, {
+          userId,
+          sanitizationApplied: true
+        })
+      }
     } catch (parseError: any) {
-      log.error("Failed to parse OpenAI response as JSON", parseError, undefined, {
+      log.error("Failed to parse OpenAI response as JSON after sanitization", parseError, undefined, {
         userId,
         parseErrorMessage: parseError.message,
         aiResponsePreview: aiResponse.substring(0, 500),
+        sanitizedPreview: sanitizedResponse.substring(0, 500),
         aiResponseLength: aiResponse.length,
+        sanitizedLength: sanitizedResponse.length,
         tokensUsed: completion.usage?.total_tokens,
         fullResponse: aiResponse // Log full response to see what OpenAI returned
       })
@@ -382,7 +421,7 @@ export async function POST(request: NextRequest) {
         {
           error: 'AI response parsing failed',
           message: 'The AI generated an invalid workout plan format. Please try again.',
-          details: `JSON parse error: ${parseError.message}`
+          details: `JSON parse error: ${parseError.message}. Response length: ${aiResponse.length} characters.`
         },
         { status: 500 }
       )
