@@ -8,9 +8,6 @@ import {
 import { createApiLogger } from '@/lib/utils/logger'
 import { weeklyAdjustmentsSchema, validateQueryParams } from '@/lib/validations/api'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
 /**
  * Get weekly adjustment recommendations without regenerating plan
  *
@@ -36,6 +33,22 @@ export async function GET(request: NextRequest) {
       planId,
       weeks
     })
+
+    // Validate required environment variables
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      log.error("Supabase credentials not configured", new Error("Missing Supabase credentials"), undefined, { userId, planId })
+      return NextResponse.json(
+        {
+          error: 'Database service not configured',
+          message: 'Unable to calculate adjustments. Please contact support.',
+          details: 'Missing Supabase credentials'
+        },
+        { status: 500 }
+      )
+    }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {

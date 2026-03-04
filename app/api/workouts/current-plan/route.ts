@@ -2,9 +2,6 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { createApiLogger } from '@/lib/utils/logger'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
 /**
  * Get the user's current active workout plan
  *
@@ -26,6 +23,22 @@ export async function GET(request: NextRequest) {
     }
 
     log.info("Fetching current workout plan", undefined, { userId })
+
+    // Validate required environment variables
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      log.error("Supabase credentials not configured", new Error("Missing Supabase credentials"), undefined, { userId })
+      return NextResponse.json(
+        {
+          error: 'Database service not configured',
+          message: 'Unable to fetch workout plan. Please contact support.',
+          details: 'Missing Supabase credentials'
+        },
+        { status: 500 }
+      )
+    }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {

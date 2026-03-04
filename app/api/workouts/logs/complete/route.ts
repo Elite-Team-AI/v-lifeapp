@@ -3,9 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createApiLogger } from '@/lib/utils/logger'
 import { workoutLogCompleteSchema, safeValidate } from '@/lib/validations/api'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
 /**
  * Complete a workout session
  *
@@ -54,6 +51,22 @@ export async function POST(request: NextRequest) {
       userId,
       workoutLogId
     })
+
+    // Validate required environment variables
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      log.error("Supabase credentials not configured", new Error("Missing Supabase credentials"), undefined, { userId, workoutLogId })
+      return NextResponse.json(
+        {
+          error: 'Database service not configured',
+          message: 'Unable to complete workout. Please contact support.',
+          details: 'Missing Supabase credentials'
+        },
+        { status: 500 }
+      )
+    }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {

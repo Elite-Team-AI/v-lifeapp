@@ -1,9 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
 /**
  * GET /api/workouts/personal-records
  * Fetch personal records (PRs) for a user
@@ -18,6 +15,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: 'userId is required' },
         { status: 400 }
+      )
+    }
+
+    // Validate required environment variables
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Supabase credentials not configured')
+      return NextResponse.json(
+        {
+          error: 'Database service not configured',
+          message: 'Unable to fetch personal records. Please contact support.',
+          details: 'Missing Supabase credentials'
+        },
+        { status: 500 }
       )
     }
 
