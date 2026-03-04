@@ -268,7 +268,33 @@ export async function POST(request: NextRequest) {
       tokensUsed: completion.usage?.total_tokens
     })
 
-    const generatedPlan = JSON.parse(aiResponse)
+    // Parse AI response with detailed error handling
+    let generatedPlan
+    try {
+      log.debug("Attempting to parse AI response", undefined, {
+        userId,
+        responsePreview: aiResponse.substring(0, 200), // First 200 chars
+        responseLength: aiResponse.length
+      })
+      generatedPlan = JSON.parse(aiResponse)
+    } catch (parseError: any) {
+      log.error("Failed to parse OpenAI response as JSON", parseError, undefined, {
+        userId,
+        parseErrorMessage: parseError.message,
+        aiResponsePreview: aiResponse.substring(0, 500),
+        aiResponseLength: aiResponse.length,
+        tokensUsed: completion.usage?.total_tokens,
+        fullResponse: aiResponse // Log full response to see what OpenAI returned
+      })
+      return NextResponse.json(
+        {
+          error: 'AI response parsing failed',
+          message: 'The AI generated an invalid workout plan format. Please try again.',
+          details: `JSON parse error: ${parseError.message}`
+        },
+        { status: 500 }
+      )
+    }
 
     // 6. Validate the generated plan structure
     const validationError = validatePlanStructure(generatedPlan)
@@ -1127,6 +1153,17 @@ async function savePlanToDatabase(
     totalWorkoutsCreated,
     totalExercisesCreated
   })
+
+  // Validate that exercises were created
+  if (totalExercisesCreated === 0) {
+    log.error("Plan created but no exercises were saved", new Error("Zero exercises created"), undefined, {
+      userId,
+      planId,
+      totalWorkoutsCreated,
+      totalExercisesCreated
+    })
+    throw new Error('Workout plan created but no exercises could be saved. This may indicate invalid exercise IDs or database constraints.')
+  }
 
   return {
     planId,
