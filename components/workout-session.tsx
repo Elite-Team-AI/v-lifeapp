@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +17,7 @@ import {
   ChevronLeft
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
+import { toast } from "@/hooks/use-toast"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,11 +59,29 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
   const [isTimerRunning, setIsTimerRunning] = useState(false)
   const [showCompletionSummary, setShowCompletionSummary] = useState(false)
   const [completionSummary, setCompletionSummary] = useState<any>(null)
-  const [hasStartedSession, setHasStartedSession] = useState(false)
+  const hasStartedSessionRef = useRef(false)
   const [showExitConfirmation, setShowExitConfirmation] = useState(false)
 
   const exercises = workout.plan_exercises || []
   const currentExercise = exercises[currentExerciseIndex]
+
+  // Debug logging
+  useEffect(() => {
+    console.log('WorkoutSession Debug:', {
+      workout,
+      hasWorkout: !!workout,
+      hasPlanExercises: !!workout.plan_exercises,
+      planExercisesLength: workout.plan_exercises?.length || 0,
+      exercises,
+      exercisesLength: exercises.length,
+      currentExerciseIndex,
+      currentExercise: currentExercise ? {
+        id: currentExercise.id,
+        exercise_id: currentExercise.exercise_id,
+        exercise_name: currentExercise.exercise?.name
+      } : null
+    })
+  }, [workout, exercises, currentExerciseIndex, currentExercise])
 
   // Timer effect
   useEffect(() => {
@@ -79,15 +98,15 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
 
   // Auto-start workout when user is available
   useEffect(() => {
-    if (user?.id && !hasStartedSession && !workoutLogId) {
+    if (user?.id && !hasStartedSessionRef.current && !workoutLogId) {
       startWorkoutSession()
     }
-  }, [user?.id])
+  }, [user?.id, workoutLogId])
 
   const startWorkoutSession = async () => {
     try {
       setIsStarting(true)
-      setHasStartedSession(true)
+      hasStartedSessionRef.current = true
 
       console.log('Starting workout with:', {
         userId: user?.id,
@@ -114,8 +133,12 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
 
       if (!response.ok) {
         console.error('Failed to start workout:', data)
-        alert(`Failed to start workout: ${data.error || 'Unknown error'}\n${data.details ? JSON.stringify(data.details) : ''}`)
-        setHasStartedSession(false) // Allow retry
+        toast({
+          title: "Failed to Start Workout",
+          description: `${data.error || 'Unknown error'}${data.details ? '\n' + JSON.stringify(data.details) : ''}`,
+          variant: "destructive"
+        })
+        hasStartedSessionRef.current = false // Allow retry
         return
       }
 
@@ -125,25 +148,82 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
 
         // Initialize exercise logs
         const logs = new Map<string, ExerciseLog>()
-        exercises.forEach((ex: any) => {
-          if (ex.exercise?.exercise_type === 'strength' || !ex.exercise?.exercise_type) {
-            logs.set(ex.exercise_id, {
-              exerciseId: ex.exercise_id,
-              sets: Array(ex.target_sets).fill(null).map(() => ({
-                reps: ex.target_reps_min || 1, // Default to 1 instead of 0
-                weight: ex.target_weight_lbs || 0,
+
+        if (data.isResume && data.exerciseLogs && data.exerciseLogs.length > 0) {
+          // Resume existing workout - populate from saved exercise logs
+          data.exerciseLogs.forEach((log: any) => {
+            const sets = []
+            const setsCompleted = log.sets_completed || 0
+
+            // Reconstruct completed sets from array data
+            for (let i = 0; i < setsCompleted; i++) {
+              sets.push({
+                reps: log.reps_per_set?.[i] ?? 1,
+                weight: log.weight_per_set?.[i] ?? 0,
+                rpe: log.rpe_per_set?.[i],
+                completed: true
+              })
+            }
+
+            // Find the plan exercise to determine total target sets
+            const planExercise = exercises.find((ex: any) => ex.exercise_id === log.exercise_id)
+            const targetSets = planExercise?.target_sets || setsCompleted
+
+            // Add remaining incomplete sets if needed
+            while (sets.length < targetSets) {
+              sets.push({
+                reps: planExercise?.target_reps_min ?? 1,
+                weight: planExercise?.target_weight_lbs ?? 0,
                 rpe: undefined,
                 completed: false
-              }))
+              })
+            }
+
+            logs.set(log.exercise_id, {
+              exerciseId: log.exercise_id,
+              sets
             })
+          })
+
+          // Calculate elapsed time from started_at if available
+          if (data.workout?.started_at) {
+            const startedAt = new Date(data.workout.started_at)
+            const now = new Date()
+            const elapsedSecs = Math.floor((now.getTime() - startedAt.getTime()) / 1000)
+            setElapsedSeconds(Math.max(0, elapsedSecs))
           }
-        })
+
+          toast({
+            title: "Workout Resumed",
+            description: "Continuing from where you left off"
+          })
+        } else {
+          // New workout - initialize fresh exercise logs
+          exercises.forEach((ex: any) => {
+            if (ex.exercise?.exercise_type === 'strength' || !ex.exercise?.exercise_type) {
+              logs.set(ex.exercise_id, {
+                exerciseId: ex.exercise_id,
+                sets: Array(ex.target_sets).fill(null).map(() => ({
+                  reps: ex.target_reps_min ?? 1, // Use nullish coalescing to allow 0 for isometric holds
+                  weight: ex.target_weight_lbs ?? 0,
+                  rpe: undefined,
+                  completed: false
+                }))
+              })
+            }
+          })
+        }
+
         setExerciseLogs(logs)
       }
     } catch (error) {
       console.error('Error starting workout:', error)
-      alert(`Error starting workout: ${error}`)
-      setHasStartedSession(false) // Allow retry
+      toast({
+        title: "Error Starting Workout",
+        description: String(error),
+        variant: "destructive"
+      })
+      hasStartedSessionRef.current = false // Allow retry
     } finally {
       setIsStarting(false)
     }
@@ -192,8 +272,8 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
             sets: updatedSets.map(s => ({
               reps: s.reps,
               weight: s.weight,
-              // Only include RPE if it's a valid value (1-10)
-              ...(s.rpe && s.rpe >= 1 && s.rpe <= 10 ? { rpe: s.rpe } : {})
+              // Only include RPE if provided (already validated to be 1-10 or undefined)
+              ...(s.rpe !== undefined ? { rpe: s.rpe } : {})
             }))
           })
         })
@@ -220,14 +300,22 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
           } else if (data.error && data.error !== 'Failed to log exercise') {
             errorMessage += ': ' + data.error
           }
-          alert(errorMessage)
+          toast({
+            title: "Failed to Save Exercise",
+            description: errorMessage,
+            variant: "destructive"
+          })
         } else {
           console.log('Exercise logged successfully!')
         }
       }
     } catch (error) {
       console.error('Error logging set:', error)
-      alert(`Error logging set: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      toast({
+        title: "Error Logging Set",
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: "destructive"
+      })
     }
   }
 
@@ -258,7 +346,11 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
   const completeWorkout = async () => {
     if (!workoutLogId) {
       console.error('Cannot complete workout: workoutLogId is null')
-      alert('Error: No workout session found. Please start a new workout.')
+      toast({
+        title: "Error",
+        description: "No workout session found. Please start a new workout.",
+        variant: "destructive"
+      })
       return
     }
 
@@ -290,7 +382,11 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
 
       if (!response.ok) {
         console.error('Failed to complete workout:', data)
-        alert(`Failed to complete workout: ${data.error || 'Unknown error'}\n${data.details ? JSON.stringify(data.details) : ''}`)
+        toast({
+          title: "Failed to Complete Workout",
+          description: `${data.error || 'Unknown error'}${data.details ? '\n' + JSON.stringify(data.details) : ''}`,
+          variant: "destructive"
+        })
         return
       }
 
@@ -299,11 +395,19 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
         setShowCompletionSummary(true)
       } else {
         console.error('Workout completion returned success=false:', data)
-        alert('Failed to complete workout. Please try again.')
+        toast({
+          title: "Failed to Complete Workout",
+          description: "Please try again.",
+          variant: "destructive"
+        })
       }
     } catch (error) {
       console.error('Error completing workout:', error)
-      alert(`Error completing workout: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      toast({
+        title: "Error Completing Workout",
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: "destructive"
+      })
     } finally {
       setIsCompleting(false)
     }
@@ -512,10 +616,12 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
                           <label className="text-[#8FD1FF]/70 text-xs mb-1 block">RPE</label>
                           <Input
                             type="number"
-                            value={set.rpe || ''}
+                            value={set.rpe ?? ''}
                             onChange={(e) => {
-                              const val = parseInt(e.target.value) || 0
-                              updateSet(index, 'rpe', val > 0 ? Math.min(10, val) : 0)
+                              const val = e.target.value === '' ? undefined : parseInt(e.target.value)
+                              if (val === undefined || (val >= 1 && val <= 10)) {
+                                updateSet(index, 'rpe', val)
+                              }
                             }}
                             disabled={set.completed}
                             placeholder="1-10"

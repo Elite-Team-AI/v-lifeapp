@@ -965,6 +965,54 @@ async function savePlanToDatabase(
     planName: generatedPlan.planName
   })
 
+  // 1.5. Validate all exercise IDs exist in exercise_library before creating workouts
+  const allExerciseIds = new Set<string>()
+  for (const week of generatedPlan.weeks) {
+    for (const workout of week.workouts) {
+      for (const exercise of workout.exercises) {
+        if (exercise.exerciseId) {
+          allExerciseIds.add(exercise.exerciseId)
+        }
+      }
+    }
+  }
+
+  if (allExerciseIds.size > 0) {
+    const { data: existingExercises, error: exerciseCheckError } = await supabase
+      .from('exercise_library')
+      .select('id')
+      .in('id', Array.from(allExerciseIds))
+
+    if (exerciseCheckError) {
+      log.error("Failed to validate exercise IDs", new Error(exerciseCheckError.message), undefined, {
+        userId,
+        planId,
+        errorCode: exerciseCheckError.code
+      })
+      throw new Error(`Failed to validate exercises: ${exerciseCheckError.message}`)
+    }
+
+    const existingIds = new Set(existingExercises.map((ex: any) => ex.id))
+    const missingIds = Array.from(allExerciseIds).filter(id => !existingIds.has(id))
+
+    if (missingIds.length > 0) {
+      log.error("AI generated plan with non-existent exercise IDs", new Error("Exercise validation failed"), undefined, {
+        userId,
+        planId,
+        missingExerciseIds: missingIds,
+        totalExercisesRequested: allExerciseIds.size,
+        totalExercisesFound: existingIds.size
+      })
+      throw new Error(`Generated plan contains invalid exercise IDs: ${missingIds.join(', ')}. These exercises do not exist in the exercise library.`)
+    }
+
+    log.debug("All exercise IDs validated successfully", undefined, {
+      userId,
+      planId,
+      totalExercisesValidated: existingIds.size
+    })
+  }
+
   // 2. Create workouts for each week
   let totalWorkoutsCreated = 0
   let totalExercisesCreated = 0

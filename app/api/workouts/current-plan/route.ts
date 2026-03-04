@@ -115,11 +115,16 @@ export async function GET(request: NextRequest) {
     // This allows users to work through the plan at their own pace
     const nextWorkout = workouts.find((w: any) => !w.is_completed)
 
+    // Calculate total weeks from actual workout data (more reliable than hardcoding)
+    const uniqueWeeks = new Set(workouts.map((w: any) => w.week_number))
+    const totalWeeks = uniqueWeeks.size || 4 // Default to 4 if no workouts
+
     log.info("Current workout plan fetched successfully", undefined, {
       userId,
       planId: plan.id,
       planName: plan.plan_name,
       currentWeek,
+      totalWeeks,
       totalWorkouts,
       completedWorkouts,
       adherenceRate,
@@ -139,7 +144,7 @@ export async function GET(request: NextRequest) {
         status: plan.status,
         rationale: plan.plan_rationale,
         currentWeek,
-        totalWeeks: 4,
+        totalWeeks,
         progress: {
           totalWorkouts,
           completedWorkouts,

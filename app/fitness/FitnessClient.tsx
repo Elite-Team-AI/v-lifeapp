@@ -48,6 +48,7 @@ import { useAppData } from "@/lib/contexts/app-data-context"
 import { useToast } from "@/hooks/use-toast"
 import { toast } from "@/components/ui/use-toast"
 import { updateProfile } from "@/lib/actions/profile"
+import { WorkoutErrorBoundary } from "@/components/workout-error-boundary"
 
 // Lazy load components
 const WorkoutPlanGeneratorModal = lazy(() =>
@@ -255,19 +256,26 @@ function WorkoutsTab({
   // Show workout session if a workout is selected
   if (selectedWorkout) {
     return (
-      <Suspense fallback={<WorkoutSessionSkeleton />}>
-        <WorkoutSession
-          workout={selectedWorkout}
-          onComplete={() => {
-            setSelectedWorkout(null)
-            onRefresh()
-          }}
-          onCancel={() => {
-            setSelectedWorkout(null)
-            onRefresh()
-          }}
-        />
-      </Suspense>
+      <WorkoutErrorBoundary
+        onReset={() => {
+          setSelectedWorkout(null)
+          onRefresh()
+        }}
+      >
+        <Suspense fallback={<WorkoutSessionSkeleton />}>
+          <WorkoutSession
+            workout={selectedWorkout}
+            onComplete={() => {
+              setSelectedWorkout(null)
+              onRefresh()
+            }}
+            onCancel={() => {
+              setSelectedWorkout(null)
+              onRefresh()
+            }}
+          />
+        </Suspense>
+      </WorkoutErrorBoundary>
     )
   }
 

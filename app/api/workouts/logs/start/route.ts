@@ -98,17 +98,44 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (existingLog) {
-      // Return existing workout session
+      // Return existing workout session with exercise logs
       log.info("Resuming existing workout session", undefined, {
         userId,
         workoutId,
         workoutLogId: existingLog.id
       })
+
+      // Fetch existing exercise logs for this workout session
+      const { data: existingExerciseLogs, error: logsError } = await supabase
+        .from('exercise_logs')
+        .select(`
+          id,
+          exercise_id,
+          plan_exercise_id,
+          exercise_type,
+          sets_completed,
+          reps_per_set,
+          weight_per_set,
+          rpe_per_set
+        `)
+        .eq('workout_log_id', existingLog.id)
+        .order('id', { ascending: true })
+
+      if (logsError) {
+        log.warn("Failed to fetch exercise logs for resume", undefined, {
+          userId,
+          workoutLogId: existingLog.id,
+          errorCode: logsError.code
+        })
+        // Continue without logs rather than failing completely
+      }
+
       return NextResponse.json({
         success: true,
         workoutLogId: existingLog.id,
         isResume: true,
         workout: plannedWorkout,
+        exerciseLogs: existingExerciseLogs || [],
         message: 'Resumed existing workout session'
       })
     }
