@@ -240,26 +240,118 @@ export async function POST(request: NextRequest) {
       model: 'gpt-4o',
       exercisesAvailable: filteredExercises.length
     })
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert fitness coach and exercise scientist. You create personalized, science-based 4-WEEK workout programs that follow proper periodization principles. You always respond with valid JSON. CRITICAL REQUIREMENTS THAT WILL CAUSE REJECTION IF NOT MET: (1) EXACTLY 4 weeks in "weeks" array. (2) MINIMUM 7 exercises for EVERY 60-minute workout - NOT 6, NOT 5, but AT LEAST 7. Target 8-9 exercises. (3) MINIMUM 12 total sets for EVERY 60-minute workout (2 sets per exercise minimum). (4) Each exercise needs 2 sets minimum. BEFORE outputting, COUNT exercises AND total sets in each 60-min workout. Plans with fewer than 7 exercises OR fewer than 12 sets will be REJECTED.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      temperature: 0.7,
-      response_format: { type: 'json_object' }
-    })
 
-    const aiResponse = completion.choices[0].message.content
+    let completion
+    let aiResponse: string | null = null
+
+    try {
+      completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert fitness coach and exercise scientist. You create personalized, science-based 4-WEEK workout programs that follow proper periodization principles. You always respond with valid JSON. CRITICAL REQUIREMENTS THAT WILL CAUSE REJECTION IF NOT MET: (1) EXACTLY 4 weeks in "weeks" array. (2) MINIMUM 7 exercises for EVERY 60-minute workout - NOT 6, NOT 5, but AT LEAST 7. Target 8-9 exercises. (3) MINIMUM 12 total sets for EVERY 60-minute workout (2 sets per exercise minimum). (4) Each exercise needs 2 sets minimum. BEFORE outputting, COUNT exercises AND total sets in each 60-min workout. Plans with fewer than 7 exercises OR fewer than 12 sets will be REJECTED.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        response_format: { type: 'json_object' }
+      })
+
+      aiResponse = completion.choices[0].message.content
+    } catch (openaiError: any) {
+      // Handle specific OpenAI errors with actionable messages
+      const errorMessage = openaiError.message || 'Unknown error'
+      const errorStatus = openaiError.status || openaiError.code
+
+      log.error("OpenAI API call failed", openaiError, undefined, {
+        userId,
+        errorMessage,
+        errorStatus,
+        errorType: openaiError.type,
+        errorCode: openaiError.code
+      })
+
+      // Provide specific error messages based on error type
+      if (errorStatus === 429 || errorMessage.includes('rate_limit')) {
+        return NextResponse.json(
+          {
+            error: 'AI service temporarily unavailable',
+            message: 'The AI service is experiencing high demand. Please try again in a few moments.',
+            details: 'OpenAI rate limit exceeded'
+          },
+          { status: 503 }
+        )
+      }
+
+      if (errorStatus === 401 || errorMessage.includes('authentication') || errorMessage.includes('api key')) {
+        return NextResponse.json(
+          {
+            error: 'AI service configuration error',
+            message: 'There is an issue with the AI service configuration. Please contact support.',
+            details: 'OpenAI authentication failed'
+          },
+          { status: 500 }
+        )
+      }
+
+      if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+        return NextResponse.json(
+          {
+            error: 'AI service timeout',
+            message: 'The AI service took too long to respond. Please try again.',
+            details: 'OpenAI request timeout'
+          },
+          { status: 504 }
+        )
+      }
+
+      if (errorMessage.includes('model') || errorMessage.includes('not found')) {
+        return NextResponse.json(
+          {
+            error: 'AI model unavailable',
+            message: 'The requested AI model is currently unavailable. Please try again later.',
+            details: `OpenAI model error: ${errorMessage}`
+          },
+          { status: 503 }
+        )
+      }
+
+      if (errorMessage.includes('token') || errorMessage.includes('maximum context length')) {
+        return NextResponse.json(
+          {
+            error: 'Request too large',
+            message: 'Your workout plan request exceeded the AI processing limits. Please simplify your requirements and try again.',
+            details: 'OpenAI token limit exceeded'
+          },
+          { status: 400 }
+        )
+      }
+
+      // Generic OpenAI error
+      return NextResponse.json(
+        {
+          error: 'AI service error',
+          message: 'The AI service encountered an error while generating your workout plan. Please try again.',
+          details: `OpenAI error: ${errorMessage}`
+        },
+        { status: 500 }
+      )
+    }
+
     if (!aiResponse) {
       log.error("No response received from OpenAI", new Error("Empty AI response"), undefined, { userId })
-      throw new Error('No response from AI')
+      return NextResponse.json(
+        {
+          error: 'Empty AI response',
+          message: 'The AI service returned an empty response. Please try again.',
+          details: 'No content in OpenAI response'
+        },
+        { status: 500 }
+      )
     }
 
     log.debug("AI response received", undefined, {
