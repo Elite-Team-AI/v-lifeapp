@@ -12,9 +12,6 @@ import {
 } from '@/lib/adaptive-progression'
 import { createApiLogger } from '@/lib/utils/logger'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
 /**
  * Regenerate workout plan based on performance data
  *
@@ -58,6 +55,22 @@ export async function POST(request: NextRequest) {
       generateFullCycle,
       trainingStyle
     })
+
+    // Validate required environment variables
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      log.error("Supabase credentials not configured", new Error("Missing Supabase credentials"), undefined, { userId, planId })
+      return NextResponse.json(
+        {
+          error: 'Database service not configured',
+          message: 'Unable to access workout data. Please contact support.',
+          details: 'Missing Supabase credentials'
+        },
+        { status: 500 }
+      )
+    }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {

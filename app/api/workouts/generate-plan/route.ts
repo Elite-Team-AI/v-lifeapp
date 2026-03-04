@@ -51,13 +51,39 @@ export async function POST(request: NextRequest) {
       preferences
     })
 
+    // Validate required environment variables
+    const openaiKey = process.env.OPENAI_API_KEY
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!openaiKey) {
+      log.error("OpenAI API key not configured", new Error("Missing OPENAI_API_KEY"), undefined, { userId })
+      return NextResponse.json(
+        {
+          error: 'AI service not configured',
+          message: 'The workout plan generator requires OpenAI configuration. Please contact support.',
+          details: 'Missing OPENAI_API_KEY environment variable'
+        },
+        { status: 500 }
+      )
+    }
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      log.error("Supabase credentials not configured", new Error("Missing Supabase credentials"), undefined, { userId })
+      return NextResponse.json(
+        {
+          error: 'Database service not configured',
+          message: 'Unable to access workout data. Please contact support.',
+          details: 'Missing Supabase credentials'
+        },
+        { status: 500 }
+      )
+    }
+
     // Initialize clients at runtime, not build time
     const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY!,
+      apiKey: openaiKey,
     })
-
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
