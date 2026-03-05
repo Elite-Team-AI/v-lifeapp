@@ -44,10 +44,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { userId, preferences = {} } = validation.data
+    const { userId, weekNumber = 1, preferences = {} } = validation.data
 
     log.info("Starting workout plan generation", undefined, {
       userId,
+      weekNumber,
       preferences
     })
 
@@ -242,346 +243,320 @@ export async function POST(request: NextRequest) {
       weeksToGenerate: 4
     })
 
-    // Generate each week separately to stay within token limits
-    const allWeeks: any[] = []
-    let generatedPlan: any = null
+    // Generate requested week only (defaults to week 1)
+    log.info(`Generating week ${weekNumber} of 4`, undefined, {
+      userId,
+      weekNumber
+    })
 
-    for (let weekNum = 1; weekNum <= 4; weekNum++) {
-      log.info(`Generating week ${weekNum} of 4`, undefined, {
-        userId,
-        weekNumber: weekNum
+    // For week 2-4, we'll need previous weeks' data (if provided in preferences)
+    const previousWeeks = preferences.previousWeeks || []
+
+    // Build week-specific prompt
+    const weekPrompt = buildWeekPrompt(profile, filteredExercises, preferences, weekNumber, previousWeeks)
+
+    let completion
+    let aiResponse: string | null = null
+
+    try {
+      completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert fitness coach and exercise scientist. You create personalized, science-based workout programs that follow proper periodization principles. You always respond with valid JSON.
+
+🚨 ABSOLUTE MANDATORY REQUIREMENTS - FAILURE TO COMPLY WILL RESULT IN REJECTED OUTPUT 🚨
+
+EXERCISE COUNT REQUIREMENTS (NON-NEGOTIABLE):
+- 60-minute workouts: YOU WILL GENERATE EXACTLY 6-7 exercises (NEVER 5 or less)
+- 45-minute workouts: YOU WILL GENERATE EXACTLY 5-6 exercises
+- 30-minute workouts: YOU WILL GENERATE EXACTLY 4-5 exercises
+
+SET COUNT REQUIREMENTS (NON-NEGOTIABLE):
+- 60-minute workouts: MINIMUM 12 total sets (2-3 sets per exercise)
+- 45-minute workouts: MINIMUM 10 total sets (2 sets per exercise)
+- Each individual exercise: MINIMUM 2 sets, MAXIMUM 4 sets
+
+VALIDATION PROCESS YOU MUST FOLLOW:
+1. After generating each workout in your mind, COUNT the exercises
+2. If a 60-minute workout has fewer than 6 exercises, ADD MORE EXERCISES until it has 6-7
+3. COUNT the total sets (sum of all exercise sets)
+4. If a 60-minute workout has fewer than 12 total sets, INCREASE sets per exercise
+5. Only after validation passes, output the JSON
+
+EXAMPLE OF CORRECT 60-MINUTE WORKOUT:
+- Exercise 1: Barbell Squat - 3 sets
+- Exercise 2: Romanian Deadlift - 3 sets
+- Exercise 3: Leg Press - 2 sets
+- Exercise 4: Bulgarian Split Squat - 2 sets
+- Exercise 5: Leg Curl - 2 sets
+- Exercise 6: Calf Raise - 2 sets
+TOTAL: 6 exercises, 14 sets ✓ VALID
+
+If you generate a 60-minute workout with only 5 exercises, YOUR OUTPUT WILL BE REJECTED.`
+          },
+          {
+            role: 'user',
+            content: weekPrompt
+          }
+        ],
+        temperature: 0.7,
+        response_format: { type: 'json_object' },
+        max_tokens: 16384 // Maximum output tokens for gpt-4o
       })
 
-      // Build week-specific prompt
-      const weekPrompt = buildWeekPrompt(profile, filteredExercises, preferences, weekNum, allWeeks)
+      aiResponse = completion.choices[0].message.content
 
-      let completion
-      let aiResponse: string | null = null
-
-      try {
-        completion = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an expert fitness coach. You respond with valid JSON. CRITICAL: 60-min workouts need EXACTLY 6-7 exercises (NEVER 5), 45-min need 5-6, 30-min need 4-5. 60-min workouts need MINIMUM 12 total sets. Before outputting, COUNT exercises: if 60-min workout has only 5 exercises, ADD ONE MORE to reach 6. Each exercise needs 2-3 sets.'
-            },
-            {
-              role: 'user',
-              content: weekPrompt
-            }
-          ],
-          temperature: 0.7,
-          response_format: { type: 'json_object' },
-          max_tokens: 16384 // Maximum output tokens for gpt-4o
-        })
-
-        aiResponse = completion.choices[0].message.content
-
-        // Check if response was truncated due to token limit
-        const finishReason = completion.choices[0].finish_reason
-        if (finishReason === 'length') {
-          log.error(`OpenAI response truncated for week ${weekNum}`, new Error("Response truncated"), undefined, {
-            userId,
-            weekNumber: weekNum,
-            finishReason,
-            tokensUsed: completion.usage?.total_tokens,
-            maxTokens: 16384,
-            responseLength: aiResponse?.length || 0
-          })
-          return NextResponse.json(
-            {
-              error: 'AI response incomplete',
-              message: `Workout plan generation was incomplete for week ${weekNum}. Please try again with slightly simpler preferences.`,
-              details: 'OpenAI response was truncated due to length limit'
-            },
-            { status: 500 }
-          )
-        }
-      } catch (openaiError: any) {
-        // Handle specific OpenAI errors with actionable messages
-        const errorMessage = openaiError.message || 'Unknown error'
-        const errorStatus = openaiError.status || openaiError.code
-
-        log.error(`OpenAI API call failed for week ${weekNum}`, openaiError, undefined, {
+      // Check if response was truncated due to token limit
+      const finishReason = completion.choices[0].finish_reason
+      if (finishReason === 'length') {
+        log.error(`OpenAI response truncated for week ${weekNumber}`, new Error("Response truncated"), undefined, {
           userId,
-          weekNumber: weekNum,
-          errorMessage,
-          errorStatus,
-          errorType: openaiError.type,
-          errorCode: openaiError.code
-        })
-
-      // Provide specific error messages based on error type
-      if (errorStatus === 429 || errorMessage.includes('rate_limit')) {
-        return NextResponse.json(
-          {
-            error: 'AI service temporarily unavailable',
-            message: 'The AI service is experiencing high demand. Please try again in a few moments.',
-            details: 'OpenAI rate limit exceeded'
-          },
-          { status: 503 }
-        )
-      }
-
-      if (errorStatus === 401 || errorMessage.includes('authentication') || errorMessage.includes('api key')) {
-        return NextResponse.json(
-          {
-            error: 'AI service configuration error',
-            message: 'There is an issue with the AI service configuration. Please contact support.',
-            details: 'OpenAI authentication failed'
-          },
-          { status: 500 }
-        )
-      }
-
-      if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
-        return NextResponse.json(
-          {
-            error: 'AI service timeout',
-            message: 'The AI service took too long to respond. Please try again.',
-            details: 'OpenAI request timeout'
-          },
-          { status: 504 }
-        )
-      }
-
-      if (errorMessage.includes('model') || errorMessage.includes('not found')) {
-        return NextResponse.json(
-          {
-            error: 'AI model unavailable',
-            message: 'The requested AI model is currently unavailable. Please try again later.',
-            details: `OpenAI model error: ${errorMessage}`
-          },
-          { status: 503 }
-        )
-      }
-
-      if (errorMessage.includes('token') || errorMessage.includes('maximum context length')) {
-        return NextResponse.json(
-          {
-            error: 'Request too large',
-            message: 'Your workout plan request exceeded the AI processing limits. Please simplify your requirements and try again.',
-            details: 'OpenAI token limit exceeded'
-          },
-          { status: 400 }
-        )
-      }
-
-        // Generic OpenAI error
-        return NextResponse.json(
-          {
-            error: 'AI service error',
-            message: `The AI service encountered an error while generating week ${weekNum}. Please try again.`,
-            details: `OpenAI error: ${errorMessage}`
-          },
-          { status: 500 }
-        )
-      }
-
-      if (!aiResponse) {
-        log.error(`No response received from OpenAI for week ${weekNum}`, new Error("Empty AI response"), undefined, {
-          userId,
-          weekNumber: weekNum
+          weekNumber,
+          finishReason,
+          tokensUsed: completion.usage?.total_tokens,
+          maxTokens: 16384,
+          responseLength: aiResponse?.length || 0
         })
         return NextResponse.json(
           {
-            error: 'Empty AI response',
-            message: `The AI service returned an empty response for week ${weekNum}. Please try again.`,
-            details: 'No content in OpenAI response'
+            error: 'AI response incomplete',
+            message: `Workout plan generation was incomplete for week ${weekNumber}. Please try again with slightly simpler preferences.`,
+            details: 'OpenAI response was truncated due to length limit'
           },
           { status: 500 }
         )
       }
+    } catch (openaiError: any) {
+      // Handle specific OpenAI errors with actionable messages
+      const errorMessage = openaiError.message || 'Unknown error'
+      const errorStatus = openaiError.status || openaiError.code
 
-      log.debug(`AI response received for week ${weekNum}`, undefined, {
+      log.error(`OpenAI API call failed for week ${weekNumber}`, openaiError, undefined, {
         userId,
-        weekNumber: weekNum,
-        responseLength: aiResponse.length,
-        tokensUsed: completion.usage?.total_tokens
+        weekNumber,
+        errorMessage,
+        errorStatus,
+        errorType: openaiError.type,
+        errorCode: openaiError.code
       })
 
-      // Parse this week's response
-      let weekData
-      let sanitizedResponse = aiResponse
-
-      try {
-        log.debug(`Attempting to parse week ${weekNum} AI response`, undefined, {
-          userId,
-          weekNumber: weekNum,
-          responsePreview: aiResponse.substring(0, 200),
-          responseLength: aiResponse.length
-        })
-
-        // Try direct parsing first
-        try {
-          weekData = JSON.parse(aiResponse)
-        } catch (initialError) {
-          // Sanitize the response if direct parsing fails
-          log.debug(`Direct JSON parse failed for week ${weekNum}, attempting sanitization`, undefined, {
-            userId,
-            weekNumber: weekNum,
-            parseError: initialError.message
-          })
-
-          // Remove any markdown code blocks
-          sanitizedResponse = aiResponse.replace(/^```json\s*/i, '').replace(/\s*```$/i, '')
-          sanitizedResponse = sanitizedResponse.trim()
-
-          // Extract JSON object
-          const jsonMatch = sanitizedResponse.match(/\{[\s\S]*\}/)
-          if (jsonMatch) {
-            sanitizedResponse = jsonMatch[0]
-          }
-
-          weekData = JSON.parse(sanitizedResponse)
-
-          log.info(`JSON parsing succeeded after sanitization for week ${weekNum}`, undefined, {
-            userId,
-            weekNumber: weekNum,
-            sanitizationApplied: true
-          })
-        }
-
-        // Store week data - if this is week 1, it contains the plan metadata
-        if (weekNum === 1) {
-          generatedPlan = weekData
-          // Ensure weeks array exists
-          if (!generatedPlan.weeks) {
-            generatedPlan.weeks = []
-          }
-        }
-
-        // Extract the week object and add to allWeeks
-        if (weekData.weeks && weekData.weeks.length > 0) {
-          allWeeks.push(weekData.weeks[0])
-          log.info(`Week ${weekNum} added to plan`, undefined, {
-            userId,
-            weekNumber: weekNum,
-            workoutsInWeek: weekData.weeks[0].workouts?.length || 0
-          })
-        } else if (weekData.weekNumber) {
-          // If the response directly contains the week data
-          allWeeks.push(weekData)
-          log.info(`Week ${weekNum} added to plan (direct format)`, undefined, {
-            userId,
-            weekNumber: weekNum,
-            workoutsInWeek: weekData.workouts?.length || 0
-          })
-        }
-
-      } catch (parseError: any) {
-        log.error(`Failed to parse OpenAI response for week ${weekNum}`, parseError, undefined, {
-          userId,
-          weekNumber: weekNum,
-          parseErrorMessage: parseError.message,
-          aiResponsePreview: aiResponse.substring(0, 500),
-          sanitizedPreview: sanitizedResponse.substring(0, 500)
-        })
-        return NextResponse.json(
-          {
-            error: 'AI response parsing failed',
-            message: `The AI generated an invalid format for week ${weekNum}. Please try again.`,
-            details: `JSON parse error: ${parseError.message}`
-          },
-          { status: 500 }
-        )
-      }
+    // Provide specific error messages based on error type
+    if (errorStatus === 429 || errorMessage.includes('rate_limit')) {
+      return NextResponse.json(
+        {
+          error: 'AI service temporarily unavailable',
+          message: 'The AI service is experiencing high demand. Please try again in a few moments.',
+          details: 'OpenAI rate limit exceeded'
+        },
+        { status: 503 }
+      )
     }
 
-    // Combine all weeks into the final plan
-    if (generatedPlan) {
-      generatedPlan.weeks = allWeeks
+    if (errorStatus === 401 || errorMessage.includes('authentication') || errorMessage.includes('api key')) {
+      return NextResponse.json(
+        {
+          error: 'AI service configuration error',
+          message: 'There is an issue with the AI service configuration. Please contact support.',
+          details: 'OpenAI authentication failed'
+        },
+        { status: 500 }
+      )
+    }
+
+    if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+      return NextResponse.json(
+        {
+          error: 'AI service timeout',
+          message: 'The AI service took too long to respond. Please try again.',
+          details: 'OpenAI request timeout'
+        },
+        { status: 504 }
+      )
+    }
+
+    if (errorMessage.includes('model') || errorMessage.includes('not found')) {
+      return NextResponse.json(
+        {
+          error: 'AI model unavailable',
+          message: 'The requested AI model is currently unavailable. Please try again later.',
+          details: `OpenAI model error: ${errorMessage}`
+        },
+        { status: 503 }
+      )
+    }
+
+    if (errorMessage.includes('token') || errorMessage.includes('maximum context length')) {
+      return NextResponse.json(
+        {
+          error: 'Request too large',
+          message: 'Your workout plan request exceeded the AI processing limits. Please simplify your requirements and try again.',
+          details: 'OpenAI token limit exceeded'
+        },
+        { status: 400 }
+      )
+    }
+
+    // Generic OpenAI error
+    return NextResponse.json(
+      {
+        error: 'AI service error',
+        message: `The AI service encountered an error while generating week ${weekNumber}. Please try again.`,
+        details: `OpenAI error: ${errorMessage}`
+      },
+      { status: 500 }
+    )
+  }
+
+  if (!aiResponse) {
+    log.error(`No response received from OpenAI for week ${weekNumber}`, new Error("Empty AI response"), undefined, {
+      userId,
+      weekNumber
+    })
+    return NextResponse.json(
+      {
+        error: 'Empty AI response',
+        message: `The AI service returned an empty response for week ${weekNumber}. Please try again.`,
+        details: 'No content in OpenAI response'
+      },
+      { status: 500 }
+    )
+  }
+
+  log.debug(`AI response received for week ${weekNumber}`, undefined, {
+    userId,
+    weekNumber,
+    responseLength: aiResponse.length,
+    tokensUsed: completion.usage?.total_tokens
+  })
+
+  // Parse this week's response
+  let weekData
+  let sanitizedResponse = aiResponse
+
+  try {
+    log.debug(`Attempting to parse week ${weekNumber} AI response`, undefined, {
+      userId,
+      weekNumber,
+      responsePreview: aiResponse.substring(0, 200),
+      responseLength: aiResponse.length
+    })
+
+    // Try direct parsing first
+    try {
+      weekData = JSON.parse(aiResponse)
+    } catch (initialError) {
+      // Sanitize the response if direct parsing fails
+      log.debug(`Direct JSON parse failed for week ${weekNumber}, attempting sanitization`, undefined, {
+        userId,
+        weekNumber,
+        parseError: initialError.message
+      })
+
+      // Remove any markdown code blocks
+      sanitizedResponse = aiResponse.replace(/^```json\s*/i, '').replace(/\s*```$/i, '')
+      sanitizedResponse = sanitizedResponse.trim()
+
+      // Extract JSON object
+      const jsonMatch = sanitizedResponse.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        sanitizedResponse = jsonMatch[0]
+      }
+
+      weekData = JSON.parse(sanitizedResponse)
+
+      log.info(`JSON parsing succeeded after sanitization for week ${weekNumber}`, undefined, {
+        userId,
+        weekNumber,
+        sanitizationApplied: true
+      })
+    }
+
+    // Extract the week object from the response
+    let generatedWeek
+    if (weekData.weeks && weekData.weeks.length > 0) {
+      generatedWeek = weekData.weeks[0]
+      log.info(`Week ${weekNumber} extracted from response`, undefined, {
+        userId,
+        weekNumber,
+        workoutsInWeek: generatedWeek.workouts?.length || 0
+      })
+    } else if (weekData.weekNumber) {
+      // If the response directly contains the week data
+      generatedWeek = weekData
+      log.info(`Week ${weekNumber} extracted (direct format)`, undefined, {
+        userId,
+        weekNumber,
+        workoutsInWeek: generatedWeek.workouts?.length || 0
+      })
     } else {
-      return NextResponse.json(
-        {
-          error: 'Plan generation failed',
-          message: 'Failed to generate base plan structure. Please try again.'
-        },
-        { status: 500 }
-      )
+      throw new Error('Invalid week data structure - missing weeks array or weekNumber property')
     }
 
-    log.info("All 4 weeks generated successfully", undefined, {
-      userId,
-      totalWeeks: allWeeks.length,
-      planName: generatedPlan.planName
-    })
-
-    // 6. Validate the generated plan structure
-    const validationError = validatePlanStructure(generatedPlan)
-    if (validationError) {
-      log.error("Generated plan failed validation", new Error(validationError), undefined, {
+    // Store plan metadata for week 1
+    let planMetadata = null
+    if (weekNumber === 1 && weekData.planName) {
+      planMetadata = {
+        planName: weekData.planName,
+        planType: weekData.planType,
+        daysPerWeek: weekData.daysPerWeek,
+        weeksDuration: weekData.weeksDuration || 4,
+        splitPattern: weekData.splitPattern
+      }
+      log.info("Plan metadata extracted from week 1", undefined, {
         userId,
-        validationError,
-        planName: generatedPlan.planName
+        planName: planMetadata.planName,
+        planType: planMetadata.planType
+      })
+    }
+
+    // Validate week structure
+    const weekValidationError = validateWeekStructure(generatedWeek)
+    if (weekValidationError) {
+      log.error("Generated week failed validation", new Error(weekValidationError), undefined, {
+        userId,
+        weekNumber,
+        validationError: weekValidationError
       })
       return NextResponse.json(
-        { error: `Invalid plan structure: ${validationError}` },
+        { error: `Invalid week structure: ${weekValidationError}` },
         { status: 500 }
       )
     }
 
-    log.debug("Plan structure validated successfully", undefined, {
+    log.info(`Week ${weekNumber} generated and validated successfully`, undefined, {
       userId,
-      planName: generatedPlan.planName,
-      weeks: generatedPlan.weeks?.length
+      weekNumber,
+      workoutsCount: generatedWeek.workouts?.length || 0
     })
 
-    // 6.5. Validate plan matches user profile requirements
-    const expectedDaysPerWeek = profile.training_days_per_week || profile.weekly_workout_goal || 3
-    if (generatedPlan.daysPerWeek !== expectedDaysPerWeek) {
-      log.error("Generated plan days per week mismatch", new Error("Days per week mismatch"), undefined, {
-        userId,
-        expectedDaysPerWeek,
-        generatedDaysPerWeek: generatedPlan.daysPerWeek,
-        profileWeeklyGoal: profile.weekly_workout_goal,
-        profileTrainingDays: profile.training_days_per_week
-      })
-      return NextResponse.json(
-        {
-          error: `Plan generation error: Generated plan has ${generatedPlan.daysPerWeek} workouts per week but your profile specifies ${expectedDaysPerWeek} days per week. Please regenerate or update your profile.`
-        },
-        { status: 500 }
-      )
-    }
-
-    log.info("Plan validated against profile requirements", undefined, {
-      userId,
-      daysPerWeek: generatedPlan.daysPerWeek,
-      trainingStyle: profile.training_style,
-      matchesProfile: true
-    })
-
-    // 7. Save plan to database
-    log.info("Saving generated workout plan to database", undefined, {
-      userId,
-      planName: generatedPlan.planName,
-      planType: generatedPlan.planType
-    })
-    const savedPlan = await savePlanToDatabase(supabase, userId, generatedPlan, profile, preferences, log)
-
-    log.info("Workout plan generated and saved successfully", undefined, {
-      userId,
-      planId: savedPlan.planId,
-      planName: generatedPlan.planName,
-      weeks: generatedPlan.weeks.length,
-      workoutsPerWeek: generatedPlan.daysPerWeek
-    })
-
+    // Return single week response
     return NextResponse.json({
       success: true,
-      planId: savedPlan.planId,
-      plan: {
-        name: generatedPlan.planName,
-        type: generatedPlan.planType,
-        weeks: generatedPlan.weeks.length,
-        workoutsPerWeek: generatedPlan.daysPerWeek,
-        startDate: savedPlan.startDate,
-        endDate: savedPlan.endDate
-      },
-      message: 'Workout plan generated successfully'
+      weekNumber,
+      weekData: generatedWeek,
+      planMetadata: planMetadata, // Only present for week 1
+      message: `Week ${weekNumber} generated successfully`
     })
+
+  } catch (parseError: any) {
+    log.error(`Failed to parse OpenAI response for week ${weekNumber}`, parseError, undefined, {
+      userId,
+      weekNumber,
+      parseErrorMessage: parseError.message,
+      aiResponsePreview: aiResponse.substring(0, 500),
+      sanitizedPreview: sanitizedResponse.substring(0, 500)
+    })
+    return NextResponse.json(
+      {
+        error: 'AI response parsing failed',
+        message: `The AI generated an invalid format for week ${weekNumber}. Please try again.`,
+        details: `JSON parse error: ${parseError.message}`
+      },
+      { status: 500 }
+    )
+  }
 
   } catch (error: any) {
     log.error("Workout plan generation failed", error as Error, undefined, {
@@ -1082,13 +1057,50 @@ ${weekNumber === 2 ? '- This is the VOLUME week - increase volume by ~10% from W
 ${weekNumber === 3 ? '- This is the PEAK week - highest volume/intensity of the cycle' : ''}
 ${weekNumber === 4 ? '- This is the DELOAD week - reduce volume to 60-70% for recovery' : ''}
 
-**AVAILABLE EXERCISES (${availableExercises.length} total - showing top 25):**
+**AVAILABLE EXERCISES (${availableExercises.length} exercises - PRE-FILTERED FOR ${userTrainingStyle.toUpperCase()} MODALITY):**
 
-${availableExercises.slice(0, 25).map(ex =>
-  `${ex.id}|${ex.name}|${ex.category}|${ex.primary_muscles?.join(',')}`
+${availableExercises.slice(0, 50).map(ex =>
+  `- ID: ${ex.id} | ${ex.name} | ${ex.category} | ${ex.difficulty} | ${ex.primary_muscles?.join(', ')} | Sets: ${ex.recommended_sets_min || 2}-${ex.recommended_sets_max || 3} | Reps: ${ex.recommended_reps_min || 8}-${ex.recommended_reps_max || 12} | Rest: ${ex.recommended_rest_seconds_min || 60}-${ex.recommended_rest_seconds_max || 90}s`
 ).join('\n')}
 
-🚨 MANDATORY: 60-min workouts = 6-7 exercises (NEVER 5), 12+ total sets. 45-min = 5-6 exercises, 10+ sets. Each exercise needs 2-3 sets. Use EXACT UUIDs from list below. COUNT exercises before outputting - if 60-min has only 5, ADD ONE MORE.
+🚨🚨🚨 CRITICAL MANDATORY REQUIREMENTS - FAILURE TO COMPLY = REJECTED OUTPUT 🚨🚨🚨
+
+**VALIDATION PROCESS YOU MUST FOLLOW BEFORE OUTPUTTING JSON:**
+
+STEP 1: Generate each workout in your mind
+STEP 2: COUNT the exercises in each workout
+STEP 3: If a 60-minute workout has 5 or fewer exercises, ADD MORE EXERCISES to reach 6-7
+STEP 4: COUNT total sets (sum all exercise sets)
+STEP 5: If a 60-minute workout has fewer than 12 total sets, ADD MORE SETS
+STEP 6: Verify all exercise IDs are EXACT UUIDs from the available exercises list
+STEP 7: Only after all validations pass, output the JSON
+
+**EXERCISE COUNT REQUIREMENTS (NON-NEGOTIABLE):**
+- 60-minute workouts: YOU WILL GENERATE EXACTLY 6-7 exercises (NEVER 5 or less) ❌ 5 exercises = INVALID
+- 45-minute workouts: YOU WILL GENERATE EXACTLY 5-6 exercises (NEVER 4 or less) ❌ 4 exercises = INVALID
+- 30-minute workouts: YOU WILL GENERATE EXACTLY 4-5 exercises
+
+**SET COUNT REQUIREMENTS (NON-NEGOTIABLE):**
+- 60-minute workouts: MINIMUM 12 total sets (Target: 14-16 sets)
+- 45-minute workouts: MINIMUM 10 total sets (Target: 12-14 sets)
+- Each individual exercise: MINIMUM 2 sets, IDEAL 2-3 sets
+
+**EXAMPLE OF CORRECT 60-MINUTE LEG DAY (YOU MUST FOLLOW THIS PATTERN):**
+1. Barbell Back Squat - 3 sets x 8-12 reps
+2. Romanian Deadlift - 3 sets x 10-12 reps
+3. Leg Press - 2 sets x 12-15 reps
+4. Bulgarian Split Squat - 2 sets x 10-12 reps each leg
+5. Lying Leg Curl - 2 sets x 12-15 reps
+6. Standing Calf Raise - 2 sets x 15-20 reps
+TOTAL: 6 exercises ✓, 14 total sets ✓ = VALID
+
+**EXAMPLE OF INVALID 60-MINUTE LEG DAY (DO NOT DO THIS):**
+1. Barbell Squat - 3 sets
+2. Leg Press - 3 sets
+3. Romanian Deadlift - 3 sets
+4. Leg Curl - 3 sets
+5. Calf Raise - 2 sets
+TOTAL: 5 exercises ❌, 14 sets ✓ = REJECTED (not enough exercises)
 
 **OUTPUT FORMAT (JSON) - RETURN ONLY THIS WEEK'S DATA:**
 
@@ -1172,7 +1184,13 @@ ${weekNumber === 1 ? `
 }
 `}
 
-Generate Week ${weekNumber} as JSON. Remember: 60-min workouts = 6-7 exercises (not 5), 12+ sets. Use exact UUIDs from list.`
+🚨 FINAL REMINDER BEFORE YOU OUTPUT:
+1. COUNT exercises in each 60-minute workout - must be 6-7 (not 5)
+2. COUNT total sets - 60-min workouts need 12+ sets minimum
+3. VERIFY every exercise ID is an exact UUID from the list above
+4. If any workout fails validation, FIX IT before outputting JSON
+
+Generate Week ${weekNumber} as a complete, valid JSON object following the exact format above.`
 }
 
 // Valid workout types from database constraint

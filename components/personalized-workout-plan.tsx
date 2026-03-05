@@ -15,6 +15,7 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
   const [currentPlan, setCurrentPlan] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [generatingWeek, setGeneratingWeek] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showRationale, setShowRationale] = useState(false)
 
@@ -67,41 +68,90 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
       setIsGenerating(true)
       setError(null)
 
-      const response = await fetch('/api/workouts/generate-plan', {
+      const allWeeks: any[] = []
+      let planMetadata: any = null
+
+      // Generate each week sequentially
+      for (let weekNumber = 1; weekNumber <= 4; weekNumber++) {
+        setGeneratingWeek(weekNumber)
+
+        const requestBody: any = {
+          userId: user?.id,
+          weekNumber
+        }
+
+        // For weeks 2-4, pass previous weeks as context
+        if (weekNumber > 1 && allWeeks.length > 0) {
+          requestBody.preferences = {
+            previousWeeks: allWeeks
+          }
+        }
+
+        const response = await fetch('/api/workouts/generate-plan', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        })
+
+        // Check if response is ok before parsing JSON
+        if (!response.ok) {
+          let errorMessage = `Failed to generate week ${weekNumber}`
+          let needsEquipment = false
+          try {
+            const data = await response.json()
+            needsEquipment = data.needsEquipment || false
+
+            // Handle validation errors (details is an array)
+            if (data.details && Array.isArray(data.details)) {
+              errorMessage = data.details.map((d: any) => d.message).join(', ')
+            } else {
+              errorMessage = data.error || data.message || errorMessage
+            }
+          } catch {
+            // If JSON parsing fails, use status text
+            errorMessage = response.statusText || errorMessage
+          }
+
+          const error: any = new Error(errorMessage)
+          error.needsEquipment = needsEquipment
+          throw error
+        }
+
+        const data = await response.json()
+
+        // Store week data
+        if (data.weekData) {
+          allWeeks.push(data.weekData)
+        }
+
+        // Store plan metadata from week 1
+        if (weekNumber === 1 && data.planMetadata) {
+          planMetadata = data.planMetadata
+        }
+      }
+
+      // All 4 weeks generated successfully
+      console.log('All 4 weeks generated:', { allWeeks, planMetadata })
+
+      // Save the complete plan to database
+      const savePlanResponse = await fetch('/api/workouts/save-plan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: user?.id
+          userId: user?.id,
+          planMetadata,
+          weeks: allWeeks
         }),
       })
 
-      // Check if response is ok before parsing JSON
-      if (!response.ok) {
-        let errorMessage = 'Failed to generate plan'
-        let needsEquipment = false
-        try {
-          const data = await response.json()
-          needsEquipment = data.needsEquipment || false
-
-          // Handle validation errors (details is an array)
-          if (data.details && Array.isArray(data.details)) {
-            errorMessage = data.details.map((d: any) => d.message).join(', ')
-          } else {
-            errorMessage = data.error || data.message || errorMessage
-          }
-        } catch {
-          // If JSON parsing fails, use status text
-          errorMessage = response.statusText || errorMessage
-        }
-
-        const error: any = new Error(errorMessage)
-        error.needsEquipment = needsEquipment
-        throw error
+      if (!savePlanResponse.ok) {
+        const errorData = await savePlanResponse.json()
+        throw new Error(errorData.error || 'Failed to save plan to database')
       }
-
-      const data = await response.json()
 
       // Refresh the plan
       await fetchCurrentPlan()
@@ -114,6 +164,7 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
       }
     } finally {
       setIsGenerating(false)
+      setGeneratingWeek(null)
     }
   }
 
@@ -197,7 +248,7 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
           {isGenerating ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              Generating Your Plan...
+              {generatingWeek ? `Generating Week ${generatingWeek} of 4...` : 'Generating Your Plan...'}
             </>
           ) : (
             <>
@@ -208,7 +259,11 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
         </Button>
 
         <p className="text-center text-[#8FD1FF]/60 text-xs mt-3">
-          Takes ~30 seconds to create your custom 4-week plan
+          {isGenerating && generatingWeek ? (
+            `Creating week ${generatingWeek} of your 4-week plan...`
+          ) : (
+            'Takes ~2 minutes to create your custom 4-week plan'
+          )}
         </p>
       </Card>
     )
@@ -301,7 +356,7 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
           {isGenerating ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Regenerating Plan...
+              {generatingWeek ? `Generating Week ${generatingWeek} of 4...` : 'Regenerating Plan...'}
             </>
           ) : (
             <>
