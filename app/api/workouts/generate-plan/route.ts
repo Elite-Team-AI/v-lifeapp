@@ -866,30 +866,32 @@ IF YOU ANSWER "NO" TO ANY OF THESE, GO BACK AND FIX YOUR PLAN NOW.
 
 ⚠️ **CRITICAL:** Your response must include ALL 4 weeks with complete workout details for each week ⚠️
 
+IMPORTANT: Return ONLY valid JSON without any markdown formatting, code blocks, or comments.
+
 {
   "planName": "Personalized 4-Week Mesocycle",
-  "planType": "push_pull_legs" | "upper_lower" | "full_body" | "custom",
+  "planType": "push_pull_legs",
   "daysPerWeek": 5,
-  "splitPattern": "3-1-2-1" (e.g., 3 on, 1 off, 2 on, 1 off),
-  "primaryModality": "strength_training" | "cardiovascular" | "hiit" | "power_explosive" | "mobility_flexibility" | "functional" | "mind_body" | "sport_specific",
-  "secondaryModalities": ["mobility_flexibility", "cardiovascular"], // Supporting modalities
+  "splitPattern": "3-1-2-1",
+  "primaryModality": "strength_training",
+  "secondaryModalities": ["mobility_flexibility", "cardiovascular"],
   "planRationale": {
     "whyThisPlan": "Detailed explanation of why THIS specific plan design was chosen for this user (2-3 sentences)",
-    "primaryModalityExplanation": "Why [primary modality] is the best fit for your [specific goal] and [experience level] (2-3 sentences)",
+    "primaryModalityExplanation": "Why this primary modality is the best fit for your specific goal and experience level (2-3 sentences)",
     "whatToExpect": {
-      "physiologicalAdaptations": "What physical changes you'll experience (e.g., 'Increased muscle mass, improved bone density, enhanced metabolic rate')",
-      "performanceGains": "Specific performance improvements (e.g., 'Lift heavier weights, build visible muscle, improve posture')",
-      "timeline": "When you'll notice changes (e.g., 'Strength gains in weeks 1-2, visible changes by week 3-4')"
+      "physiologicalAdaptations": "What physical changes you'll experience",
+      "performanceGains": "Specific performance improvements",
+      "timeline": "When you'll notice changes"
     },
     "planStructure": {
-      "weekByWeek": "How the 4-week structure works (e.g., 'Week 1: Learning phase, Week 2: Volume increase, Week 3: Peak intensity, Week 4: Deload')",
-      "progressionStrategy": "How we're increasing difficulty (e.g., 'Progressive overload through weight increases and additional sets')"
+      "weekByWeek": "How the 4-week structure works",
+      "progressionStrategy": "How we're increasing difficulty"
     },
     "personalizationFactors": [
-      "Available equipment: [list specific equipment used]",
-      "Experience level: [how plan is tailored to beginner/intermediate/advanced]",
-      "Mobility considerations: [any specific mobility work included]",
-      "Time availability: [how workouts fit their schedule]"
+      "Available equipment: list specific equipment used",
+      "Experience level: how plan is tailored to beginner/intermediate/advanced",
+      "Mobility considerations: any specific mobility work included",
+      "Time availability: how workouts fit their schedule"
     ],
     "successTips": [
       "Tip 1 specific to their modality",
@@ -903,7 +905,6 @@ IF YOU ANSWER "NO" TO ANY OF THESE, GO BACK AND FIX YOUR PLAN NOW.
       "weekType": "baseline",
       "volumeMultiplier": 1.0,
       "workouts": [
-        // Multiple workouts based on daysPerWeek (e.g., 5 workouts for 5 days/week)
         {
           "dayOfWeek": 1,
           "workoutName": "Push Day A",
@@ -911,48 +912,49 @@ IF YOU ANSWER "NO" TO ANY OF THESE, GO BACK AND FIX YOUR PLAN NOW.
           "estimatedDuration": 60,
           "muscleGroups": ["chest", "shoulders", "triceps"],
           "exercises": [
-            // 8-10 exercises for 60-minute workout
             {
-              "exerciseId": "PASTE-EXACT-UUID-FROM-AVAILABLE-EXERCISES-LIST-ABOVE-HERE",
+              "exerciseId": "USE-EXACT-UUID-FROM-AVAILABLE-EXERCISES-LIST",
               "exerciseName": "Barbell Bench Press",
               "exerciseOrder": 1,
               "sets": 4,
               "repsMin": 6,
               "repsMax": 8,
-              // ... other exercise properties
+              "restSeconds": 90,
+              "tempo": "3-0-1-0",
+              "notes": "Control the descent"
             }
-            // ... 7-9 more exercises to total 8-10 exercises
           ]
         }
-        // ... more workouts for this week
       ]
     },
     {
       "weekNumber": 2,
       "weekType": "volume",
       "volumeMultiplier": 1.1,
-      "workouts": [
-        // Multiple workouts for week 2
-      ]
+      "workouts": []
     },
     {
       "weekNumber": 3,
       "weekType": "peak",
       "volumeMultiplier": 1.15,
-      "workouts": [
-        // Multiple workouts for week 3
-      ]
+      "workouts": []
     },
     {
       "weekNumber": 4,
       "weekType": "deload",
       "volumeMultiplier": 0.65,
-      "workouts": [
-        // Multiple workouts for week 4 (deload)
-      ]
+      "workouts": []
     }
   ]
 }
+
+NOTES ON STRUCTURE:
+- The "weeks" array MUST contain exactly 4 week objects (weekNumber 1, 2, 3, 4)
+- Each week's "workouts" array contains multiple workout objects based on daysPerWeek
+- Each workout's "exercises" array MUST contain 8-10 exercises for 60-minute workouts
+- Use exact exercise UUIDs from the available exercises list provided earlier in this prompt
+- Do NOT include any JavaScript-style comments in your JSON response
+- Do NOT wrap your response in markdown code blocks
 
 ⚠️ **YOU MUST INCLUDE ALL 4 WEEKS** - Not just week 1, but weeks 1, 2, 3, AND 4 ⚠️
 
