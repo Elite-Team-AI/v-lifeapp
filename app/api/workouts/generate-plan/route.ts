@@ -633,11 +633,11 @@ ${availableExercises.slice(0, 50).map(ex =>
    - ⚠️ DO NOT make up exercise IDs - only use the exact UUIDs provided above (they look like "a1b2c3d4-e5f6-7890-abcd-ef1234567890")
    - 🎯 **USE MODALITY-SPECIFIC RECOMMENDATIONS:** Each exercise above includes pre-configured sets/reps/rest recommendations for ${userTrainingStyle} training. Use these values as your baseline when programming workouts.
 
-   **MINIMUM EXERCISES BASED ON WORKOUT DURATION (NON-NEGOTIABLE):**
-   - ⚠️ 30-40 minutes: 4 exercises, 8-10 total sets (avg 2 sets per exercise)
-   - ⚠️ 45-55 minutes: 5-6 exercises, 10-12 total sets (avg 2 sets per exercise)
-   - ⚠️⚠️⚠️ 60-75 minutes: MINIMUM 6 exercises, MINIMUM 12 total sets - TARGET 6-7 EXERCISES with 12-16 TOTAL SETS ⚠️⚠️⚠️
-   - ⚠️ 75+ minutes: 7-8 exercises, 14-18 total sets (avg 2 sets per exercise)
+   **MINIMUM EXERCISES BASED ON WORKOUT DURATION:**
+   - 30-40 minutes: 4 exercises, 8-10 total sets
+   - 45-55 minutes: 5 exercises, 10-12 total sets
+   - 60-75 minutes: 6 exercises minimum, 12+ total sets (target: 6-7 exercises)
+   - 75+ minutes: 7 exercises, 14+ total sets
 
    **CRITICAL SET COUNT REQUIREMENTS:**
    - Each exercise should have 2 sets minimum (ideally 2-3 sets)
@@ -647,9 +647,9 @@ ${availableExercises.slice(0, 50).map(ex =>
    - For 60-minute workouts: 12+ total sets required (7 exercises × 2 sets = 14 sets minimum, target 16+ sets)
 
    **EXERCISE DISTRIBUTION BY SPLIT:**
-   - Push/Pull/Legs: 7-8 exercises per workout (minimum 7)
-   - Upper/Lower: 7-9 exercises per workout (minimum 7)
-   - Full Body: 8-10 exercises per workout (minimum 7)
+   - Push/Pull/Legs: 6-7 exercises per workout
+   - Upper/Lower: 6-7 exercises per workout
+   - Full Body: 6-7 exercises per workout
 
    - Only select exercises from the provided list
    - Prioritize compound movements first (2-3 compounds per workout)
@@ -746,37 +746,16 @@ ${availableExercises.slice(0, 50).map(ex =>
    - Exercise 6: Endurance Exercise - 3 sets of 15-20 reps
    MINIMUM: 6 exercises, 18-24 total sets` : ''}
 
-7. **EXERCISE COUNT REQUIREMENTS (PER WORKOUT) - FOLLOW THESE PATTERNS:**
+7. **EXERCISE COUNT REQUIREMENTS (PER WORKOUT):**
 
-   **IMPORTANT NOTE:** The examples below show what ONE SINGLE WORKOUT should contain. You must create a COMPLETE 4-WEEK PLAN with MULTIPLE workouts per week, where EACH workout follows these exercise count guidelines.
-
-   **EXAMPLE A: 60-MINUTE STRENGTH PUSH WORKOUT (MATCH THIS EXERCISE COUNT FOR EACH 60-MIN WORKOUT):**
-   1. Barbell Bench Press - 4 sets x 5 reps (RPE 8)
-   2. Incline Barbell Press - 4 sets x 6 reps (RPE 8)
-   3. Overhead Press - 3 sets x 6 reps (RPE 7)
-   4. Dips (Weighted) - 3 sets x 8 reps (RPE 7)
-   5. Close Grip Bench Press - 3 sets x 8 reps (RPE 7)
-   6. Lateral Raises - 3 sets x 10 reps (RPE 6)
-   7. Tricep Extensions - 3 sets x 10 reps (RPE 7)
-   8. Face Pulls - 3 sets x 12 reps (RPE 6)
-   **TOTAL: 8 EXERCISES, 26 SETS, 60 MINUTES** ✅
-
-   **EXAMPLE B: 60-MINUTE HYPERTROPHY PULL WORKOUT (MATCH THIS EXERCISE COUNT FOR EACH 60-MIN WORKOUT):**
-   1. Barbell Rows - 4 sets x 8 reps (RPE 8)
-   2. Pull-ups - 3 sets x 10 reps (RPE 8)
-   3. Seated Cable Rows - 3 sets x 12 reps (RPE 7)
-   4. Lat Pulldowns - 3 sets x 12 reps (RPE 7)
-   5. Face Pulls - 3 sets x 15 reps (RPE 6)
-   6. Barbell Curls - 3 sets x 10 reps (RPE 7)
-   7. Hammer Curls - 3 sets x 12 reps (RPE 7)
-   8. Cable Curls - 3 sets x 15 reps (RPE 6)
-   9. Rear Delt Flyes - 3 sets x 15 reps (RPE 6)
-   **TOTAL: 9 EXERCISES, 28 SETS, 60 MINUTES** ✅
-
-   **⚠️ APPLY THESE EXERCISE COUNTS TO ALL WORKOUTS IN YOUR 4-WEEK PLAN ⚠️**
-   - A 60-minute workout with 4 exercises is COMPLETELY UNACCEPTABLE
-   - YOU MUST INCLUDE AT LEAST 8 EXERCISES FOR EVERY 60-MINUTE WORKOUT
-   - IF ANY WORKOUT HAS FEWER EXERCISES, YOUR ENTIRE 4-WEEK PLAN WILL BE REJECTED
+   **60-MINUTE WORKOUT EXAMPLE:**
+   1. Primary Compound - 3 sets x 6 reps
+   2. Secondary Compound - 3 sets x 8 reps
+   3. Tertiary Compound - 2 sets x 10 reps
+   4. Isolation Exercise 1 - 2 sets x 12 reps
+   5. Isolation Exercise 2 - 2 sets x 12 reps
+   6. Isolation Exercise 3 - 2 sets x 12 reps
+   **TOTAL: 6 EXERCISES, 14 SETS** ✅
 
 **TRAINING MODALITIES - SELECT PRIMARY MODALITY BASED ON USER GOALS:**
 
@@ -831,42 +810,16 @@ ${availableExercises.slice(0, 50).map(ex =>
 **PRIMARY MODALITY FOR THIS USER:**
 ⚠️ MANDATORY: The user has selected "${userTrainingStyle}" as their training style. You MUST use this as the PRIMARY modality. Based on the user's profile (goal: ${profile.fitness_goal || profile.primary_goal}, training style: ${userTrainingStyle}), explain why ${userTrainingStyle} training is appropriate for achieving their goal.
 
-**⚠️⚠️⚠️ FINAL PRE-OUTPUT CHECKLIST - VERIFY BEFORE RESPONDING ⚠️⚠️⚠️**
+**⚠️ FINAL CHECKLIST - VERIFY BEFORE RESPONDING:**
 
-Before you output your JSON response, verify the following:
+1. **Plan Structure:** EXACTLY 4 weeks in the "weeks" array
+2. **Workouts per Week:** Each week has correct number of workouts (daysPerWeek)
+3. **60-minute workouts:** AT LEAST 6 exercises (target: 6-7)
+4. **45-minute workouts:** AT LEAST 5 exercises
+5. **Total sets:** AT LEAST 12 total sets per 60-min workout (2 sets per exercise minimum)
+6. **Exercise IDs:** Use EXACT UUIDs from the available exercises list
 
-1. **Plan Structure:** Does your plan have EXACTLY 4 weeks in the "weeks" array? (Week 1, 2, 3, 4)
-2. **Workouts per Week:** Does each week have multiple workouts based on daysPerWeek?
-3. **60-minute workouts - COUNT CAREFULLY:** Did you include AT LEAST 7 exercises in EACH 60-min workout?
-   - NOT 6 exercises (this will be REJECTED)
-   - NOT 5 exercises (this will be REJECTED)
-   - NOT 4 or fewer exercises (this will be REJECTED)
-   - MINIMUM 7 exercises, TARGET 8-9 exercises
-4. **45-minute workouts:** Did you include AT LEAST 6 exercises in EACH 45-min workout?
-5. **Total sets - COUNT CAREFULLY:** Does EACH 60-min workout have AT LEAST 12 total sets?
-   - 10-11 total sets = REJECTED (increase sets per exercise to 2)
-   - Each exercise should have 2 sets minimum
-   - Target: 16-20 total sets for 60-minute workouts
-6. **45-minute workouts sets:** Does EACH 45-min workout have AT LEAST 12 total sets?
-7. **Exercise IDs:** Did you use EXACT UUIDs from the available exercises list above?
-
-**SPECIFICALLY CHECK ITEMS #3 AND #5:**
-- If any 60-min workout has 6 or fewer exercises → REJECTED
-- If any 60-min workout has fewer than 12 total sets → REJECTED
-
-IF YOU ANSWER "NO" TO ANY OF THESE, GO BACK AND FIX YOUR PLAN NOW.
-
-**CRITICAL:** Your response MUST be a complete 4-week mesocycle with:
-- Exactly 4 weeks in the "weeks" array (weeks[0] through weeks[3])
-- Multiple workouts in each week's "workouts" array
-- Each 60-min workout having 8+ exercises (target: 9-10)
-- Each 60-min workout having 20+ total sets (3-4 sets per exercise)
-
-**EXAMPLE CALCULATION FOR 60-MIN WORKOUT:**
-8 exercises × 3 sets each = 24 total sets ✅ (exceeds 20 minimum)
-8 exercises × 2 sets each = 16 total sets ❌ (below 20 minimum - REJECTED)
-
-**DO NOT PROCEED TO OUTPUT UNTIL ALL REQUIREMENTS ARE MET.**
+**EXAMPLE:** 6 exercises × 2 sets = 12 total sets ✅
 
 **OUTPUT FORMAT (JSON) - YOU MUST RETURN THE COMPLETE STRUCTURE BELOW:**
 
@@ -964,23 +917,12 @@ NOTES ON STRUCTURE:
 
 ⚠️ **YOU MUST INCLUDE ALL 4 WEEKS** - Not just week 1, but weeks 1, 2, 3, AND 4 ⚠️
 
-**FINAL REMINDER BEFORE YOU START:**
-- Your JSON response must have "weeks": [ ... ] with EXACTLY 4 week objects
-- Week 1 (baseline), Week 2 (volume), Week 3 (peak), Week 4 (deload)
-- Each 60-minute workout MUST have 8-10 exercises (NOT 7, NOT 6, but 8-10)
-- Use exact UUIDs from the available exercises list above
+**FINAL REMINDER:**
+- EXACTLY 4 weeks in "weeks" array
+- Each 60-minute workout: 6-7 exercises, 12+ total sets
+- Use exact UUIDs from available exercises list
 
-**TOP 2 REASONS FOR REJECTION:**
-1. Generating only 6 exercises for a 60-minute workout → The minimum is 7, the target is 8-9
-2. Generating fewer than 12 total sets for a 60-minute workout → Each exercise needs 2 sets minimum
-
-Before you output, count for EACH 60-minute workout:
-- Exercises: Exercise 1, Exercise 2, Exercise 3, Exercise 4, Exercise 5, Exercise 6, Exercise 7... (need 7+)
-- Sets: Add up all the "sets" values → Should be 12+ total (Example: 2+2+2+2+2+2+2 = 14 sets ✅)
-
-If any 60-minute workout has fewer than 7 exercises OR fewer than 12 total sets, ADD MORE EXERCISES OR INCREASE SETS.
-
-Generate a complete, personalized 4-week workout plan following all requirements. Your response must be a COMPLETE JSON object with all 4 weeks included.`
+Generate a complete 4-week workout plan as valid JSON.`
 }
 
 // Valid workout types from database constraint
@@ -1054,16 +996,16 @@ function validatePlanStructure(plan: any): string | null {
 
       // Validate minimum exercise count based on workout duration
       const duration = workout.estimatedDuration || 60
-      let minExercises = 6 // Default minimum
+      let minExercises = 5 // Default minimum
 
       if (duration >= 75) {
-        minExercises = 9
-      } else if (duration >= 60) {
         minExercises = 7
-      } else if (duration >= 45) {
+      } else if (duration >= 60) {
         minExercises = 6
-      } else if (duration >= 30) {
+      } else if (duration >= 45) {
         minExercises = 5
+      } else if (duration >= 30) {
+        minExercises = 4
       }
 
       if (workout.exercises.length < minExercises) {
