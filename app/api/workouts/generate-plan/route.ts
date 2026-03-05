@@ -258,10 +258,31 @@ export async function POST(request: NextRequest) {
           }
         ],
         temperature: 0.7,
-        response_format: { type: 'json_object' }
+        response_format: { type: 'json_object' },
+        max_tokens: 16000 // Ensure response isn't truncated for full 4-week plans
       })
 
       aiResponse = completion.choices[0].message.content
+
+      // Check if response was truncated due to token limit
+      const finishReason = completion.choices[0].finish_reason
+      if (finishReason === 'length') {
+        log.error("OpenAI response truncated due to token limit", new Error("Response truncated"), undefined, {
+          userId,
+          finishReason,
+          tokensUsed: completion.usage?.total_tokens,
+          maxTokens: 16000,
+          responseLength: aiResponse?.length || 0
+        })
+        return NextResponse.json(
+          {
+            error: 'AI response incomplete',
+            message: 'The workout plan generation was incomplete. Please try again with slightly simpler preferences.',
+            details: 'OpenAI response was truncated due to length limit'
+          },
+          { status: 500 }
+        )
+      }
     } catch (openaiError: any) {
       // Handle specific OpenAI errors with actionable messages
       const errorMessage = openaiError.message || 'Unknown error'
