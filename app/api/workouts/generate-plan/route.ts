@@ -250,7 +250,7 @@ export async function POST(request: NextRequest) {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert fitness coach and exercise scientist. You create personalized, science-based 4-WEEK workout programs that follow proper periodization principles. You always respond with valid JSON. CRITICAL REQUIREMENTS THAT WILL CAUSE REJECTION IF NOT MET: (1) EXACTLY 4 weeks in "weeks" array. (2) MINIMUM 7 exercises for EVERY 60-minute workout - NOT 6, NOT 5, but AT LEAST 7. Target 8-9 exercises. (3) MINIMUM 12 total sets for EVERY 60-minute workout (2 sets per exercise minimum). (4) Each exercise needs 2 sets minimum. BEFORE outputting, COUNT exercises AND total sets in each 60-min workout. Plans with fewer than 7 exercises OR fewer than 12 sets will be REJECTED.'
+            content: 'You are an expert fitness coach and exercise scientist. You create personalized, science-based 4-WEEK workout programs that follow proper periodization principles. You always respond with valid JSON. CRITICAL REQUIREMENTS THAT WILL CAUSE REJECTION IF NOT MET: (1) EXACTLY 4 weeks in "weeks" array. (2) MINIMUM 6 exercises for EVERY 60-minute workout. Target 6-7 exercises. (3) MINIMUM 12 total sets for EVERY 60-minute workout (2 sets per exercise minimum). (4) Each exercise needs 2 sets minimum. BEFORE outputting, COUNT exercises AND total sets in each 60-min workout. Plans with fewer than 6 exercises OR fewer than 12 sets will be REJECTED.'
           },
           {
             role: 'user',
