@@ -910,7 +910,9 @@ IMPORTANT: Return ONLY valid JSON without any markdown formatting, code blocks, 
 NOTES ON STRUCTURE:
 - The "weeks" array MUST contain exactly 4 week objects (weekNumber 1, 2, 3, 4)
 - Each week's "workouts" array contains multiple workout objects based on daysPerWeek
-- Each workout's "exercises" array MUST contain 6-7 exercises for 60-minute workouts
+- Each workout's "exercises" array MUST contain:
+  * 60-minute workouts: 6-7 exercises, 12+ total sets
+  * 45-minute workouts: 5-6 exercises, 10+ total sets
 - Use exact exercise UUIDs from the available exercises list provided earlier in this prompt
 - Do NOT include any JavaScript-style comments in your JSON response
 - Do NOT wrap your response in markdown code blocks
@@ -919,7 +921,8 @@ NOTES ON STRUCTURE:
 
 **FINAL REMINDER:**
 - EXACTLY 4 weeks in "weeks" array
-- Each 60-minute workout: 6-7 exercises, 12+ total sets
+- 60-minute workouts: 6-7 exercises, 12+ total sets
+- 45-minute workouts: 5-6 exercises, 10+ total sets
 - Use exact UUIDs from available exercises list
 
 Generate a complete 4-week workout plan as valid JSON.`
