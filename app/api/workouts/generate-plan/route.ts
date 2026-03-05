@@ -264,7 +264,37 @@ export async function POST(request: NextRequest) {
           messages: [
             {
               role: 'system',
-              content: 'You are an expert fitness coach and exercise scientist. You create personalized, science-based workout programs that follow proper periodization principles. You always respond with valid JSON. CRITICAL REQUIREMENTS: (1) Generate workouts for the specified week only. (2) MINIMUM 6 exercises for EVERY 60-minute workout. Target 6-7 exercises. (3) MINIMUM 12 total sets for EVERY 60-minute workout (2 sets per exercise minimum). (4) Each exercise needs 2 sets minimum. BEFORE outputting, COUNT exercises AND total sets in each 60-min workout.'
+              content: `You are an expert fitness coach and exercise scientist. You create personalized, science-based workout programs that follow proper periodization principles. You always respond with valid JSON.
+
+🚨 ABSOLUTE MANDATORY REQUIREMENTS - FAILURE TO COMPLY WILL RESULT IN REJECTED OUTPUT 🚨
+
+EXERCISE COUNT REQUIREMENTS (NON-NEGOTIABLE):
+- 60-minute workouts: YOU WILL GENERATE EXACTLY 6-7 exercises (NEVER 5 or less)
+- 45-minute workouts: YOU WILL GENERATE EXACTLY 5-6 exercises
+- 30-minute workouts: YOU WILL GENERATE EXACTLY 4-5 exercises
+
+SET COUNT REQUIREMENTS (NON-NEGOTIABLE):
+- 60-minute workouts: MINIMUM 12 total sets (2-3 sets per exercise)
+- 45-minute workouts: MINIMUM 10 total sets (2 sets per exercise)
+- Each individual exercise: MINIMUM 2 sets, MAXIMUM 4 sets
+
+VALIDATION PROCESS YOU MUST FOLLOW:
+1. After generating each workout in your mind, COUNT the exercises
+2. If a 60-minute workout has fewer than 6 exercises, ADD MORE EXERCISES until it has 6-7
+3. COUNT the total sets (sum of all exercise sets)
+4. If a 60-minute workout has fewer than 12 total sets, INCREASE sets per exercise
+5. Only after validation passes, output the JSON
+
+EXAMPLE OF CORRECT 60-MINUTE WORKOUT:
+- Exercise 1: Barbell Squat - 3 sets
+- Exercise 2: Romanian Deadlift - 3 sets
+- Exercise 3: Leg Press - 2 sets
+- Exercise 4: Bulgarian Split Squat - 2 sets
+- Exercise 5: Leg Curl - 2 sets
+- Exercise 6: Calf Raise - 2 sets
+TOTAL: 6 exercises, 14 sets ✓ VALID
+
+If you generate a 60-minute workout with only 5 exercises, YOUR OUTPUT WILL BE REJECTED.`
             },
             {
               role: 'user',
@@ -1088,17 +1118,44 @@ ${availableExercises.slice(0, 50).map(ex =>
   `- ID: ${ex.id} | ${ex.name} | ${ex.category} | ${ex.difficulty} | ${ex.primary_muscles?.join(', ')} | Sets: ${ex.recommended_sets_min || 2}-${ex.recommended_sets_max || 3} | Reps: ${ex.recommended_reps_min || 8}-${ex.recommended_reps_max || 12} | Rest: ${ex.recommended_rest_seconds_min || 60}-${ex.recommended_rest_seconds_max || 90}s`
 ).join('\n')}
 
-**CRITICAL MANDATORY REQUIREMENTS - YOU MUST FOLLOW THESE:**
+🚨🚨🚨 CRITICAL MANDATORY REQUIREMENTS - FAILURE TO COMPLY = REJECTED OUTPUT 🚨🚨🚨
 
-⚠️⚠️⚠️ **BEFORE YOU OUTPUT YOUR RESPONSE, COUNT THE EXERCISES IN EACH WORKOUT** ⚠️⚠️⚠️
+**VALIDATION PROCESS YOU MUST FOLLOW BEFORE OUTPUTTING JSON:**
 
-**EXERCISE COUNT VALIDATION CHECKLIST (MUST BE 100% CHECKED):**
-- [ ] Does EVERY 60-minute workout have AT LEAST 6 exercises? (Target: 6-7 exercises)
-- [ ] Does EVERY 45-minute workout have AT LEAST 5 exercises? (Target: 6-7 exercises)
-- [ ] Does EVERY 60-minute workout have AT LEAST 12 total sets? (Target: 12-16 sets)
-- [ ] Does EVERY 45-minute workout have AT LEAST 10 total sets? (Target: 12-14 sets)
-- [ ] Does each exercise have 2 sets minimum? (Ideally 2-3 sets per exercise)
-- [ ] Have I used EXACT UUIDs from the available exercises list (not sequential numbers)?
+STEP 1: Generate each workout in your mind
+STEP 2: COUNT the exercises in each workout
+STEP 3: If a 60-minute workout has 5 or fewer exercises, ADD MORE EXERCISES to reach 6-7
+STEP 4: COUNT total sets (sum all exercise sets)
+STEP 5: If a 60-minute workout has fewer than 12 total sets, ADD MORE SETS
+STEP 6: Verify all exercise IDs are EXACT UUIDs from the available exercises list
+STEP 7: Only after all validations pass, output the JSON
+
+**EXERCISE COUNT REQUIREMENTS (NON-NEGOTIABLE):**
+- 60-minute workouts: YOU WILL GENERATE EXACTLY 6-7 exercises (NEVER 5 or less) ❌ 5 exercises = INVALID
+- 45-minute workouts: YOU WILL GENERATE EXACTLY 5-6 exercises (NEVER 4 or less) ❌ 4 exercises = INVALID
+- 30-minute workouts: YOU WILL GENERATE EXACTLY 4-5 exercises
+
+**SET COUNT REQUIREMENTS (NON-NEGOTIABLE):**
+- 60-minute workouts: MINIMUM 12 total sets (Target: 14-16 sets)
+- 45-minute workouts: MINIMUM 10 total sets (Target: 12-14 sets)
+- Each individual exercise: MINIMUM 2 sets, IDEAL 2-3 sets
+
+**EXAMPLE OF CORRECT 60-MINUTE LEG DAY (YOU MUST FOLLOW THIS PATTERN):**
+1. Barbell Back Squat - 3 sets x 8-12 reps
+2. Romanian Deadlift - 3 sets x 10-12 reps
+3. Leg Press - 2 sets x 12-15 reps
+4. Bulgarian Split Squat - 2 sets x 10-12 reps each leg
+5. Lying Leg Curl - 2 sets x 12-15 reps
+6. Standing Calf Raise - 2 sets x 15-20 reps
+TOTAL: 6 exercises ✓, 14 total sets ✓ = VALID
+
+**EXAMPLE OF INVALID 60-MINUTE LEG DAY (DO NOT DO THIS):**
+1. Barbell Squat - 3 sets
+2. Leg Press - 3 sets
+3. Romanian Deadlift - 3 sets
+4. Leg Curl - 3 sets
+5. Calf Raise - 2 sets
+TOTAL: 5 exercises ❌, 14 sets ✓ = REJECTED (not enough exercises)
 
 **OUTPUT FORMAT (JSON) - RETURN ONLY THIS WEEK'S DATA:**
 
@@ -1182,15 +1239,17 @@ ${weekNumber === 1 ? `
 }
 `}
 
-**IMPORTANT NOTES:**
-- Generate ONLY Week ${weekNumber} workouts (${daysPerWeek} workouts total)
-- 60-minute workouts MUST have 6-7 exercises with 12+ total sets
-- 45-minute workouts MUST have 5-6 exercises with 10+ total sets
-- Use EXACT exercise UUIDs from the available exercises list
-- Return ONLY valid JSON without markdown code blocks
-- Do NOT include comments in the JSON
+🚨 FINAL VALIDATION BEFORE OUTPUTTING:
+1. Count exercises in EACH workout - 60-min workouts need EXACTLY 6-7 exercises
+2. Count total sets in EACH workout - 60-min workouts need MINIMUM 12 total sets
+3. Verify exercise IDs are EXACT UUIDs from the available exercises list above
+4. Generate ONLY Week ${weekNumber} workouts (${daysPerWeek} workouts total)
+5. Return ONLY valid JSON without markdown code blocks or comments
 
-Generate Week ${weekNumber} as valid JSON now.`
+❌ IF ANY 60-MINUTE WORKOUT HAS ONLY 5 EXERCISES, ADD A 6TH EXERCISE BEFORE OUTPUTTING
+✓ Correct pattern: 6-7 exercises per 60-minute workout, 12-16 total sets
+
+Generate Week ${weekNumber} as valid JSON now. Remember: 60-minute workouts need 6-7 exercises, not 5.`
 }
 
 // Valid workout types from database constraint
