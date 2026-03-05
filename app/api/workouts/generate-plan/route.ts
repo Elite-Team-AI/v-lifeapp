@@ -259,7 +259,7 @@ export async function POST(request: NextRequest) {
         ],
         temperature: 0.7,
         response_format: { type: 'json_object' },
-        max_tokens: 16000 // Ensure response isn't truncated for full 4-week plans
+        max_tokens: 16384 // Maximum output tokens for gpt-4o
       })
 
       aiResponse = completion.choices[0].message.content
@@ -583,13 +583,8 @@ ${specificGoals ? `- Specific Goals: ${specificGoals}` : ''}
 
 **AVAILABLE EXERCISES (${availableExercises.length} exercises - PRE-FILTERED FOR ${userTrainingStyle.toUpperCase()} MODALITY):**
 
-🎯 **IMPORTANT:** These exercises are already optimized for ${userTrainingStyle} training with modality-specific recommendations built-in. Use the recommended sets/reps/rest values provided with each exercise.
-
-${availableExercises.slice(0, 100).map(ex =>
-  `- ID: ${ex.id} | Name: ${ex.name} | Category: ${ex.category} | Difficulty: ${ex.difficulty} | Targets: ${ex.primary_muscles?.join(', ')}
-  ${ex.recommended_sets_min && ex.recommended_sets_max ? `  📊 Sets: ${ex.recommended_sets_min}-${ex.recommended_sets_max}` : ''}
-  ${ex.recommended_reps_min && ex.recommended_reps_max ? `  🔢 Reps: ${ex.recommended_reps_min}-${ex.recommended_reps_max}` : ''}
-  ${ex.recommended_rest_seconds_min && ex.recommended_rest_seconds_max ? `  ⏱️ Rest: ${ex.recommended_rest_seconds_min}-${ex.recommended_rest_seconds_max}s` : ''}`
+${availableExercises.slice(0, 50).map(ex =>
+  `- ID: ${ex.id} | ${ex.name} | ${ex.category} | ${ex.difficulty} | ${ex.primary_muscles?.join(', ')} | Sets: ${ex.recommended_sets_min || 2}-${ex.recommended_sets_max || 3} | Reps: ${ex.recommended_reps_min || 8}-${ex.recommended_reps_max || 12} | Rest: ${ex.recommended_rest_seconds_min || 60}-${ex.recommended_rest_seconds_max || 90}s`
 ).join('\n')}
 
 **CRITICAL MANDATORY REQUIREMENTS - YOU MUST FOLLOW THESE:**
@@ -597,16 +592,16 @@ ${availableExercises.slice(0, 100).map(ex =>
 ⚠️⚠️⚠️ **BEFORE YOU OUTPUT YOUR RESPONSE, COUNT THE EXERCISES IN EACH WORKOUT** ⚠️⚠️⚠️
 
 **EXERCISE COUNT VALIDATION CHECKLIST (MUST BE 100% CHECKED):**
-- [ ] Does EVERY 60-minute workout have AT LEAST 7 exercises? (Target: 8-9 exercises)
-- [ ] Does EVERY 45-minute workout have AT LEAST 6 exercises? (Target: 7-8 exercises)
-- [ ] Does EVERY 60-minute workout have AT LEAST 12 total sets? (Target: 16-20 sets)
-- [ ] Does EVERY 45-minute workout have AT LEAST 12 total sets? (Target: 14-18 sets)
+- [ ] Does EVERY 60-minute workout have AT LEAST 6 exercises? (Target: 6-7 exercises)
+- [ ] Does EVERY 45-minute workout have AT LEAST 5 exercises? (Target: 6-7 exercises)
+- [ ] Does EVERY 60-minute workout have AT LEAST 12 total sets? (Target: 12-16 sets)
+- [ ] Does EVERY 45-minute workout have AT LEAST 10 total sets? (Target: 12-14 sets)
 - [ ] Does each exercise have 2 sets minimum? (Ideally 2-3 sets per exercise)
 - [ ] Have I used EXACT UUIDs from the available exercises list (not sequential numbers)?
 
 **REALITY CHECK - COMMON FAILURE MODES:**
-- 6 exercises in 60 minutes = REJECTION → ADD 1 MORE EXERCISE NOW
-- 5 exercises in 60 minutes = REJECTION → ADD 2 MORE EXERCISES NOW
+- 5 exercises in 60 minutes = REJECTION → ADD 1 MORE EXERCISE NOW
+- 4 exercises in 60 minutes = REJECTION → ADD 2 MORE EXERCISES NOW
 - 10-11 total sets in 60 minutes = REJECTION → INCREASE SETS PER EXERCISE (use 2 sets minimum)
 - Using only 1 set per exercise = INSUFFICIENT VOLUME → USE 2 SETS MINIMUM
 
@@ -639,10 +634,10 @@ ${availableExercises.slice(0, 100).map(ex =>
    - 🎯 **USE MODALITY-SPECIFIC RECOMMENDATIONS:** Each exercise above includes pre-configured sets/reps/rest recommendations for ${userTrainingStyle} training. Use these values as your baseline when programming workouts.
 
    **MINIMUM EXERCISES BASED ON WORKOUT DURATION (NON-NEGOTIABLE):**
-   - ⚠️ 30-40 minutes: 5 exercises, 10-12 total sets (avg 2 sets per exercise)
-   - ⚠️ 45-55 minutes: 6-7 exercises, 12-16 total sets (avg 2 sets per exercise)
-   - ⚠️⚠️⚠️ 60-75 minutes: MINIMUM 7 exercises, MINIMUM 12 total sets - TARGET 8-9 EXERCISES with 16-20 TOTAL SETS ⚠️⚠️⚠️
-   - ⚠️ 75+ minutes: 9-10 exercises, 18-24 total sets (avg 2 sets per exercise)
+   - ⚠️ 30-40 minutes: 4 exercises, 8-10 total sets (avg 2 sets per exercise)
+   - ⚠️ 45-55 minutes: 5-6 exercises, 10-12 total sets (avg 2 sets per exercise)
+   - ⚠️⚠️⚠️ 60-75 minutes: MINIMUM 6 exercises, MINIMUM 12 total sets - TARGET 6-7 EXERCISES with 12-16 TOTAL SETS ⚠️⚠️⚠️
+   - ⚠️ 75+ minutes: 7-8 exercises, 14-18 total sets (avg 2 sets per exercise)
 
    **CRITICAL SET COUNT REQUIREMENTS:**
    - Each exercise should have 2 sets minimum (ideally 2-3 sets)
@@ -675,8 +670,8 @@ ${availableExercises.slice(0, 100).map(ex =>
      * Barbell compound movements (Squat, Bench, Deadlift, OHP, Rows)
      * Heavy dumbbell compounds
      * Supporting accessories for weak points
-   - Total Volume: 12-20 sets per workout
-   - Example 60min Push Day (7 exercises): Bench Press (3x5), Incline Barbell Press (2x6), Overhead Press (2x6), Dips (2x8), Close Grip Bench (2x8), Lateral Raises (2x10), Tricep Extensions (2x10) = 15 sets ✅
+   - Total Volume: 12-18 sets per workout
+   - Example 60min Push Day (6 exercises): Bench Press (3x5), Incline Barbell Press (2x6), Overhead Press (2x6), Dips (2x8), Lateral Raises (2x10), Tricep Extensions (2x10) = 13 sets ✅
 
    **B. HYPERTROPHY/BODYBUILDING (${userTrainingStyle === 'hypertrophy' ? 'CURRENT SELECTION - FOLLOW THIS' : 'Reference only'}):**
    - Focus: Muscle growth through mechanical tension and metabolic stress
@@ -689,8 +684,8 @@ ${availableExercises.slice(0, 100).map(ex =>
      * Multiple exercises per muscle group (3-4 for major muscles)
      * Variety of angles and movement patterns
      * Include drop sets, supersets, and intensity techniques
-   - Total Volume: 24-32 sets per workout
-   - Example 60min Push Day: Barbell Bench Press (4x8), Incline Dumbbell Press (3x10), Flat Dumbbell Flyes (3x12), Machine Chest Press (3x12), Overhead Press (4x8), Lateral Raises (3x12), Front Raises (3x12), Cable Flyes (3x15), Tricep Pushdowns (3x12), Overhead Extensions (3x12)
+   - Total Volume: 18-24 sets per workout
+   - Example 60min Push Day (6 exercises): Barbell Bench Press (4x8), Incline Dumbbell Press (3x10), Machine Chest Press (3x12), Overhead Press (3x8), Lateral Raises (3x12), Tricep Pushdowns (3x12) = 19 sets ✅
 
    **C. ENDURANCE/CONDITIONING (${userTrainingStyle === 'endurance' ? 'CURRENT SELECTION - FOLLOW THIS' : 'Reference only'}):**
    - Focus: Muscular endurance and cardiovascular conditioning
@@ -703,8 +698,8 @@ ${availableExercises.slice(0, 100).map(ex =>
      * Bodyweight exercises and lighter weights
      * Plyometric and explosive movements
      * Circuit-style programming
-   - Total Volume: 25-35 sets per workout
-   - Example 60min Circuit: Squat (3x20), Push-ups (3x20), Lunges (3x20), Rows (3x20), Burpees (3x15), Mountain Climbers (3x30s), Jump Squats (3x15), Plank (3x60s), Bicycle Crunches (3x25), Jump Rope (3x60s)
+   - Total Volume: 18-24 sets per workout
+   - Example 60min Circuit (6 exercises): Squat (3x20), Push-ups (3x20), Lunges (3x20), Rows (3x20), Burpees (3x15), Mountain Climbers (3x30s) = 18 sets ✅
 
    **D. MIXED/BALANCED (${userTrainingStyle === 'mixed' ? 'CURRENT SELECTION - FOLLOW THIS' : 'Reference only'}):**
    - Focus: Balanced development across strength, size, and endurance
@@ -712,54 +707,44 @@ ${availableExercises.slice(0, 100).map(ex =>
    - Secondary Compounds: 3-4 sets of 8-12 reps at 65-75% 1RM (RPE 7-8) - Hypertrophy emphasis
    - Accessories: 3 sets of 12-15 reps at 60-70% 1RM (RPE 6-7) - Endurance emphasis
    - Rest Periods: Vary based on exercise (3min for strength, 90s for hypertrophy, 60s for endurance)
-   - Total Volume: 22-28 sets per workout
-   - Example 60min Upper Day: Bench Press (4x6), Barbell Rows (4x6), Incline Press (3x10), Pull-ups (3x10), Overhead Press (3x10), Face Pulls (3x12), Bicep Curls (3x12), Tricep Extensions (3x12), Lateral Raises (3x15)
+   - Total Volume: 18-24 sets per workout
+   - Example 60min Upper Day (6 exercises): Bench Press (4x6), Barbell Rows (4x6), Incline Press (3x10), Pull-ups (3x10), Bicep Curls (3x12), Tricep Extensions (3x12) = 20 sets ✅
 
 6. **Workout Structure Template - MUST FOLLOW:**
 
    **For ${userTrainingStyle.toUpperCase()} training style, each workout MUST include:**
 
    ${userTrainingStyle === 'strength' ? `
-   - Exercise 1: Primary Compound (Squat/Bench/Dead/OHP variant) - 4-5 sets of 3-6 reps
-   - Exercise 2: Secondary Compound (variation of main lift) - 4 sets of 5-8 reps
-   - Exercise 3: Supporting Compound - 3-4 sets of 6-8 reps
-   - Exercise 4: Compound Accessory - 3 sets of 8-10 reps
-   - Exercise 5: Primary Isolation - 3 sets of 8-10 reps
-   - Exercise 6: Secondary Isolation - 3 sets of 8-12 reps
-   - Exercise 7: Tertiary Isolation - 3 sets of 10-12 reps
-   - Exercise 8: Mobility/Prehab work - 2 sets of 12-15 reps
-   MINIMUM: 8 exercises, 24-28 total sets` : ''}
+   - Exercise 1: Primary Compound (Squat/Bench/Dead/OHP variant) - 3-4 sets of 3-6 reps
+   - Exercise 2: Secondary Compound (variation of main lift) - 3 sets of 5-8 reps
+   - Exercise 3: Supporting Compound - 3 sets of 6-8 reps
+   - Exercise 4: Compound Accessory - 2 sets of 8-10 reps
+   - Exercise 5: Primary Isolation - 2 sets of 8-10 reps
+   - Exercise 6: Secondary Isolation - 2 sets of 8-12 reps
+   MINIMUM: 6 exercises, 16-20 total sets` : ''}
 
    ${userTrainingStyle === 'hypertrophy' ? `
    - Exercise 1: Primary Compound Movement - 4 sets of 6-10 reps
-   - Exercise 2: Secondary Compound (different angle) - 3-4 sets of 8-12 reps
+   - Exercise 2: Secondary Compound (different angle) - 3 sets of 8-12 reps
    - Exercise 3: Tertiary Compound/Machine - 3 sets of 10-12 reps
    - Exercise 4: Isolation Exercise - Muscle Group 1 - 3 sets of 10-15 reps
    - Exercise 5: Isolation Exercise - Muscle Group 2 - 3 sets of 10-15 reps
-   - Exercise 6: Isolation Exercise - Muscle Group 3 - 3 sets of 12-15 reps
-   - Exercise 7: Isolation Exercise - Muscle Group 4 - 3 sets of 12-15 reps
-   - Exercise 8: Pump/Burnout Exercise - 3 sets of 15-20 reps
-   - Exercise 9: Isolation Exercise - Weak Point - 3 sets of 12-15 reps
-   - Exercise 10: Final Pump Exercise - 3 sets of 15-20 reps
-   MINIMUM: 10 exercises, 28-32 total sets` : ''}
+   - Exercise 6: Pump/Burnout Exercise - 3 sets of 12-15 reps
+   MINIMUM: 6 exercises, 18-24 total sets` : ''}
 
    ${userTrainingStyle === 'endurance' ? `
-   - Circuit 1: 4 exercises x 3 rounds (compound movements, 15-20 reps each)
-   - Circuit 2: 4 exercises x 3 rounds (mix of strength and cardio, 15-20 reps each)
-   - Circuit 3: 3 exercises x 3 rounds (finisher circuit, 20-25 reps each)
-   MINIMUM: 11 total exercises, 33 total sets` : ''}
+   - Circuit 1: 3 exercises x 3 rounds (compound movements, 15-20 reps each)
+   - Circuit 2: 3 exercises x 3 rounds (mix of strength and cardio, 15-20 reps each)
+   MINIMUM: 6 total exercises, 18-24 total sets` : ''}
 
    ${userTrainingStyle === 'mixed' ? `
    - Exercise 1: Primary Strength Compound - 4 sets of 5-8 reps
-   - Exercise 2: Secondary Strength Compound - 4 sets of 5-8 reps
+   - Exercise 2: Secondary Strength Compound - 3 sets of 5-8 reps
    - Exercise 3: Hypertrophy Compound - 3 sets of 8-12 reps
-   - Exercise 4: Hypertrophy Compound (different angle) - 3 sets of 8-12 reps
-   - Exercise 5: Isolation Exercise - 3 sets of 10-12 reps
-   - Exercise 6: Isolation Exercise - 3 sets of 10-12 reps
-   - Exercise 7: Isolation Exercise - 3 sets of 12-15 reps
-   - Exercise 8: Isolation Exercise - 3 sets of 12-15 reps
-   - Exercise 9: Endurance Exercise - 3 sets of 15-20 reps
-   MINIMUM: 9 exercises, 26-28 total sets` : ''}
+   - Exercise 4: Isolation Exercise - 3 sets of 10-12 reps
+   - Exercise 5: Isolation Exercise - 3 sets of 12-15 reps
+   - Exercise 6: Endurance Exercise - 3 sets of 15-20 reps
+   MINIMUM: 6 exercises, 18-24 total sets` : ''}
 
 7. **EXERCISE COUNT REQUIREMENTS (PER WORKOUT) - FOLLOW THESE PATTERNS:**
 
