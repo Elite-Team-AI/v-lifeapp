@@ -910,7 +910,7 @@ IMPORTANT: Return ONLY valid JSON without any markdown formatting, code blocks, 
 NOTES ON STRUCTURE:
 - The "weeks" array MUST contain exactly 4 week objects (weekNumber 1, 2, 3, 4)
 - Each week's "workouts" array contains multiple workout objects based on daysPerWeek
-- Each workout's "exercises" array MUST contain 8-10 exercises for 60-minute workouts
+- Each workout's "exercises" array MUST contain 6-7 exercises for 60-minute workouts
 - Use exact exercise UUIDs from the available exercises list provided earlier in this prompt
 - Do NOT include any JavaScript-style comments in your JSON response
 - Do NOT wrap your response in markdown code blocks
