@@ -1061,6 +1061,10 @@ function FitnessProfileSection() {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isEquipmentExpanded, setIsEquipmentExpanded] = useState(false)
   const [customEquipmentInput, setCustomEquipmentInput] = useState('')
+  const [isMobilityAssessmentExpanded, setIsMobilityAssessmentExpanded] = useState(false)
+  const [showShoulderInstructions, setShowShoulderInstructions] = useState(false)
+  const [showHipInstructions, setShowHipInstructions] = useState(false)
+  const [showAnkleInstructions, setShowAnkleInstructions] = useState(false)
 
   const profile = appData?.profile
 
@@ -1523,19 +1527,46 @@ function FitnessProfileSection() {
                   </button>
 
                   {isEquipmentExpanded && (
-                    <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-3 bg-neutral-900/50 rounded-lg">
-                      {COMMON_EQUIPMENT.map((item) => (
-                        <label
-                          key={item}
-                          className="flex items-center gap-2 text-xs text-white/80 hover:text-white cursor-pointer"
-                        >
-                          <Checkbox
-                            checked={formData.selectedEquipment.includes(item)}
-                            onCheckedChange={() => toggleEquipment(item)}
-                          />
-                          <span>{item}</span>
-                        </label>
-                      ))}
+                    <div className="relative">
+                      <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-3 bg-neutral-900/50 rounded-lg">
+                        {COMMON_EQUIPMENT.slice(0, 10).map((item) => (
+                          <label
+                            key={item}
+                            className="flex items-center gap-2 text-xs text-white/80 hover:text-white cursor-pointer"
+                          >
+                            <Checkbox
+                              checked={formData.selectedEquipment.includes(item)}
+                              onCheckedChange={() => toggleEquipment(item)}
+                            />
+                            <span>{item}</span>
+                          </label>
+                        ))}
+
+                        {/* Scroll Indicator */}
+                        {COMMON_EQUIPMENT.length > 10 && (
+                          <div className="col-span-2 flex flex-col items-center gap-1 py-2">
+                            <div className="w-full h-px bg-gradient-to-r from-transparent via-neutral-600 to-transparent" />
+                            <div className="flex items-center gap-2 text-xs text-neutral-500">
+                              <span>Scroll for more options</span>
+                              <ChevronDown className="w-3 h-3 animate-bounce" />
+                            </div>
+                            <div className="w-full h-px bg-gradient-to-r from-transparent via-neutral-600 to-transparent" />
+                          </div>
+                        )}
+
+                        {COMMON_EQUIPMENT.slice(10).map((item) => (
+                          <label
+                            key={item}
+                            className="flex items-center gap-2 text-xs text-white/80 hover:text-white cursor-pointer"
+                          >
+                            <Checkbox
+                              checked={formData.selectedEquipment.includes(item)}
+                              onCheckedChange={() => toggleEquipment(item)}
+                            />
+                            <span>{item}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1607,50 +1638,161 @@ function FitnessProfileSection() {
           <div className="p-3 bg-neutral-800/50 rounded-lg">
             <div className="flex items-center gap-3 mb-3">
               <Activity className="w-4 h-4 text-indigo-400" />
-              <span className="text-sm text-neutral-400">Mobility Assessment (1-10 scale)</span>
+              <span className="text-sm text-neutral-400">Mobility Assessment</span>
             </div>
             {isEditing ? (
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-xs text-neutral-400 mb-1">Shoulder Mobility</Label>
-                  <Select value={formData.shoulderMobility} onValueChange={(value) => setFormData({...formData, shoulderMobility: value})}>
-                    <SelectTrigger className="w-full bg-neutral-900 border-white/10 mt-1">
-                      <SelectValue placeholder="Select score" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                        <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs text-neutral-400 mb-1">Hip Mobility</Label>
-                  <Select value={formData.hipMobility} onValueChange={(value) => setFormData({...formData, hipMobility: value})}>
-                    <SelectTrigger className="w-full bg-neutral-900 border-white/10 mt-1">
-                      <SelectValue placeholder="Select score" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                        <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs text-neutral-400 mb-1">Ankle Mobility</Label>
-                  <Select value={formData.ankleMobility} onValueChange={(value) => setFormData({...formData, ankleMobility: value})}>
-                    <SelectTrigger className="w-full bg-neutral-900 border-white/10 mt-1">
-                      <SelectValue placeholder="Select score" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                        <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              <>
+                {/* Show Start Assessment button if never completed */}
+                {!profile?.shoulder_mobility && !profile?.hip_mobility && !profile?.ankle_mobility && !isMobilityAssessmentExpanded ? (
+                  <div className="space-y-3">
+                    <p className="text-xs text-neutral-400">
+                      Complete a quick mobility assessment to help us personalize your workouts and prevent injuries.
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={() => setIsMobilityAssessmentExpanded(true)}
+                      className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-medium"
+                    >
+                      <Activity className="w-4 h-4 mr-2" />
+                      Start Assessment
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Shoulder Mobility Test */}
+                    <div className="space-y-2 p-3 bg-neutral-900/50 rounded-lg border border-white/5">
+                      <div className="flex items-start gap-2">
+                        <div className="flex-1">
+                          <Label className="text-xs font-semibold text-white mb-1 flex items-center gap-2">
+                            Shoulder Mobility
+                            <button
+                              type="button"
+                              onClick={() => setShowShoulderInstructions(!showShoulderInstructions)}
+                              className="text-indigo-400 hover:text-indigo-300"
+                            >
+                              {showShoulderInstructions ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                            </button>
+                          </Label>
+                          {showShoulderInstructions && (
+                            <div className="mt-2 p-2 bg-indigo-500/10 rounded border border-indigo-500/20 text-xs text-neutral-300 space-y-1">
+                              <p className="font-medium text-indigo-400">Test: Overhead Shoulder Reach</p>
+                              <ol className="list-decimal list-inside space-y-1 ml-1">
+                                <li>Stand with arms at your sides</li>
+                                <li>Raise both arms overhead as high as possible</li>
+                                <li>Keep your back straight (don't arch)</li>
+                              </ol>
+                              <div className="mt-2 pt-2 border-t border-indigo-500/20">
+                                <p className="font-medium">Scoring:</p>
+                                <p><strong>1-3:</strong> Can't reach overhead, pain or restriction</p>
+                                <p><strong>4-6:</strong> Can reach overhead but with difficulty or compensation</p>
+                                <p><strong>7-10:</strong> Full range, arms straight overhead easily</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <Select value={formData.shoulderMobility} onValueChange={(value) => setFormData({...formData, shoulderMobility: value})}>
+                        <SelectTrigger className="w-full bg-neutral-900 border-white/10">
+                          <SelectValue placeholder="Select your score (1-10)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                            <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Hip Mobility Test */}
+                    <div className="space-y-2 p-3 bg-neutral-900/50 rounded-lg border border-white/5">
+                      <div className="flex items-start gap-2">
+                        <div className="flex-1">
+                          <Label className="text-xs font-semibold text-white mb-1 flex items-center gap-2">
+                            Hip Mobility
+                            <button
+                              type="button"
+                              onClick={() => setShowHipInstructions(!showHipInstructions)}
+                              className="text-purple-400 hover:text-purple-300"
+                            >
+                              {showHipInstructions ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                            </button>
+                          </Label>
+                          {showHipInstructions && (
+                            <div className="mt-2 p-2 bg-purple-500/10 rounded border border-purple-500/20 text-xs text-neutral-300 space-y-1">
+                              <p className="font-medium text-purple-400">Test: Deep Squat</p>
+                              <ol className="list-decimal list-inside space-y-1 ml-1">
+                                <li>Stand with feet shoulder-width apart</li>
+                                <li>Lower into a deep squat (as low as possible)</li>
+                                <li>Keep heels on the ground, chest up</li>
+                              </ol>
+                              <div className="mt-2 pt-2 border-t border-purple-500/20">
+                                <p className="font-medium">Scoring:</p>
+                                <p><strong>1-3:</strong> Can't squat below parallel, severe restriction</p>
+                                <p><strong>4-6:</strong> Can squat to parallel but with compensation</p>
+                                <p><strong>7-10:</strong> Full deep squat, butt to ankles, heels down</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <Select value={formData.hipMobility} onValueChange={(value) => setFormData({...formData, hipMobility: value})}>
+                        <SelectTrigger className="w-full bg-neutral-900 border-white/10">
+                          <SelectValue placeholder="Select your score (1-10)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                            <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Ankle Mobility Test */}
+                    <div className="space-y-2 p-3 bg-neutral-900/50 rounded-lg border border-white/5">
+                      <div className="flex items-start gap-2">
+                        <div className="flex-1">
+                          <Label className="text-xs font-semibold text-white mb-1 flex items-center gap-2">
+                            Ankle Mobility
+                            <button
+                              type="button"
+                              onClick={() => setShowAnkleInstructions(!showAnkleInstructions)}
+                              className="text-pink-400 hover:text-pink-300"
+                            >
+                              {showAnkleInstructions ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                            </button>
+                          </Label>
+                          {showAnkleInstructions && (
+                            <div className="mt-2 p-2 bg-pink-500/10 rounded border border-pink-500/20 text-xs text-neutral-300 space-y-1">
+                              <p className="font-medium text-pink-400">Test: Knee-to-Wall</p>
+                              <ol className="list-decimal list-inside space-y-1 ml-1">
+                                <li>Face a wall in a lunge position</li>
+                                <li>Front foot 4-5 inches from wall</li>
+                                <li>Try to touch knee to wall without heel lifting</li>
+                              </ol>
+                              <div className="mt-2 pt-2 border-t border-pink-500/20">
+                                <p className="font-medium">Scoring:</p>
+                                <p><strong>1-3:</strong> Heel lifts immediately, can't reach wall</p>
+                                <p><strong>4-6:</strong> Can reach with difficulty, limited range</p>
+                                <p><strong>7-10:</strong> Knee easily touches wall 4-5 inches away</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <Select value={formData.ankleMobility} onValueChange={(value) => setFormData({...formData, ankleMobility: value})}>
+                        <SelectTrigger className="w-full bg-neutral-900 border-white/10">
+                          <SelectValue placeholder="Select your score (1-10)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                            <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="grid grid-cols-3 gap-2 mt-2">
                 <div className="text-center">

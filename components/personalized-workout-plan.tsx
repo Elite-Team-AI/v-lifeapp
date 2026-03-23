@@ -18,12 +18,22 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
   const [generatingWeek, setGeneratingWeek] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showRationale, setShowRationale] = useState(false)
+  const [wakeLock, setWakeLock] = useState<any>(null)
 
   useEffect(() => {
     if (user?.id) {
       fetchCurrentPlan()
     }
   }, [user])
+
+  // Cleanup wake lock on component unmount
+  useEffect(() => {
+    return () => {
+      if (wakeLock) {
+        wakeLock.release().catch((err: any) => console.warn('Error releasing wake lock on unmount:', err))
+      }
+    }
+  }, [wakeLock])
 
   const fetchCurrentPlan = async () => {
     try {
@@ -64,9 +74,30 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
   }
 
   const handleGeneratePlan = async () => {
+    let wakeLockInstance: any = null
+
     try {
       setIsGenerating(true)
       setError(null)
+
+      // Request wake lock to keep screen awake during generation
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLockInstance = await (navigator as any).wakeLock.request('screen')
+          setWakeLock(wakeLockInstance)
+          console.log('Wake Lock activated - screen will stay on during generation')
+
+          // Handle wake lock release (e.g., if user switches tabs)
+          wakeLockInstance.addEventListener('release', () => {
+            console.log('Wake Lock released')
+          })
+        } else {
+          console.log('Wake Lock API not supported - user must keep screen on manually')
+        }
+      } catch (wakeLockError) {
+        // Wake lock failed - continue anyway but log it
+        console.warn('Failed to acquire wake lock:', wakeLockError)
+      }
 
       const allWeeks: any[] = []
       let planMetadata: any = null
@@ -169,6 +200,17 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
     } finally {
       setIsGenerating(false)
       setGeneratingWeek(null)
+
+      // Release wake lock when generation completes
+      if (wakeLockInstance) {
+        try {
+          await wakeLockInstance.release()
+          setWakeLock(null)
+          console.log('Wake Lock released - screen can now sleep')
+        } catch (releaseError) {
+          console.warn('Failed to release wake lock:', releaseError)
+        }
+      }
     }
   }
 
@@ -264,7 +306,11 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
 
         <p className="text-center text-[#8FD1FF]/60 text-xs mt-3">
           {isGenerating && generatingWeek ? (
-            `Creating week ${generatingWeek} of your 4-week plan...`
+            <>
+              Creating week {generatingWeek} of your 4-week plan...
+              <br />
+              <span className="text-green-400">Your screen will stay on automatically</span>
+            </>
           ) : (
             'Takes ~2 minutes to create your custom 4-week plan'
           )}
