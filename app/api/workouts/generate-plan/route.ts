@@ -176,16 +176,18 @@ export async function POST(request: NextRequest) {
 
     // Validate required environment variables
     const openaiKey = process.env.OPENAI_API_KEY
+    const anthropicKey = process.env.ANTHROPIC_API_KEY
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-    if (!openaiKey) {
-      log.error("OpenAI API key not configured", new Error("Missing OPENAI_API_KEY"), undefined, { userId })
+    // Check that at least one AI provider is configured
+    if (!openaiKey && !anthropicKey) {
+      log.error("No AI provider configured", new Error("Missing both OPENAI_API_KEY and ANTHROPIC_API_KEY"), undefined, { userId })
       return NextResponse.json(
         {
           error: 'AI service not configured',
-          message: 'The workout plan generator requires OpenAI configuration. Please contact support.',
-          details: 'Missing OPENAI_API_KEY environment variable'
+          message: 'The workout plan generator requires either OpenAI or Anthropic configuration. Please contact support.',
+          details: 'Missing both OPENAI_API_KEY and ANTHROPIC_API_KEY environment variables'
         },
         { status: 500 }
       )
@@ -615,12 +617,21 @@ BEFORE YOU OUTPUT YOUR JSON:
   } catch (error: any) {
     log.error("Workout plan generation failed", error as Error, undefined, {
       hasUserId: !!body?.userId,
-      errorMessage: error.message
+      userId: body?.userId,
+      weekNumber: body?.weekNumber,
+      errorMessage: error.message,
+      errorStack: error.stack,
+      errorType: error.constructor?.name,
+      hasOpenAI: !!process.env.OPENAI_API_KEY,
+      hasAnthropic: !!process.env.ANTHROPIC_API_KEY,
+      hasSupabase: !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_ROLE_KEY
     })
     return NextResponse.json(
       {
         error: 'Failed to generate workout plan',
-        details: error.message
+        message: 'Failed to generate. Please try again.',
+        // Include technical details only in development
+        ...(process.env.NODE_ENV === 'development' && { details: error.message })
       },
       { status: 500 }
     )
