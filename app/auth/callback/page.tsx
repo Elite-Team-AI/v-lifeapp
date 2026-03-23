@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2 } from 'lucide-react'
+import { Loader2, CheckCircle } from 'lucide-react'
 
 export default function AuthCallback() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [error, setError] = useState<string | null>(null)
+  const [showMobileMessage, setShowMobileMessage] = useState(false)
 
   useEffect(() => {
     const handleAuthCallback = async () => {
@@ -21,33 +22,25 @@ export default function AuthCallback() {
         const search = window.location.search
 
         // If mobile, try to redirect to app
-        if (isMobile && hash) {
-          // Extract tokens from hash
-          const hashParams = new URLSearchParams(hash.substring(1))
-          const accessToken = hashParams.get('access_token')
-          const refreshToken = hashParams.get('refresh_token')
-          const type = hashParams.get('type')
+        if (isMobile && (hash || search)) {
+          // Try to open the mobile app with deep link
+          const deepLinkUrl = `vlife://auth/callback${hash}${search}`
 
-          if (accessToken) {
-            // Try to open the mobile app with deep link
-            const deepLinkUrl = `vlife://auth/callback${hash}${search}`
+          console.log('Redirecting to mobile app:', deepLinkUrl)
 
-            console.log('Redirecting to mobile app:', deepLinkUrl)
+          // Attempt to open the app
+          window.location.href = deepLinkUrl
 
-            // Attempt to open the app
-            window.location.href = deepLinkUrl
+          // Give the app 2 seconds to open, then show message
+          setTimeout(() => {
+            console.log('Showing mobile verification message')
+            setShowMobileMessage(true)
+          }, 2000)
 
-            // Give the app 2 seconds to open, then fall back to web
-            setTimeout(() => {
-              console.log('App did not open, continuing with web auth...')
-              handleWebAuth()
-            }, 2000)
-
-            return
-          }
+          return
         }
 
-        // Handle web authentication
+        // Handle web authentication (only for desktop)
         await handleWebAuth()
 
       } catch (err: any) {
@@ -131,6 +124,20 @@ export default function AuthCallback() {
             <h1 className="text-xl font-bold text-red-400 mb-2">Authentication Error</h1>
             <p className="text-red-300 text-sm">{error}</p>
             <p className="text-white/50 text-xs mt-4">Redirecting to login...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (showMobileMessage) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black p-4">
+        <div className="w-full max-w-md space-y-4 text-center">
+          <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-8">
+            <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-green-400 mb-2">Verified</h1>
+            <p className="text-white text-base">Go back to your app.</p>
           </div>
         </div>
       </div>
