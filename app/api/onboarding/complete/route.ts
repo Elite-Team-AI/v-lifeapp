@@ -42,6 +42,7 @@ export async function POST(req: Request) {
         : payload.programType || null,
       available_time_minutes: payload.availableTimeMinutes || null,
       training_days_per_week: payload.trainingDaysPerWeek || null,
+      visual_coach_enabled: payload.visualCoachEnabled || false,
       onboarding_completed: true,
       updated_at: new Date().toISOString(),
     }

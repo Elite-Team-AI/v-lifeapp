@@ -199,8 +199,8 @@ function DashboardClientV2() {
     }
   }, [appData?.shouldPromptWeeklyReflection])
 
-  // Loading state
-  if (appDataLoading && !appData) {
+  // Loading state - keep showing until appData is fully loaded
+  if (!appData || appDataLoading) {
     return (
       <div className="min-h-screen pb-nav-safe relative flex items-center justify-center bg-black overflow-hidden">
         {/* Animated gradient background */}

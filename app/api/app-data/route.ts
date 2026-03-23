@@ -80,6 +80,7 @@ export async function GET() {
 
     // Step 2: Fetch ALL data in parallel using internal functions
     // These don't re-check auth - they use the userId and supabase we pass
+    // PERFORMANCE: Skip VitalFlow AI generation on initial load (non-blocking)
     const [
       habits,
       weeklyProgress,
@@ -102,7 +103,7 @@ export async function GET() {
       getNotificationPreferencesInternal(userId, supabase),
       getDailyInsightInternal(userId, timezone, supabase, accessToken),
       shouldPromptWeeklyReflectionInternal(userId, supabase),
-      getVitalFlowSuggestionsInternal(userId, supabase),
+      getVitalFlowSuggestionsInternal(userId, supabase, true), // skipGeneration=true for fast initial load
       getGamificationDataInternal(userId, supabase),
     ])
 

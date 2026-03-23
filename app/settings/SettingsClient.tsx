@@ -33,6 +33,7 @@ import {
   AboutSection,
   PlanSection,
   VoiceSection,
+  FitnessSection,
 } from "./components"
 import type { ProfileFormData, ReferralStats, StreakStats, Milestone, NotificationPreferences, VoicePreferences, GeminiVoiceName } from "@/lib/types"
 
@@ -610,6 +611,8 @@ export default function SettingsClient() {
             onVoiceChange={handleVoiceChange}
             onPreviewVoice={handlePreviewVoice}
           />
+
+          <FitnessSection />
 
           <PlanSection
             isStartingFresh={isStartingFresh}

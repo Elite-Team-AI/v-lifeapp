@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useOnboarding } from "@/lib/contexts/onboarding-context"
 import { motion } from "framer-motion"
-import { ArrowRight, Plus, Dumbbell, Clock, Calendar } from "lucide-react"
+import { ArrowRight, Plus, Dumbbell, Clock, Calendar, Sparkles } from "lucide-react"
 import { ButtonGlow } from "@/components/ui/button-glow"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -40,6 +40,7 @@ export default function Preferences() {
   const [customProgramType, setCustomProgramType] = useState(data.customProgramType || "")
   const [availableTime, setAvailableTime] = useState(data.availableTimeMinutes || 45)
   const [trainingDays, setTrainingDays] = useState(data.trainingDaysPerWeek || 4)
+  const [visualCoachEnabled, setVisualCoachEnabled] = useState(data.visualCoachEnabled || false)
 
   const toggleAllergy = (allergy: string) => {
     if (selectedAllergies.includes(allergy)) {
@@ -64,6 +65,7 @@ export default function Preferences() {
       customProgramType: programType === "other" ? customProgramType : undefined,
       availableTimeMinutes: availableTime,
       trainingDaysPerWeek: trainingDays,
+      visualCoachEnabled,
     })
     router.push("/onboarding/confirmation")
   }
@@ -237,11 +239,64 @@ export default function Preferences() {
             </div>
           </motion.div>
 
+          {/* Visual AI Coach Preference */}
           <motion.div
             className="space-y-3"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 1.3 }}
+            transition={{ delay: 1.25 }}
+          >
+            <h2 className="text-lg font-medium tracking-tight font-heading text-white/90 flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-yellow-400" />
+              V-Life Visual AI Coach
+            </h2>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.3 }}
+              whileHover={{ scale: 1.02, x: 4 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Card
+                className={`relative p-4 cursor-pointer transition-all backdrop-blur-xl ${
+                  visualCoachEnabled
+                    ? "border-yellow-500 bg-yellow-500/10 shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+                    : "border-white/10 bg-white/5 hover:border-yellow-500/50 hover:bg-white/10"
+                }`}
+                onClick={() => setVisualCoachEnabled(!visualCoachEnabled)}
+              >
+                {visualCoachEnabled && (
+                  <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent rounded-lg" />
+                )}
+                <div className="relative flex items-start gap-3">
+                  <div className={`p-2 rounded-lg ${visualCoachEnabled ? 'bg-yellow-500/20' : 'bg-white/10'}`}>
+                    <Sparkles className={`w-5 h-5 ${visualCoachEnabled ? 'text-yellow-400' : 'text-white/60'}`} />
+                  </div>
+                  <div className="flex-1">
+                    <p className={`font-medium ${visualCoachEnabled ? 'text-yellow-400' : 'text-white'}`}>
+                      Enable Visual AI Coach
+                    </p>
+                    <p className="text-xs text-white/60 mt-1 leading-relaxed">
+                      AI tracks your form, reps, and calories burned in real time—privately on your device
+                    </p>
+                  </div>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    visualCoachEnabled ? 'border-yellow-500 bg-yellow-500' : 'border-white/30'
+                  }`}>
+                    {visualCoachEnabled && (
+                      <div className="w-2 h-2 rounded-full bg-black" />
+                    )}
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          </motion.div>
+
+          <motion.div
+            className="space-y-3"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 1.4 }}
           >
             <h2 className="text-lg font-medium tracking-tight font-heading text-white/90">Food Allergies</h2>
             <div className="flex flex-wrap gap-2">
@@ -270,7 +325,7 @@ export default function Preferences() {
             className="space-y-3"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 1.6 }}
+            transition={{ delay: 1.7 }}
           >
             <h2 className="text-lg font-medium tracking-tight font-heading text-white/90">Custom Restrictions</h2>
             <div className="flex gap-2">
@@ -317,7 +372,7 @@ export default function Preferences() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.7 }}
+            transition={{ delay: 1.8 }}
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
           >

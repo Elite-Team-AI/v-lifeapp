@@ -33,6 +33,7 @@ const defaultData: OnboardingData = {
   customProgramType: "",
   availableTimeMinutes: 45,
   trainingDaysPerWeek: 4,
+  visualCoachEnabled: false,
 
   // Preferences data
   allergies: [],

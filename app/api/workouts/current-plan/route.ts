@@ -119,6 +119,19 @@ export async function GET(request: NextRequest) {
     const completedWorkouts = workouts.filter((w: any) => w.is_completed).length
     const adherenceRate = totalWorkouts > 0 ? Math.round((completedWorkouts / totalWorkouts) * 100) : 0
 
+    // Debug: Log completion status for all workouts
+    log.info("Workout completion status", undefined, {
+      userId,
+      totalWorkouts,
+      completedWorkouts,
+      completedWorkoutNames: workouts.filter((w: any) => w.is_completed).map((w: any) => w.workout_name),
+      firstWorkoutStatus: workouts[0] ? {
+        name: workouts[0].workout_name,
+        isCompleted: workouts[0].is_completed,
+        completedDate: workouts[0].completed_date
+      } : null
+    })
+
     // Use progression-based week tracking from database
     // User advances to next week only after completing all workouts in current week
     // This is managed automatically by the check_and_advance_week() trigger

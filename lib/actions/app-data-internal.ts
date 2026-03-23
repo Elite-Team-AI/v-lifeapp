@@ -677,7 +677,8 @@ export async function shouldPromptWeeklyReflectionInternal(
 
 export async function getVitalFlowSuggestionsInternal(
   userId: string,
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  skipGeneration: boolean = false
 ): Promise<VitalFlowSuggestion[]> {
   const targetDate = new Date().toISOString().split("T")[0]
 
@@ -694,9 +695,25 @@ export async function getVitalFlowSuggestionsInternal(
       return []
     }
 
-    // If no suggestions exist for today, generate them automatically
+    // If no suggestions exist for today, handle based on skipGeneration flag
     if (!data || data.length === 0) {
-      console.log("[getVitalFlowSuggestionsInternal] No suggestions found for today, auto-generating...")
+      console.log("[getVitalFlowSuggestionsInternal] No suggestions found for today")
+
+      // If skipGeneration is true (initial bootstrap load), return empty array immediately
+      // and trigger generation in background (fire-and-forget)
+      if (skipGeneration) {
+        console.log("[getVitalFlowSuggestionsInternal] Skipping blocking generation (initial load)")
+
+        // Trigger generation in background (don't await - let it run async)
+        triggerVitalFlowGenerationBackground(userId, supabase).catch(err =>
+          console.error("[getVitalFlowSuggestionsInternal] Background generation error:", err)
+        )
+
+        return []
+      }
+
+      // If not skipping, wait for generation (used on manual refresh)
+      console.log("[getVitalFlowSuggestionsInternal] Auto-generating suggestions...")
 
       try {
         // Get user's session token for Edge Function auth
@@ -742,5 +759,43 @@ export async function getVitalFlowSuggestionsInternal(
   } catch (error) {
     console.error("[getVitalFlowSuggestionsInternal] Exception:", error)
     return []
+  }
+}
+
+// Background generation helper (fire-and-forget)
+async function triggerVitalFlowGenerationBackground(
+  userId: string,
+  supabase: SupabaseClient
+): Promise<void> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (session?.access_token) {
+      console.log("[triggerVitalFlowGenerationBackground] Starting background generation...")
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/vitalflow-daily-habits`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            context: "It's a regular day.",
+            regenerate: false,
+          }),
+        }
+      )
+
+      if (response.ok) {
+        console.log("[triggerVitalFlowGenerationBackground] ✅ Background generation completed")
+      } else {
+        const errorText = await response.text()
+        console.error("[triggerVitalFlowGenerationBackground] Failed:", errorText)
+      }
+    }
+  } catch (error) {
+    console.error("[triggerVitalFlowGenerationBackground] Error:", error)
   }
 }

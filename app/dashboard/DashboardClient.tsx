@@ -18,6 +18,7 @@ import { AIConsentDialog, useAIConsent } from "@/components/ai-consent-dialog"
 // Lazy load modals - they're only needed when opened
 const UpdateProfileModal = lazy(() => import("@/app/update-profile-modal").then(m => ({ default: m.UpdateProfileModal })))
 const WeeklyReflectionModal = lazy(() => import("@/app/weekly-reflection-modal").then(m => ({ default: m.WeeklyReflectionModal })))
+const OnboardingChecklistModal = lazy(() => import("@/app/onboarding-checklist-modal").then(m => ({ default: m.OnboardingChecklistModal })))
 
 // Animation variants for staggered children
 const containerVariants = {
@@ -55,6 +56,7 @@ function DashboardClient() {
   // UI states
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isWeeklyReflectionModalOpen, setIsWeeklyReflectionModalOpen] = useState(false)
+  const [isOnboardingChecklistOpen, setIsOnboardingChecklistOpen] = useState(false)
   
   // Derive user data from cached app data
   const userName = useMemo(() => {
@@ -123,10 +125,48 @@ function DashboardClient() {
   // Daily insight from batched app data (no separate fetch needed)
   const dailyInsight = appData?.dailyInsight || "Start small and build momentum. Complete one habit today!"
 
-  // Check if we should prompt for weekly reflection (from batched app data)
+  // Check if user needs onboarding (incomplete profile setup)
+  const needsOnboarding = useMemo(() => {
+    if (!appData?.profile) return false
+
+    const profile = appData.profile
+
+    // Check if essential setup items are missing
+    const hasEquipment = !!(profile.custom_equipment &&
+      (Array.isArray(profile.custom_equipment) ? profile.custom_equipment.length > 0 : profile.custom_equipment))
+    const hasWorkoutTime = !!profile.preferred_workout_time
+    const hasMobilityAssessment = !!(
+      profile.shoulder_mobility &&
+      profile.hip_mobility &&
+      profile.ankle_mobility
+    )
+
+    // User needs onboarding if any essential setup is missing
+    return !hasEquipment || !hasWorkoutTime || !hasMobilityAssessment
+  }, [appData?.profile])
+
+  // Check if we should show onboarding checklist or weekly reflection
   // Uses sessionStorage to prevent re-showing the modal on repeated logins/navigations
   useEffect(() => {
-    if (appData?.shouldPromptWeeklyReflection) {
+    // Priority 1: Show onboarding checklist for new/incomplete users
+    if (needsOnboarding) {
+      const ONBOARDING_SHOWN_KEY = "v-life-onboarding-checklist-shown"
+      const shownToday = sessionStorage.getItem(ONBOARDING_SHOWN_KEY)
+      const today = new Date().toISOString().split("T")[0]
+
+      // Skip if already shown today in this session
+      if (shownToday === today) return
+
+      // Delay the prompt slightly to avoid overwhelming the user on page load
+      const timer = setTimeout(() => {
+        sessionStorage.setItem(ONBOARDING_SHOWN_KEY, today)
+        setIsOnboardingChecklistOpen(true)
+      }, 2000)
+      return () => clearTimeout(timer)
+    }
+
+    // Priority 2: Show weekly reflection for established users
+    if (appData?.shouldPromptWeeklyReflection && !needsOnboarding) {
       // Calculate current week start (Monday) for session tracking
       const getWeekStart = () => {
         const d = new Date()
@@ -134,14 +174,14 @@ function DashboardClient() {
         const diff = d.getDate() - day + (day === 0 ? -6 : 1)
         return new Date(d.setDate(diff)).toISOString().split("T")[0]
       }
-      
+
       const REFLECTION_SHOWN_KEY = "v-life-weekly-reflection-shown"
       const weekStart = getWeekStart()
       const shownForWeek = sessionStorage.getItem(REFLECTION_SHOWN_KEY)
-      
+
       // Skip if already shown this session for this week
       if (shownForWeek === weekStart) return
-      
+
       // Delay the prompt slightly to avoid overwhelming the user on page load
       const timer = setTimeout(() => {
         sessionStorage.setItem(REFLECTION_SHOWN_KEY, weekStart)
@@ -149,7 +189,7 @@ function DashboardClient() {
       }, 3000)
       return () => clearTimeout(timer)
     }
-  }, [appData?.shouldPromptWeeklyReflection])
+  }, [appData?.shouldPromptWeeklyReflection, needsOnboarding])
 
   // Show loading state while app data is being fetched
   if (appDataLoading && !appData) {
@@ -308,6 +348,15 @@ function DashboardClient() {
           <WeeklyReflectionModal
             isOpen={isWeeklyReflectionModalOpen}
             onClose={() => setIsWeeklyReflectionModalOpen(false)}
+          />
+        </Suspense>
+      )}
+      {isOnboardingChecklistOpen && (
+        <Suspense fallback={null}>
+          <OnboardingChecklistModal
+            isOpen={isOnboardingChecklistOpen}
+            onClose={() => setIsOnboardingChecklistOpen(false)}
+            profileData={appData?.profile}
           />
         </Suspense>
       )}

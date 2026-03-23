@@ -441,6 +441,7 @@ export interface OnboardingData {
   customProgramType?: string
   availableTimeMinutes: number
   trainingDaysPerWeek: number
+  visualCoachEnabled: boolean
 
   // Preferences data
   allergies: string[]

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { ArrowRight, Dumbbell, Home, Hotel, Building, Settings } from "lucide-react"
+import { ArrowRight, Dumbbell, Home, Hotel, Building, Settings, Sparkles, Clock } from "lucide-react"
 import { ButtonGlow } from "@/components/ui/button-glow"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -95,6 +95,34 @@ export default function ProfileSetup() {
             Tell us about yourself
           </motion.p>
         </div>
+
+        {/* Informational Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="mb-6"
+        >
+          <Card className="backdrop-blur-xl bg-gradient-to-br from-accent/10 via-yellow-500/5 to-accent/5 border border-accent/20 p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-0.5">
+                <Sparkles className="w-5 h-5 text-accent" />
+              </div>
+              <div className="flex-1 space-y-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-white">Why This Matters</h3>
+                  <div className="flex items-center gap-1 text-xs text-accent/80">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>1-2 min</span>
+                  </div>
+                </div>
+                <p className="text-xs text-white/70 leading-relaxed">
+                  Your responses help us create a truly personalized fitness experience. We'll generate custom workout plans, nutrition guidance, and AI coaching tailored specifically to your goals, fitness level, and available equipment.
+                </p>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
 
         <motion.div
           className="space-y-6"

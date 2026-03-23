@@ -1457,3 +1457,142 @@ export async function getWorkoutStatistics(planId: string) {
     totalVolume: Math.round(totalVolume),
   }
 }
+
+/**
+ * Advance to the next week of the workout plan
+ * This checks if all workouts in current week are completed, then:
+ * 1. Marks current week as completed
+ * 2. Advances current_week to next week
+ * 3. Unlocks next week's workouts
+ */
+export async function advanceToNextWeek(planId: string) {
+  const { user, error: authError } = await getAuthUser()
+  if (authError || !user) {
+    console.error('[advanceToNextWeek] Auth error:', authError)
+    return { success: false, error: 'Not authenticated' }
+  }
+
+  console.log('[advanceToNextWeek] Starting week advancement for plan:', planId)
+
+  try {
+    const supabase = await createClient()
+
+    // Call the database function to advance the week
+    const { data, error } = await supabase
+      .rpc('advance_to_next_week', { plan_id_param: planId })
+
+    if (error) {
+      console.error('[advanceToNextWeek] Database error:', error)
+      return {
+        success: false,
+        error: error.message || 'Failed to advance to next week'
+      }
+    }
+
+    // data is an array with one result from the function
+    const result = data?.[0]
+
+    if (!result || !result.success) {
+      console.warn('[advanceToNextWeek] Advancement blocked:', result?.message)
+      return {
+        success: false,
+        error: result?.message || 'Cannot advance to next week yet'
+      }
+    }
+
+    console.log('[advanceToNextWeek] Successfully advanced to week:', result.new_week)
+
+    // Revalidate paths
+    revalidatePath('/fitness')
+    revalidatePath('/dashboard')
+
+    return {
+      success: true,
+      newWeek: result.new_week,
+      message: result.message
+    }
+  } catch (error) {
+    console.error('[advanceToNextWeek] Unexpected error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Failed to advance week'
+    return {
+      success: false,
+      error: errorMessage
+    }
+  }
+}
+
+/**
+ * Generate the next week of the workout plan based on previous week's performance
+ * This is called when advancing to a week that hasn't been generated yet
+ */
+export async function generateAndUnlockNextWeek(planId: string) {
+  const { user, error: authError } = await getAuthUser()
+  if (authError || !user) {
+    console.error('[generateAndUnlockNextWeek] Auth error:', authError)
+    return { success: false, error: 'Not authenticated' }
+  }
+
+  console.log('[generateAndUnlockNextWeek] Generating next week for plan:', planId)
+
+  try {
+    // Call the generate-next-week API endpoint
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const response = await fetch(`${baseUrl}/api/workouts/generate-next-week`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: user.id,
+        planId: planId
+      })
+    })
+
+    const result = await response.json()
+
+    if (!response.ok || !result.success) {
+      console.error('[generateAndUnlockNextWeek] Generation failed:', result.error)
+      return {
+        success: false,
+        error: result.error || result.message || 'Failed to generate next week'
+      }
+    }
+
+    console.log('[generateAndUnlockNextWeek] Week generated successfully:', {
+      weekNumber: result.weekNumber,
+      totalWorkouts: result.totalWorkouts,
+      totalExercises: result.totalExercises
+    })
+
+    // Now advance to the newly generated week
+    const advanceResult = await advanceToNextWeek(planId)
+
+    if (!advanceResult.success) {
+      console.error('[generateAndUnlockNextWeek] Failed to advance after generation:', advanceResult.error)
+      return {
+        success: false,
+        error: `Week generated but failed to unlock: ${advanceResult.error}`
+      }
+    }
+
+    // Revalidate paths
+    revalidatePath('/fitness')
+    revalidatePath('/dashboard')
+
+    return {
+      success: true,
+      weekNumber: result.weekNumber,
+      newWeek: advanceResult.newWeek,
+      totalWorkouts: result.totalWorkouts,
+      totalExercises: result.totalExercises,
+      message: result.message
+    }
+  } catch (error) {
+    console.error('[generateAndUnlockNextWeek] Unexpected error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Failed to generate and unlock next week'
+    return {
+      success: false,
+      error: errorMessage
+    }
+  }
+}

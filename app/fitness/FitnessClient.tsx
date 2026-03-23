@@ -134,6 +134,16 @@ const COMMON_EQUIPMENT = [
   'Glute Ham Developer (GHD)',
 ]
 
+// Helper function to format weight with correct units (outside component for global access)
+function formatWeight(weightKg: number, useMetric: boolean) {
+  if (useMetric) {
+    return `${weightKg}kg`
+  } else {
+    const weightLbs = Math.round(weightKg * 2.20462)
+    return `${weightLbs}lbs`
+  }
+}
+
 export function FitnessClient() {
   const router = useRouter()
   const { user } = useAuth()
@@ -141,6 +151,13 @@ export function FitnessClient() {
   const [activeTab, setActiveTab] = useState<Tab>('workouts')
   const [showPlanGenerator, setShowPlanGenerator] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [useMetric, setUseMetric] = useState(false)
+
+  // Load metric preference from localStorage (default to false for US/imperial)
+  useEffect(() => {
+    const savedMetric = localStorage.getItem('useMetric')
+    setUseMetric(savedMetric === 'true') // Defaults to false if not set
+  }, [])
 
   const handleRefreshPlan = () => {
     setRefreshKey(prev => prev + 1)
@@ -213,10 +230,10 @@ export function FitnessClient() {
             />
           )}
           {activeTab === 'analytics' && (
-            <AnalyticsTab key="analytics" />
+            <AnalyticsTab key="analytics" useMetric={useMetric} />
           )}
           {activeTab === 'progress' && (
-            <ProgressTab key="progress" />
+            <ProgressTab key="progress" useMetric={useMetric} />
           )}
         </AnimatePresence>
       </div>
@@ -286,36 +303,38 @@ function WorkoutsTab({
       exit={{ opacity: 0, y: -20 }}
       className="space-y-4"
     >
-      {/* Access Reborn Visual AI Coach Card */}
-      <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 border-yellow-500/20 overflow-hidden">
-        <CardContent className="p-6">
-          <div className="flex items-start gap-4">
-            <div className="p-3 rounded-xl bg-yellow-500/20">
-              <Sparkles className="w-6 h-6 text-yellow-400" />
+      {/* Access V-Life Visual AI Coach Card - Only shown if enabled */}
+      {appData?.profile?.visual_coach_enabled && (
+        <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 border-yellow-500/20 overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-xl bg-yellow-500/20">
+                <Sparkles className="w-6 h-6 text-yellow-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-white mb-1">
+                  V-Life Visual AI Coach
+                </h3>
+                <p className="text-sm text-neutral-300 mb-4">
+                  Corrects form. And counts reps.
+                </p>
+                <p className="text-xs text-neutral-400 mb-4">
+                  AI tracks your form, reps, and calories burned in real time—so you train smarter,
+                  avoid injury, and see real results, all privately on your device.
+                </p>
+                <ButtonGlow
+                  onClick={() => router.push("/ai-coach")}
+                  className="gap-2 bg-yellow-500 hover:bg-yellow-400 text-black w-full"
+                  size="sm"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Access V-Life Visual AI Coach
+                </ButtonGlow>
+              </div>
             </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-white mb-1">
-                Reborn Visual AI Coach
-              </h3>
-              <p className="text-sm text-neutral-300 mb-4">
-                Corrects form. And counts reps.
-              </p>
-              <p className="text-xs text-neutral-400 mb-4">
-                AI tracks your form, reps, and calories burned in real time—so you train smarter,
-                avoid injury, and see real results, all privately on your device.
-              </p>
-              <ButtonGlow
-                onClick={() => router.push("/ai-coach")}
-                className="gap-2 bg-yellow-500 hover:bg-yellow-400 text-black w-full"
-                size="sm"
-              >
-                <Sparkles className="w-4 h-4" />
-                Access Reborn Visual AI Coach
-              </ButtonGlow>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Personalized Workout Plan Component */}
       <Suspense fallback={<WorkoutPlanSkeleton />}>
@@ -335,7 +354,7 @@ function WorkoutsTab({
 }
 
 // Analytics Tab Component
-function AnalyticsTab() {
+function AnalyticsTab({ useMetric }: { useMetric: boolean }) {
   const { user } = useAuth()
   const [workoutLogs, setWorkoutLogs] = useState<any[]>([])
   const [personalRecords, setPersonalRecords] = useState<any[]>([])
@@ -478,7 +497,7 @@ function AnalyticsTab() {
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-bold text-purple-400">
-                      {pr.weight ? `${pr.weight}kg` : pr.value}
+                      {pr.weight ? formatWeight(pr.weight, useMetric) : pr.value}
                     </p>
                     <p className="text-xs text-neutral-400">
                       {pr.reps ? `${pr.reps} reps` : pr.metric}
@@ -795,7 +814,7 @@ function AnalyticsTab() {
 }
 
 // Progress Tab Component
-function ProgressTab() {
+function ProgressTab({ useMetric }: { useMetric: boolean }) {
   const { user } = useAuth()
   const [personalRecords, setPersonalRecords] = useState<any[]>([])
   const [workoutLogs, setWorkoutLogs] = useState<any[]>([])
@@ -944,7 +963,7 @@ function ProgressTab() {
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-bold text-yellow-400">
-                      {pr.weight ? `${pr.weight}kg` : pr.value}
+                      {pr.weight ? formatWeight(pr.weight, useMetric) : pr.value}
                     </p>
                     <p className="text-xs text-neutral-400">
                       {pr.reps ? `${pr.reps} reps` : pr.metric}
@@ -1008,7 +1027,7 @@ function ProgressTab() {
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-bold text-purple-400">
-                      {pr.weight ? `${pr.weight}kg` : pr.value}
+                      {pr.weight ? formatWeight(pr.weight, useMetric) : pr.value}
                     </p>
                     <p className="text-xs text-neutral-400">
                       {pr.reps ? `${pr.reps} reps` : pr.metric}

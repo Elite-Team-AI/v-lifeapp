@@ -130,6 +130,32 @@ export function AppDataProvider({ children }: AppDataProviderProps) {
     fetchAppData(false)
   }, [fetchAppData])
 
+  // One-time auto-refresh after initial load to pick up background-generated VitalFlow suggestions
+  useEffect(() => {
+    if (!appData || isLoading) {
+      return
+    }
+
+    // Only do this once after initial load
+    const hasRefreshedForVitalFlow = sessionStorage.getItem('vitalflow-auto-refresh')
+    if (hasRefreshedForVitalFlow) {
+      return
+    }
+
+    // Check if VitalFlow suggestions are empty (meaning they're being generated in background)
+    if (!appData.vitalFlowSuggestions || appData.vitalFlowSuggestions.length === 0) {
+      console.log("[AppDataProvider] 🔄 VitalFlow suggestions empty, scheduling auto-refresh in 15s...")
+
+      const timeoutId = setTimeout(() => {
+        console.log("[AppDataProvider] 🔄 Auto-refreshing to fetch background-generated VitalFlow suggestions...")
+        fetchAppData(true)
+        sessionStorage.setItem('vitalflow-auto-refresh', 'true')
+      }, 15000) // 15 seconds should be enough for background generation
+
+      return () => clearTimeout(timeoutId)
+    }
+  }, [fetchAppData, appData, isLoading])
+
   // Background refresh on tab focus
   useEffect(() => {
     const handleVisibilityChange = () => {
