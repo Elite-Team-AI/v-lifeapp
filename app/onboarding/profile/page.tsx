@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { ArrowRight, Dumbbell, Home, Hotel, Building, Settings, Sparkles, Clock } from "lucide-react"
 import { ButtonGlow } from "@/components/ui/button-glow"
 import { Input } from "@/components/ui/input"
@@ -22,6 +22,9 @@ export default function ProfileSetup() {
   const [heightInches, setHeightInches] = useState(data.heightInches)
   const [weight, setWeight] = useState(data.weight)
   const [goalWeight, setGoalWeight] = useState(data.goalWeight)
+  const [showBodyFat, setShowBodyFat] = useState(!!data.bodyFatPercentage)
+  const [bodyFatPercentage, setBodyFatPercentage] = useState(data.bodyFatPercentage || "")
+  const [goalBodyFatPercentage, setGoalBodyFatPercentage] = useState(data.goalBodyFatPercentage || "")
   const [gymAccess, setGymAccess] = useState<string | null>(data.gymAccess || null)
   const [activityLevel, setActivityLevel] = useState(data.activityLevel)
   const [showActivityDefinitions, setShowActivityDefinitions] = useState(false)
@@ -51,6 +54,8 @@ export default function ProfileSetup() {
       heightInches,
       weight,
       goalWeight,
+      bodyFatPercentage: showBodyFat ? bodyFatPercentage : undefined,
+      goalBodyFatPercentage: showBodyFat ? goalBodyFatPercentage : undefined,
       gymAccess: gymAccess || "",
       selectedGym: selectedGym || "",
       customEquipment,
@@ -255,6 +260,76 @@ export default function ProfileSetup() {
                 onChange={(e) => setGoalWeight(e.target.value)}
                 className="backdrop-blur-xl bg-white/5 border-white/10 focus:border-accent/50 focus:bg-white/10 transition-all duration-300"
               />
+            </div>
+
+            {/* Body Fat Percentage Toggle */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowBodyFat(!showBodyFat)}
+                  className="flex items-center gap-2 text-sm text-white/70 hover:text-accent transition-colors"
+                >
+                  <div className={`w-10 h-6 rounded-full transition-all duration-300 ${showBodyFat ? 'bg-accent' : 'bg-white/20'} relative`}>
+                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 ${showBodyFat ? 'left-5' : 'left-1'}`} />
+                  </div>
+                  <span className="font-medium">Enter body fat percentage if known</span>
+                </button>
+              </div>
+
+              {showBodyFat && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-3 pl-1"
+                >
+                  <div className="p-3 rounded-lg bg-accent/5 border border-accent/20">
+                    <p className="text-xs text-white/60 leading-relaxed">
+                      <span className="text-accent font-semibold">Why track body fat?</span> Body fat percentage is a more accurate indicator of health and fitness than weight alone. Your goal body fat percentage will be prioritized over goal weight when creating your personalized nutrition and fitness plans.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="bodyFat" className="text-white/90 font-medium">Current Body Fat % (optional)</Label>
+                    <Input
+                      id="bodyFat"
+                      type="number"
+                      step="0.1"
+                      min="3"
+                      max="60"
+                      placeholder="e.g., 18.5"
+                      value={bodyFatPercentage}
+                      onChange={(e) => setBodyFatPercentage(e.target.value)}
+                      className="backdrop-blur-xl bg-white/5 border-white/10 focus:border-accent/50 focus:bg-white/10 transition-all duration-300"
+                    />
+                  </div>
+
+                  {bodyFatPercentage && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-2"
+                    >
+                      <Label htmlFor="goalBodyFat" className="text-white/90 font-medium flex items-center gap-2">
+                        Goal Body Fat %
+                        <span className="text-xs text-accent font-normal">(Prioritized over goal weight)</span>
+                      </Label>
+                      <Input
+                        id="goalBodyFat"
+                        type="number"
+                        step="0.1"
+                        min="3"
+                        max="60"
+                        placeholder="e.g., 15.0"
+                        value={goalBodyFatPercentage}
+                        onChange={(e) => setGoalBodyFatPercentage(e.target.value)}
+                        className="backdrop-blur-xl bg-white/5 border-white/10 focus:border-accent/50 focus:bg-white/10 transition-all duration-300"
+                      />
+                    </motion.div>
+                  )}
+                </motion.div>
+              )}
             </div>
           </motion.div>
 

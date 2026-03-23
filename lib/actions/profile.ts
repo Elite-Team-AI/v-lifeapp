@@ -54,6 +54,8 @@ export async function updateProfile(profileData: {
   heightInches?: string
   weight?: string
   goalWeight?: string
+  bodyFatPercentage?: number
+  goalBodyFatPercentage?: number
   calorieGoal?: string | null
   primaryGoal?: string
   activityLevel?: number | string
@@ -123,6 +125,8 @@ export async function updateProfile(profileData: {
       height_inches: profileData.heightInches ? Number.parseInt(profileData.heightInches) : null,
       weight: profileData.weight ? Number.parseFloat(profileData.weight) : null,
       goal_weight: profileData.goalWeight ? Number.parseFloat(profileData.goalWeight) : null,
+      body_fat_percentage: profileData.bodyFatPercentage ?? null,
+      goal_body_fat_percentage: profileData.goalBodyFatPercentage ?? null,
       calorie_goal: profileData.calorieGoal ? Number.parseInt(profileData.calorieGoal) : null,
       primary_goal: profileData.primaryGoal,
       activity_level: profileData.activityLevel,

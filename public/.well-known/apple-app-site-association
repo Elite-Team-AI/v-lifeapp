@@ -3,19 +3,18 @@
     "apps": [],
     "details": [
       {
-        "appID": "4BX779XKAL.app.vlife.ios",
+        "appID": "TEAM_ID.com.vlife.app",
         "paths": [
-          "/auth/*",
-          "/onboarding/*",
-          "/dashboard",
-          "/settings"
+          "/auth/callback",
+          "/auth/callback/*",
+          "/auth/*"
         ]
       }
     ]
   },
   "webcredentials": {
     "apps": [
-      "4BX779XKAL.app.vlife.ios"
+      "TEAM_ID.com.vlife.app"
     ]
   }
 }

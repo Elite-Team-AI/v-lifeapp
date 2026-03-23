@@ -1087,6 +1087,8 @@ function FitnessProfileSection() {
     availableTimeMinutes: profile?.available_time_minutes?.toString() || '45',
     selectedEquipment: parseEquipment(profile?.custom_equipment),
     preferredWorkoutTime: profile?.preferred_workout_time || '',
+    bodyFatPercentage: profile?.body_fat_percentage?.toString() || '',
+    goalBodyFatPercentage: profile?.goal_body_fat_percentage?.toString() || '',
     shoulderMobility: profile?.shoulder_mobility?.toString() || '',
     hipMobility: profile?.hip_mobility?.toString() || '',
     ankleMobility: profile?.ankle_mobility?.toString() || '',
@@ -1108,6 +1110,8 @@ function FitnessProfileSection() {
         availableTimeMinutes: profile.available_time_minutes?.toString() || '45',
         selectedEquipment: parseEquipment(profile.custom_equipment),
         preferredWorkoutTime: profile.preferred_workout_time || '',
+        bodyFatPercentage: profile.body_fat_percentage?.toString() || '',
+        goalBodyFatPercentage: profile.goal_body_fat_percentage?.toString() || '',
         shoulderMobility: profile.shoulder_mobility?.toString() || '',
         hipMobility: profile.hip_mobility?.toString() || '',
         ankleMobility: profile.ankle_mobility?.toString() || '',
@@ -1216,6 +1220,8 @@ function FitnessProfileSection() {
         availableTimeMinutes: formData.availableTimeMinutes ? parseInt(formData.availableTimeMinutes) : undefined,
         customEquipment: formData.selectedEquipment.length > 0 ? formData.selectedEquipment.join(',') : undefined,
         preferredWorkoutTime: formData.preferredWorkoutTime || undefined,
+        bodyFatPercentage: formData.bodyFatPercentage ? parseFloat(formData.bodyFatPercentage) : undefined,
+        goalBodyFatPercentage: formData.goalBodyFatPercentage ? parseFloat(formData.goalBodyFatPercentage) : undefined,
         shoulderMobility: formData.shoulderMobility ? parseInt(formData.shoulderMobility) : undefined,
         hipMobility: formData.hipMobility ? parseInt(formData.hipMobility) : undefined,
         ankleMobility: formData.ankleMobility ? parseInt(formData.ankleMobility) : undefined,
@@ -1262,6 +1268,8 @@ function FitnessProfileSection() {
       availableTimeMinutes: profile?.available_time_minutes?.toString() || '45',
       selectedEquipment: parseEquipment(profile?.custom_equipment),
       preferredWorkoutTime: profile?.preferred_workout_time || '',
+      bodyFatPercentage: profile?.body_fat_percentage?.toString() || '',
+      goalBodyFatPercentage: profile?.goal_body_fat_percentage?.toString() || '',
       shoulderMobility: profile?.shoulder_mobility?.toString() || '',
       hipMobility: profile?.hip_mobility?.toString() || '',
       ankleMobility: profile?.ankle_mobility?.toString() || '',
@@ -1355,6 +1363,65 @@ function FitnessProfileSection() {
                     </Select>
                   ) : (
                     <span className="text-sm font-medium text-white block mt-1">{formatGoal(profile?.primary_goal)}</span>
+                  )}
+                </div>
+
+                {/* Body Fat Percentage */}
+                <div className="p-3 bg-neutral-800/50 rounded-lg border border-accent/10">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Activity className="w-4 h-4 text-accent" />
+                    <div className="flex-1">
+                      <span className="text-sm text-neutral-400">Body Composition</span>
+                      <p className="text-xs text-neutral-500 mt-0.5">More important than weight for AI planning</p>
+                    </div>
+                  </div>
+                  {isEditing ? (
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-neutral-400 mb-1">Current Body Fat %</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="3"
+                          max="60"
+                          placeholder="e.g., 18.5"
+                          value={formData.bodyFatPercentage}
+                          onChange={(e) => setFormData({...formData, bodyFatPercentage: e.target.value})}
+                          className="bg-neutral-900 border-white/10 text-white text-sm mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-neutral-400 mb-1 flex items-center gap-2">
+                          Goal Body Fat %
+                          <span className="text-xs text-accent font-normal">(Priority metric)</span>
+                        </Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="3"
+                          max="60"
+                          placeholder="e.g., 15.0"
+                          value={formData.goalBodyFatPercentage}
+                          onChange={(e) => setFormData({...formData, goalBodyFatPercentage: e.target.value})}
+                          className="bg-neutral-900 border-white/10 text-white text-sm mt-1"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3 mt-2">
+                      <div>
+                        <div className="text-xs text-neutral-500 mb-1">Current</div>
+                        <div className="text-sm font-medium text-white">
+                          {profile?.body_fat_percentage ? `${profile.body_fat_percentage}%` : 'Not Set'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-neutral-500 mb-1">Goal</div>
+                        <div className="text-sm font-medium text-accent">
+                          {profile?.goal_body_fat_percentage ? `${profile.goal_body_fat_percentage}%` : 'Not Set'}
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
 

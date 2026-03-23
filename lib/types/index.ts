@@ -69,6 +69,8 @@ export interface Profile {
   height_inches: number | null
   weight: number | null
   goal_weight: number | null
+  body_fat_percentage: number | null
+  goal_body_fat_percentage: number | null
   calorie_goal: number | null
   primary_goal: 'lose-weight' | 'tone-up' | 'build-muscle' | 'lifestyle' | null
   activity_level: 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'extremely_active' | null
@@ -113,6 +115,8 @@ export interface ProfileFormData {
   heightInches: string
   weight: string
   goalWeight: string
+  bodyFatPercentage?: string
+  goalBodyFatPercentage?: string
   calorieGoal?: string
   primaryGoal: string
   activityLevel: number | string
@@ -428,6 +432,8 @@ export interface OnboardingData {
   heightInches: string
   weight: string
   goalWeight: string
+  bodyFatPercentage?: string
+  goalBodyFatPercentage?: string
   gymAccess: string
   selectedGym: string
   customEquipment: string
