@@ -150,14 +150,18 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
 
       if (!savePlanResponse.ok) {
         const errorData = await savePlanResponse.json()
-        throw new Error(errorData.error || 'Failed to save plan to database')
+        console.error('Save plan error:', errorData)
+        // Use the user-friendly message from the API, or fall back to error
+        throw new Error(errorData.message || errorData.error || 'Failed to save. Please try again.')
       }
 
       // Refresh the plan
       await fetchCurrentPlan()
     } catch (err: any) {
       console.error('Error generating plan:', err)
-      setError(err.message || 'Failed to generate workout plan')
+      // Use the error message as-is if it exists, otherwise use a generic message
+      const errorMessage = err.message || 'Failed to generate. Please try again.'
+      setError(errorMessage)
       // Store needsEquipment flag for rendering
       if (err.needsEquipment) {
         setError(`${err.message}|NEEDS_EQUIPMENT`)
