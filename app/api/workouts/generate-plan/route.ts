@@ -481,22 +481,33 @@ BEFORE YOU OUTPUT YOUR JSON:
     // Try direct parsing first
     try {
       weekData = JSON.parse(aiResponse)
-    } catch (initialError) {
+    } catch (initialError: any) {
       // Sanitize the response if direct parsing fails
       log.debug(`Direct JSON parse failed for week ${weekNumber}, attempting sanitization`, undefined, {
         userId,
         weekNumber,
-        parseError: initialError.message
+        parseError: initialError?.message || 'Unknown error',
+        responsePreview: aiResponse.substring(0, 200)
       })
 
       // Remove any markdown code blocks
       sanitizedResponse = aiResponse.replace(/^```json\s*/i, '').replace(/\s*```$/i, '')
+
+      // Remove any markdown or text before/after JSON
+      sanitizedResponse = sanitizedResponse.replace(/^[^{]*/, '').replace(/[^}]*$/, '')
       sanitizedResponse = sanitizedResponse.trim()
 
-      // Extract JSON object
+      // Validate we have something that looks like JSON
+      if (!sanitizedResponse.startsWith('{') || !sanitizedResponse.endsWith('}')) {
+        throw new Error(`Sanitized response doesn't look like valid JSON. Starts with: ${sanitizedResponse.substring(0, 50)}`)
+      }
+
+      // Extract JSON object (find the outermost braces)
       const jsonMatch = sanitizedResponse.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         sanitizedResponse = jsonMatch[0]
+      } else {
+        throw new Error('Could not extract JSON object from response')
       }
 
       weekData = JSON.parse(sanitizedResponse)
@@ -580,8 +591,9 @@ BEFORE YOU OUTPUT YOUR JSON:
       userId,
       weekNumber,
       parseErrorMessage: parseError.message,
-      aiResponsePreview: aiResponse.substring(0, 500),
-      sanitizedPreview: sanitizedResponse.substring(0, 500)
+      aiResponsePreview: aiResponse ? aiResponse.substring(0, 500) : 'N/A',
+      sanitizedPreview: sanitizedResponse && typeof sanitizedResponse === 'string' ? sanitizedResponse.substring(0, 500) : 'N/A',
+      aiResponseLength: aiResponse ? aiResponse.length : 0
     })
     return NextResponse.json(
       {
@@ -1248,18 +1260,18 @@ function validateWeekStructure(week: any): string | null {
     }
 
     // Validate minimum exercise count based on workout duration
-    // Note: These are minimum thresholds - quality over quantity
+    // These thresholds must match the AI prompt requirements
     const duration = workout.estimatedDuration || 60
-    let minExercises = 4 // Default minimum
+    let minExercises = 3 // Default minimum
 
     if (duration >= 75) {
-      minExercises = 5 // Relaxed from 6
+      minExercises = 5
     } else if (duration >= 60) {
-      minExercises = 4 // Relaxed from 5
+      minExercises = 5 // Match prompt: "60-minute workouts: MINIMUM 5 exercises"
     } else if (duration >= 45) {
-      minExercises = 3 // Relaxed from 4
+      minExercises = 4 // Match prompt: "45-minute workouts: MINIMUM 4 exercises"
     } else if (duration >= 30) {
-      minExercises = 3
+      minExercises = 3 // Match prompt: "30-minute workouts: MINIMUM 3 exercises"
     }
 
     if (workout.exercises.length < minExercises) {
@@ -1269,14 +1281,14 @@ function validateWeekStructure(week: any): string | null {
     // Validate total sets per workout based on duration
     const totalSets = workout.exercises.reduce((sum: number, ex: any) => sum + (ex.sets || 0), 0)
 
-    // Set minimum based on duration (relaxed requirements for flexibility)
+    // Set minimum based on duration - MUST match AI prompt requirements
     let minSets = 6
     if (duration >= 60) {
-      minSets = 9 // 60+ minute workouts need 9+ sets (relaxed from 10)
+      minSets = 10 // Match prompt: "60-minute workouts: MINIMUM 10 total sets"
     } else if (duration >= 45) {
-      minSets = 8 // 45+ minute workouts need 8+ sets (relaxed from 9)
+      minSets = 9 // Match prompt: "45-minute workouts: MINIMUM 9 total sets"
     } else if (duration >= 30) {
-      minSets = 6 // 30+ minute workouts need 6+ sets
+      minSets = 6 // 30-minute workouts
     }
 
     if (totalSets < minSets) {
@@ -1371,18 +1383,18 @@ function validatePlanStructure(plan: any): string | null {
       }
 
       // Validate minimum exercise count based on workout duration
-      // Note: These are minimum thresholds - quality over quantity
+      // These thresholds must match the AI prompt requirements
       const duration = workout.estimatedDuration || 60
-      let minExercises = 4 // Default minimum
+      let minExercises = 3 // Default minimum
 
       if (duration >= 75) {
-        minExercises = 6
-      } else if (duration >= 60) {
         minExercises = 5
+      } else if (duration >= 60) {
+        minExercises = 5 // Match prompt: "60-minute workouts: MINIMUM 5 exercises"
       } else if (duration >= 45) {
-        minExercises = 4
+        minExercises = 4 // Match prompt: "45-minute workouts: MINIMUM 4 exercises"
       } else if (duration >= 30) {
-        minExercises = 3
+        minExercises = 3 // Match prompt: "30-minute workouts: MINIMUM 3 exercises"
       }
 
       if (workout.exercises.length < minExercises) {
@@ -1392,14 +1404,14 @@ function validatePlanStructure(plan: any): string | null {
       // Validate total sets per workout based on duration
       const totalSets = workout.exercises.reduce((sum: number, ex: any) => sum + (ex.sets || 0), 0)
 
-      // Set minimum based on duration
-      let minSets = 10
+      // Set minimum based on duration - MUST match AI prompt requirements
+      let minSets = 6
       if (duration >= 60) {
-        minSets = 12 // 60+ minute workouts need 12+ sets
+        minSets = 10 // Match prompt: "60-minute workouts: MINIMUM 10 total sets"
       } else if (duration >= 45) {
-        minSets = 10 // 45+ minute workouts need 10+ sets
+        minSets = 9 // Match prompt: "45-minute workouts: MINIMUM 9 total sets"
       } else if (duration >= 30) {
-        minSets = 8 // 30+ minute workouts need 8+ sets
+        minSets = 6 // 30-minute workouts
       }
 
       if (totalSets < minSets) {
