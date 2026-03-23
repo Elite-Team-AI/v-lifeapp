@@ -165,14 +165,34 @@ export async function POST(request: NextRequest) {
 
     // 4. Mark the planned workout as completed
     if (workoutLog.workout_id) {
-      await supabase
+      const { data: updatedWorkout, error: workoutUpdateError } = await supabase
         .from('plan_workouts')
         .update({
           is_completed: true,
-          completed_date: new Date().toISOString().split('T')[0],
-          actual_duration_minutes: actualDurationMinutes
+          completion_percentage: 100
         })
         .eq('id', workoutLog.workout_id)
+        .select()
+        .single()
+
+      if (workoutUpdateError) {
+        log.error('Error marking workout as completed', new Error(workoutUpdateError.message), undefined, {
+          userId,
+          workoutId: workoutLog.workout_id,
+          errorCode: workoutUpdateError.code
+        })
+      } else {
+        log.info('Workout marked as completed in plan', undefined, {
+          userId,
+          workoutId: updatedWorkout.id,
+          workoutName: updatedWorkout.workout_name
+        })
+      }
+    } else {
+      log.warn('No workout_id found on workout_log, cannot mark as completed', undefined, {
+        userId,
+        workoutLogId
+      })
     }
 
     // 5. Check if any PRs were set (trigger will handle this automatically)

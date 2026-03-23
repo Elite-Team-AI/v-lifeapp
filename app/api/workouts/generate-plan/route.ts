@@ -1,8 +1,130 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import Anthropic from '@anthropic-ai/sdk'
 import { createApiLogger } from '@/lib/utils/logger'
 import { workoutGenerationSchema, safeValidate } from '@/lib/validations/api'
+
+/**
+ * Generate workout plan using AI with automatic fallback
+ * Tries OpenAI first, falls back to Claude if OpenAI fails
+ */
+async function generateWithAIFallback(
+  systemPrompt: string,
+  userPrompt: string,
+  log: any,
+  userId: string,
+  weekNumber: number
+): Promise<{ content: string; provider: 'openai' | 'claude' }> {
+  const openaiKey = process.env.OPENAI_API_KEY
+  const anthropicKey = process.env.ANTHROPIC_API_KEY
+
+  // Try OpenAI first
+  if (openaiKey) {
+    try {
+      log.info(`Attempting workout generation with OpenAI`, undefined, {
+        userId,
+        weekNumber,
+        provider: 'openai'
+      })
+
+      const openai = new OpenAI({ apiKey: openaiKey })
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.7,
+        response_format: { type: 'json_object' },
+        max_tokens: 16384
+      })
+
+      const content = completion.choices[0].message.content
+
+      if (!content) {
+        throw new Error('Empty response from OpenAI')
+      }
+
+      // Check if response was truncated
+      if (completion.choices[0].finish_reason === 'length') {
+        throw new Error('OpenAI response truncated due to length')
+      }
+
+      log.info(`✅ Successfully generated workout with OpenAI`, undefined, {
+        userId,
+        weekNumber,
+        provider: 'openai',
+        tokensUsed: completion.usage?.total_tokens
+      })
+
+      return { content, provider: 'openai' }
+
+    } catch (openaiError: any) {
+      log.warn(`OpenAI generation failed, will try Claude fallback`, openaiError, {
+        userId,
+        weekNumber,
+        provider: 'openai',
+        errorMessage: openaiError.message,
+        errorType: openaiError.type,
+        errorCode: openaiError.code
+      })
+    }
+  }
+
+  // Fallback to Claude
+  if (!anthropicKey) {
+    throw new Error('Both OpenAI and Anthropic API keys are missing. Cannot generate workout plan.')
+  }
+
+  try {
+    log.info(`Attempting workout generation with Claude (fallback)`, undefined, {
+      userId,
+      weekNumber,
+      provider: 'claude'
+    })
+
+    const anthropic = new Anthropic({ apiKey: anthropicKey })
+
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 16384,
+      temperature: 0.7,
+      system: systemPrompt,
+      messages: [
+        {
+          role: 'user',
+          content: userPrompt
+        }
+      ]
+    })
+
+    const content = message.content[0]
+    if (content.type !== 'text') {
+      throw new Error('Unexpected response type from Claude')
+    }
+
+    log.info(`✅ Successfully generated workout with Claude`, undefined, {
+      userId,
+      weekNumber,
+      provider: 'claude',
+      tokensUsed: message.usage.input_tokens + message.usage.output_tokens
+    })
+
+    return { content: content.text, provider: 'claude' }
+
+  } catch (claudeError: any) {
+    log.error(`Claude generation failed`, claudeError, undefined, {
+      userId,
+      weekNumber,
+      provider: 'claude',
+      errorMessage: claudeError.message
+    })
+
+    throw new Error(`Both AI providers failed. OpenAI: ${openaiKey ? 'attempted' : 'no key'}. Claude: ${claudeError.message}`)
+  }
+}
 
 /**
  * Generate a personalized 4-week workout plan using AI
@@ -81,11 +203,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Initialize clients at runtime, not build time
-    const openai = new OpenAI({
-      apiKey: openaiKey,
-    })
-
+    // Initialize Supabase client at runtime, not build time
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
@@ -255,181 +373,98 @@ export async function POST(request: NextRequest) {
     // Build week-specific prompt
     const weekPrompt = buildWeekPrompt(profile, filteredExercises, preferences, weekNumber, previousWeeks)
 
-    let completion
-    let aiResponse: string | null = null
-
-    try {
-      completion = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert fitness coach and exercise scientist. You create personalized, science-based workout programs that follow proper periodization principles. You always respond with valid JSON.
+    // System prompt for AI (works with both OpenAI and Claude)
+    const systemPrompt = `You are an expert fitness coach and exercise scientist. You create personalized, science-based workout programs that follow proper periodization principles. You always respond with valid JSON.
 
 🚨 ABSOLUTE MANDATORY REQUIREMENTS - FAILURE TO COMPLY WILL RESULT IN REJECTED OUTPUT 🚨
 
 EXERCISE COUNT REQUIREMENTS (NON-NEGOTIABLE):
-- 60-minute workouts: YOU WILL GENERATE EXACTLY 6-7 exercises (NEVER 5 or less)
-- 45-minute workouts: YOU WILL GENERATE EXACTLY 5-6 exercises
-- 30-minute workouts: YOU WILL GENERATE EXACTLY 4-5 exercises
+- 60-minute workouts: MINIMUM 5 exercises (Target: 5-6 exercises for optimal quality)
+- 45-minute workouts: MINIMUM 4 exercises (Target: 4-5 exercises)
+- 30-minute workouts: MINIMUM 3 exercises (Target: 3-4 exercises)
 
 SET COUNT REQUIREMENTS (NON-NEGOTIABLE):
-- 60-minute workouts: MINIMUM 12 total sets (2-3 sets per exercise)
-- 45-minute workouts: MINIMUM 10 total sets (2 sets per exercise)
+- 60-minute workouts: MINIMUM 10 total sets (Target: 12-15 sets, typically 2-3 sets per exercise)
+- 45-minute workouts: MINIMUM 9 total sets (Target: 10-12 sets, typically 2-3 sets per exercise)
 - Each individual exercise: MINIMUM 2 sets, MAXIMUM 4 sets
 
-VALIDATION PROCESS YOU MUST FOLLOW:
-1. After generating each workout in your mind, COUNT the exercises
-2. If a 60-minute workout has fewer than 6 exercises, ADD MORE EXERCISES until it has 6-7
-3. COUNT the total sets (sum of all exercise sets)
-4. If a 60-minute workout has fewer than 12 total sets, INCREASE sets per exercise
-5. Only after validation passes, output the JSON
+VALIDATION PROCESS YOU MUST FOLLOW (MANDATORY - NO EXCEPTIONS):
+1. Generate each workout in your mind
+2. FOR EACH 60-MINUTE WORKOUT: Literally count on your fingers - 1, 2, 3, 4, 5 exercises minimum
+3. If you counted to 4 and stopped → ADD ONE MORE EXERCISE before outputting
+4. COUNT total sets across all exercises
+5. If total sets < 12 → INCREASE sets per exercise (use 2-3 sets each)
+6. ONLY after you have verified EVERY 60-min workout has 5+ exercises, output JSON
 
-EXAMPLE OF CORRECT 60-MINUTE WORKOUT:
-- Exercise 1: Barbell Squat - 3 sets
-- Exercise 2: Romanian Deadlift - 3 sets
-- Exercise 3: Leg Press - 2 sets
-- Exercise 4: Bulgarian Split Squat - 2 sets
-- Exercise 5: Leg Curl - 2 sets
-- Exercise 6: Calf Raise - 2 sets
-TOTAL: 6 exercises, 14 sets ✓ VALID
+EXAMPLE OF CORRECT 60-MINUTE WORKOUT (YOU MUST MATCH THIS PATTERN):
+✅ CORRECT:
+- Exercise 1: Barbell Squat - 3 sets x 8-12 reps
+- Exercise 2: Romanian Deadlift - 3 sets x 10-12 reps
+- Exercise 3: Leg Press - 3 sets x 12-15 reps
+- Exercise 4: Bulgarian Split Squat - 2 sets x 10-12 reps
+- Exercise 5: Leg Curl - 2 sets x 12-15 reps
+COUNT: 1, 2, 3, 4, 5 = 5 exercises ✓ | 13 total sets ✓ | VALID
 
-If you generate a 60-minute workout with only 5 exercises, YOUR OUTPUT WILL BE REJECTED.`
-          },
-          {
-            role: 'user',
-            content: weekPrompt
-          }
-        ],
-        temperature: 0.7,
-        response_format: { type: 'json_object' },
-        max_tokens: 16384 // Maximum output tokens for gpt-4o
-      })
+❌ INVALID (WILL BE REJECTED):
+- Exercise 1: Squat - 3 sets
+- Exercise 2: Deadlift - 3 sets
+- Exercise 3: Leg Press - 3 sets
+- Exercise 4: Leg Curl - 3 sets
+COUNT: 1, 2, 3, 4 = 4 exercises ✗ | REJECTED | OUTPUT WILL FAIL
 
-      aiResponse = completion.choices[0].message.content
+BEFORE YOU OUTPUT YOUR JSON:
+- Count exercises in EACH 60-min workout on your fingers: 1, 2, 3, 4, 5
+- If you only count to 4 → GO BACK and ADD ONE MORE EXERCISE
+- Verify total sets >= 12 for 60-min workouts
+- If validation fails → FIX IT before outputting JSON`
 
-      // Check if response was truncated due to token limit
-      const finishReason = completion.choices[0].finish_reason
-      if (finishReason === 'length') {
-        log.error(`OpenAI response truncated for week ${weekNumber}`, new Error("Response truncated"), undefined, {
-          userId,
-          weekNumber,
-          finishReason,
-          tokensUsed: completion.usage?.total_tokens,
-          maxTokens: 16384,
-          responseLength: aiResponse?.length || 0
-        })
-        return NextResponse.json(
-          {
-            error: 'AI response incomplete',
-            message: `Workout plan generation was incomplete for week ${weekNumber}. Please try again with slightly simpler preferences.`,
-            details: 'OpenAI response was truncated due to length limit'
-          },
-          { status: 500 }
-        )
-      }
-    } catch (openaiError: any) {
-      // Handle specific OpenAI errors with actionable messages
-      const errorMessage = openaiError.message || 'Unknown error'
-      const errorStatus = openaiError.status || openaiError.code
+    // Try AI generation with automatic fallback (OpenAI → Claude)
+    let aiResponse: string | null = null
+    let aiProvider: 'openai' | 'claude' = 'openai'
 
-      log.error(`OpenAI API call failed for week ${weekNumber}`, openaiError, undefined, {
+    try {
+      const result = await generateWithAIFallback(systemPrompt, weekPrompt, log, userId, weekNumber)
+      aiResponse = result.content
+      aiProvider = result.provider
+    } catch (aiError: any) {
+      log.error(`All AI providers failed for week ${weekNumber}`, aiError, undefined, {
         userId,
         weekNumber,
-        errorMessage,
-        errorStatus,
-        errorType: openaiError.type,
-        errorCode: openaiError.code
+        errorMessage: aiError.message
       })
 
-    // Provide specific error messages based on error type
-    if (errorStatus === 429 || errorMessage.includes('rate_limit')) {
       return NextResponse.json(
         {
-          error: 'AI service temporarily unavailable',
-          message: 'The AI service is experiencing high demand. Please try again in a few moments.',
-          details: 'OpenAI rate limit exceeded'
-        },
-        { status: 503 }
-      )
-    }
-
-    if (errorStatus === 401 || errorMessage.includes('authentication') || errorMessage.includes('api key')) {
-      return NextResponse.json(
-        {
-          error: 'AI service configuration error',
-          message: 'There is an issue with the AI service configuration. Please contact support.',
-          details: 'OpenAI authentication failed'
+          error: 'AI service error',
+          message: `Unable to generate workout plan. Both AI services are currently unavailable. Please try again later.`,
+          details: aiError.message
         },
         { status: 500 }
       )
     }
 
-    if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+    if (!aiResponse) {
+      log.error(`Empty AI response for week ${weekNumber}`, new Error("Empty AI response"), undefined, {
+        userId,
+        weekNumber,
+        provider: aiProvider
+      })
       return NextResponse.json(
         {
-          error: 'AI service timeout',
-          message: 'The AI service took too long to respond. Please try again.',
-          details: 'OpenAI request timeout'
+          error: 'Empty AI response',
+          message: `The AI service returned an empty response for week ${weekNumber}. Please try again.`,
+          details: `No content from ${aiProvider}`
         },
-        { status: 504 }
+        { status: 500 }
       )
     }
 
-    if (errorMessage.includes('model') || errorMessage.includes('not found')) {
-      return NextResponse.json(
-        {
-          error: 'AI model unavailable',
-          message: 'The requested AI model is currently unavailable. Please try again later.',
-          details: `OpenAI model error: ${errorMessage}`
-        },
-        { status: 503 }
-      )
-    }
-
-    if (errorMessage.includes('token') || errorMessage.includes('maximum context length')) {
-      return NextResponse.json(
-        {
-          error: 'Request too large',
-          message: 'Your workout plan request exceeded the AI processing limits. Please simplify your requirements and try again.',
-          details: 'OpenAI token limit exceeded'
-        },
-        { status: 400 }
-      )
-    }
-
-    // Generic OpenAI error
-    return NextResponse.json(
-      {
-        error: 'AI service error',
-        message: `The AI service encountered an error while generating week ${weekNumber}. Please try again.`,
-        details: `OpenAI error: ${errorMessage}`
-      },
-      { status: 500 }
-    )
-  }
-
-  if (!aiResponse) {
-    log.error(`No response received from OpenAI for week ${weekNumber}`, new Error("Empty AI response"), undefined, {
+    log.debug(`AI response received for week ${weekNumber}`, undefined, {
       userId,
-      weekNumber
+      weekNumber,
+      provider: aiProvider,
+      responseLength: aiResponse.length
     })
-    return NextResponse.json(
-      {
-        error: 'Empty AI response',
-        message: `The AI service returned an empty response for week ${weekNumber}. Please try again.`,
-        details: 'No content in OpenAI response'
-      },
-      { status: 500 }
-    )
-  }
-
-  log.debug(`AI response received for week ${weekNumber}`, undefined, {
-    userId,
-    weekNumber,
-    responseLength: aiResponse.length,
-    tokensUsed: completion.usage?.total_tokens
-  })
 
   // Parse this week's response
   let weekData
@@ -627,20 +662,20 @@ ${availableExercises.slice(0, 25).map(ex =>
 ⚠️⚠️⚠️ **BEFORE YOU OUTPUT YOUR RESPONSE, COUNT THE EXERCISES IN EACH WORKOUT** ⚠️⚠️⚠️
 
 **EXERCISE COUNT VALIDATION CHECKLIST (MUST BE 100% CHECKED):**
-- [ ] Does EVERY 60-minute workout have AT LEAST 6 exercises? (Target: 6-7 exercises)
-- [ ] Does EVERY 45-minute workout have AT LEAST 5 exercises? (Target: 6-7 exercises)
-- [ ] Does EVERY 60-minute workout have AT LEAST 12 total sets? (Target: 12-16 sets)
-- [ ] Does EVERY 45-minute workout have AT LEAST 10 total sets? (Target: 12-14 sets)
+- [ ] Does EVERY 60-minute workout have AT LEAST 5 exercises? (Target: 5-6 exercises)
+- [ ] Does EVERY 45-minute workout have AT LEAST 4 exercises? (Target: 4-5 exercises)
+- [ ] Does EVERY 60-minute workout have AT LEAST 12 total sets? (Target: 12-15 sets)
+- [ ] Does EVERY 45-minute workout have AT LEAST 10 total sets? (Target: 10-12 sets)
 - [ ] Does each exercise have 2 sets minimum? (Ideally 2-3 sets per exercise)
 - [ ] Have I used EXACT UUIDs from the available exercises list (not sequential numbers)?
 
 **REALITY CHECK - COMMON FAILURE MODES:**
-- 5 exercises in 60 minutes = REJECTION → ADD 1 MORE EXERCISE NOW
-- 4 exercises in 60 minutes = REJECTION → ADD 2 MORE EXERCISES NOW
-- 10-11 total sets in 60 minutes = REJECTION → INCREASE SETS PER EXERCISE (use 2 sets minimum)
+- 4 exercises in 60 minutes = REJECTION → ADD 1 MORE EXERCISE NOW
+- 3 exercises in 60 minutes = REJECTION → ADD 2 MORE EXERCISES NOW
+- 10-11 total sets in 60 minutes = REJECTION → INCREASE SETS PER EXERCISE (use 2-3 sets per exercise)
 - Using only 1 set per exercise = INSUFFICIENT VOLUME → USE 2 SETS MINIMUM
 
-**IF ANY CHECKBOX IS UNCHECKED, YOUR RESPONSE WILL BE REJECTED. GO BACK AND ADD MORE EXERCISES.**
+**IF ANY CHECKBOX IS UNCHECKED, YOUR RESPONSE WILL BE REJECTED. FIX THE ISSUES BEFORE OUTPUTTING.**
 
 **REQUIREMENTS:**
 
@@ -669,22 +704,22 @@ ${availableExercises.slice(0, 25).map(ex =>
    - 🎯 **USE MODALITY-SPECIFIC RECOMMENDATIONS:** Each exercise above includes pre-configured sets/reps/rest recommendations for ${userTrainingStyle} training. Use these values as your baseline when programming workouts.
 
    **MINIMUM EXERCISES BASED ON WORKOUT DURATION:**
-   - 30-40 minutes: 4 exercises, 8-10 total sets
-   - 45-55 minutes: 5 exercises, 10-12 total sets
-   - 60-75 minutes: 6 exercises minimum, 12+ total sets (target: 6-7 exercises)
-   - 75+ minutes: 7 exercises, 14+ total sets
+   - 30-40 minutes: 3-4 exercises, 8-10 total sets
+   - 45-55 minutes: 4-5 exercises, 10-12 total sets
+   - 60-75 minutes: 5-6 exercises, 12-15 total sets
+   - 75+ minutes: 6+ exercises, 14+ total sets
 
    **CRITICAL SET COUNT REQUIREMENTS:**
    - Each exercise should have 2 sets minimum (ideally 2-3 sets)
    - Primary compound exercises: 2-3 sets
    - Secondary compounds: 2 sets
    - Isolation exercises: 2 sets
-   - For 60-minute workouts: 12+ total sets required (7 exercises × 2 sets = 14 sets minimum, target 16+ sets)
+   - For 60-minute workouts: 10+ total sets required (5 exercises × 2 sets = 10 sets minimum, target 12-15 sets)
 
    **EXERCISE DISTRIBUTION BY SPLIT:**
-   - Push/Pull/Legs: 6-7 exercises per workout
-   - Upper/Lower: 6-7 exercises per workout
-   - Full Body: 6-7 exercises per workout
+   - Push/Pull/Legs: 5-6 exercises per workout
+   - Upper/Lower: 5-6 exercises per workout
+   - Full Body: 5-6 exercises per workout
 
    - Only select exercises from the provided list
    - Prioritize compound movements first (2-3 compounds per workout)
@@ -706,7 +741,7 @@ ${availableExercises.slice(0, 25).map(ex =>
      * Heavy dumbbell compounds
      * Supporting accessories for weak points
    - Total Volume: 12-18 sets per workout
-   - Example 60min Push Day (6 exercises): Bench Press (3x5), Incline Barbell Press (2x6), Overhead Press (2x6), Dips (2x8), Lateral Raises (2x10), Tricep Extensions (2x10) = 13 sets ✅
+   - Example 60min Push Day (5 exercises): Bench Press (3x5), Incline Barbell Press (3x6), Overhead Press (2x6), Dips (2x8), Lateral Raises (2x10) = 12 sets ✅
 
    **B. HYPERTROPHY/BODYBUILDING (${userTrainingStyle === 'hypertrophy' ? 'CURRENT SELECTION - FOLLOW THIS' : 'Reference only'}):**
    - Focus: Muscle growth through mechanical tension and metabolic stress
@@ -719,8 +754,8 @@ ${availableExercises.slice(0, 25).map(ex =>
      * Multiple exercises per muscle group (3-4 for major muscles)
      * Variety of angles and movement patterns
      * Include drop sets, supersets, and intensity techniques
-   - Total Volume: 18-24 sets per workout
-   - Example 60min Push Day (6 exercises): Barbell Bench Press (4x8), Incline Dumbbell Press (3x10), Machine Chest Press (3x12), Overhead Press (3x8), Lateral Raises (3x12), Tricep Pushdowns (3x12) = 19 sets ✅
+   - Total Volume: 15-21 sets per workout
+   - Example 60min Push Day (5 exercises): Barbell Bench Press (4x8), Incline Dumbbell Press (3x10), Overhead Press (3x8), Lateral Raises (3x12), Tricep Pushdowns (3x12) = 16 sets ✅
 
    **C. ENDURANCE/CONDITIONING (${userTrainingStyle === 'endurance' ? 'CURRENT SELECTION - FOLLOW THIS' : 'Reference only'}):**
    - Focus: Muscular endurance and cardiovascular conditioning
@@ -733,8 +768,8 @@ ${availableExercises.slice(0, 25).map(ex =>
      * Bodyweight exercises and lighter weights
      * Plyometric and explosive movements
      * Circuit-style programming
-   - Total Volume: 18-24 sets per workout
-   - Example 60min Circuit (6 exercises): Squat (3x20), Push-ups (3x20), Lunges (3x20), Rows (3x20), Burpees (3x15), Mountain Climbers (3x30s) = 18 sets ✅
+   - Total Volume: 12-18 sets per workout
+   - Example 60min Circuit (5 exercises): Squat (3x20), Push-ups (3x20), Lunges (3x20), Rows (3x20), Burpees (2x15) = 14 sets ✅
 
    **D. MIXED/BALANCED (${userTrainingStyle === 'mixed' ? 'CURRENT SELECTION - FOLLOW THIS' : 'Reference only'}):**
    - Focus: Balanced development across strength, size, and endurance
@@ -742,21 +777,20 @@ ${availableExercises.slice(0, 25).map(ex =>
    - Secondary Compounds: 3-4 sets of 8-12 reps at 65-75% 1RM (RPE 7-8) - Hypertrophy emphasis
    - Accessories: 3 sets of 12-15 reps at 60-70% 1RM (RPE 6-7) - Endurance emphasis
    - Rest Periods: Vary based on exercise (3min for strength, 90s for hypertrophy, 60s for endurance)
-   - Total Volume: 18-24 sets per workout
-   - Example 60min Upper Day (6 exercises): Bench Press (4x6), Barbell Rows (4x6), Incline Press (3x10), Pull-ups (3x10), Bicep Curls (3x12), Tricep Extensions (3x12) = 20 sets ✅
+   - Total Volume: 15-20 sets per workout
+   - Example 60min Upper Day (5 exercises): Bench Press (4x6), Barbell Rows (4x6), Incline Press (3x10), Pull-ups (3x10), Bicep Curls (2x12) = 16 sets ✅
 
 6. **Workout Structure Template - MUST FOLLOW:**
 
    **For ${userTrainingStyle.toUpperCase()} training style, each workout MUST include:**
 
    ${userTrainingStyle === 'strength' ? `
-   - Exercise 1: Primary Compound (Squat/Bench/Dead/OHP variant) - 3-4 sets of 3-6 reps
+   - Exercise 1: Primary Compound (Squat/Bench/Dead/OHP variant) - 3 sets of 3-6 reps
    - Exercise 2: Secondary Compound (variation of main lift) - 3 sets of 5-8 reps
    - Exercise 3: Supporting Compound - 3 sets of 6-8 reps
    - Exercise 4: Compound Accessory - 2 sets of 8-10 reps
    - Exercise 5: Primary Isolation - 2 sets of 8-10 reps
-   - Exercise 6: Secondary Isolation - 2 sets of 8-12 reps
-   MINIMUM: 6 exercises, 16-20 total sets` : ''}
+   MINIMUM: 5 exercises, 13 total sets (target: 13-16 sets)` : ''}
 
    ${userTrainingStyle === 'hypertrophy' ? `
    - Exercise 1: Primary Compound Movement - 4 sets of 6-10 reps
@@ -764,8 +798,7 @@ ${availableExercises.slice(0, 25).map(ex =>
    - Exercise 3: Tertiary Compound/Machine - 3 sets of 10-12 reps
    - Exercise 4: Isolation Exercise - Muscle Group 1 - 3 sets of 10-15 reps
    - Exercise 5: Isolation Exercise - Muscle Group 2 - 3 sets of 10-15 reps
-   - Exercise 6: Pump/Burnout Exercise - 3 sets of 12-15 reps
-   MINIMUM: 6 exercises, 18-24 total sets` : ''}
+   MINIMUM: 5 exercises, 16 total sets (target: 16-20 sets)` : ''}
 
    ${userTrainingStyle === 'endurance' ? `
    - Circuit 1: 3 exercises x 3 rounds (compound movements, 15-20 reps each)
@@ -777,20 +810,18 @@ ${availableExercises.slice(0, 25).map(ex =>
    - Exercise 2: Secondary Strength Compound - 3 sets of 5-8 reps
    - Exercise 3: Hypertrophy Compound - 3 sets of 8-12 reps
    - Exercise 4: Isolation Exercise - 3 sets of 10-12 reps
-   - Exercise 5: Isolation Exercise - 3 sets of 12-15 reps
-   - Exercise 6: Endurance Exercise - 3 sets of 15-20 reps
-   MINIMUM: 6 exercises, 18-24 total sets` : ''}
+   - Exercise 5: Isolation Exercise - 2 sets of 12-15 reps
+   MINIMUM: 5 exercises, 15 total sets (target: 15-18 sets)` : ''}
 
 7. **EXERCISE COUNT REQUIREMENTS (PER WORKOUT):**
 
    **60-MINUTE WORKOUT EXAMPLE:**
    1. Primary Compound - 3 sets x 6 reps
    2. Secondary Compound - 3 sets x 8 reps
-   3. Tertiary Compound - 2 sets x 10 reps
+   3. Tertiary Compound - 3 sets x 10 reps
    4. Isolation Exercise 1 - 2 sets x 12 reps
    5. Isolation Exercise 2 - 2 sets x 12 reps
-   6. Isolation Exercise 3 - 2 sets x 12 reps
-   **TOTAL: 6 EXERCISES, 14 SETS** ✅
+   **TOTAL: 5 EXERCISES, 13 SETS** ✅
 
 **TRAINING MODALITIES - SELECT PRIMARY MODALITY BASED ON USER GOALS:**
 
@@ -849,12 +880,12 @@ ${availableExercises.slice(0, 25).map(ex =>
 
 1. **Plan Structure:** EXACTLY 4 weeks in the "weeks" array
 2. **Workouts per Week:** Each week has correct number of workouts (daysPerWeek)
-3. **60-minute workouts:** AT LEAST 6 exercises (target: 6-7)
-4. **45-minute workouts:** AT LEAST 5 exercises
-5. **Total sets:** AT LEAST 12 total sets per 60-min workout (2 sets per exercise minimum)
+3. **60-minute workouts:** AT LEAST 5 exercises (target: 5-6 for optimal quality)
+4. **45-minute workouts:** AT LEAST 4 exercises (target: 4-5)
+5. **Total sets:** AT LEAST 12 total sets per 60-min workout (2-3 sets per exercise)
 6. **Exercise IDs:** Use EXACT UUIDs from the available exercises list
 
-**EXAMPLE:** 6 exercises × 2 sets = 12 total sets ✅
+**EXAMPLE:** 5 exercises × 2-3 sets = 10-15 total sets (minimum 12 required)
 
 **OUTPUT FORMAT (JSON) - YOU MUST RETURN THE COMPLETE STRUCTURE BELOW:**
 
@@ -946,8 +977,8 @@ NOTES ON STRUCTURE:
 - The "weeks" array MUST contain exactly 4 week objects (weekNumber 1, 2, 3, 4)
 - Each week's "workouts" array contains multiple workout objects based on daysPerWeek
 - Each workout's "exercises" array MUST contain:
-  * 60-minute workouts: 6-7 exercises, 12+ total sets
-  * 45-minute workouts: 5-6 exercises, 10+ total sets
+  * 60-minute workouts: 5-6 exercises, 10+ total sets (target 12-15)
+  * 45-minute workouts: 4-5 exercises, 9+ total sets (target 10-12)
 - Use exact exercise UUIDs from the available exercises list provided earlier in this prompt
 - Do NOT include any JavaScript-style comments in your JSON response
 - Do NOT wrap your response in markdown code blocks
@@ -956,8 +987,8 @@ NOTES ON STRUCTURE:
 
 **FINAL REMINDER:**
 - EXACTLY 4 weeks in "weeks" array
-- 60-minute workouts: 6-7 exercises, 12+ total sets
-- 45-minute workouts: 5-6 exercises, 10+ total sets
+- 60-minute workouts: 5-6 exercises, 10+ total sets (target 12-15)
+- 45-minute workouts: 4-5 exercises, 9+ total sets (target 10-12)
 - Use exact UUIDs from available exercises list
 
 Generate a complete 4-week workout plan as valid JSON.`
@@ -1068,39 +1099,37 @@ ${availableExercises.slice(0, 50).map(ex =>
 **VALIDATION PROCESS YOU MUST FOLLOW BEFORE OUTPUTTING JSON:**
 
 STEP 1: Generate each workout in your mind
-STEP 2: COUNT the exercises in each workout
-STEP 3: If a 60-minute workout has 5 or fewer exercises, ADD MORE EXERCISES to reach 6-7
-STEP 4: COUNT total sets (sum all exercise sets)
-STEP 5: If a 60-minute workout has fewer than 12 total sets, ADD MORE SETS
-STEP 6: Verify all exercise IDs are EXACT UUIDs from the available exercises list
-STEP 7: Only after all validations pass, output the JSON
+STEP 2: COUNT the exercises in each 60-minute workout - Literally count: 1, 2, 3, 4, 5
+STEP 3: If you counted 1, 2, 3, 4 and stopped → YOU MUST ADD ONE MORE EXERCISE (minimum is 5)
+STEP 4: COUNT total sets (sum all exercise sets across all exercises)
+STEP 5: If a 60-minute workout has fewer than 12 total sets, INCREASE sets per exercise
+STEP 6: Verify all exercise IDs are EXACT UUIDs from the available exercises list (not numbers like "1", "2")
+STEP 7: ONLY after confirming every 60-min workout has 5+ exercises AND 12+ sets, output JSON
 
 **EXERCISE COUNT REQUIREMENTS (NON-NEGOTIABLE):**
-- 60-minute workouts: YOU WILL GENERATE EXACTLY 6-7 exercises (NEVER 5 or less) ❌ 5 exercises = INVALID
-- 45-minute workouts: YOU WILL GENERATE EXACTLY 5-6 exercises (NEVER 4 or less) ❌ 4 exercises = INVALID
-- 30-minute workouts: YOU WILL GENERATE EXACTLY 4-5 exercises
+- 60-minute workouts: MINIMUM 5 exercises (Target: 5-6 exercises) ❌ 4 or fewer = INVALID
+- 45-minute workouts: MINIMUM 4 exercises (Target: 4-5 exercises) ❌ 3 or fewer = INVALID
+- 30-minute workouts: MINIMUM 3 exercises (Target: 3-4 exercises)
 
 **SET COUNT REQUIREMENTS (NON-NEGOTIABLE):**
-- 60-minute workouts: MINIMUM 12 total sets (Target: 14-16 sets)
-- 45-minute workouts: MINIMUM 10 total sets (Target: 12-14 sets)
+- 60-minute workouts: MINIMUM 10 total sets (Target: 12-15 sets)
+- 45-minute workouts: MINIMUM 9 total sets (Target: 10-12 sets)
 - Each individual exercise: MINIMUM 2 sets, IDEAL 2-3 sets
 
 **EXAMPLE OF CORRECT 60-MINUTE LEG DAY (YOU MUST FOLLOW THIS PATTERN):**
 1. Barbell Back Squat - 3 sets x 8-12 reps
 2. Romanian Deadlift - 3 sets x 10-12 reps
-3. Leg Press - 2 sets x 12-15 reps
+3. Leg Press - 3 sets x 12-15 reps
 4. Bulgarian Split Squat - 2 sets x 10-12 reps each leg
 5. Lying Leg Curl - 2 sets x 12-15 reps
-6. Standing Calf Raise - 2 sets x 15-20 reps
-TOTAL: 6 exercises ✓, 14 total sets ✓ = VALID
+TOTAL: 5 exercises ✓, 13 total sets ✓ = VALID
 
 **EXAMPLE OF INVALID 60-MINUTE LEG DAY (DO NOT DO THIS):**
 1. Barbell Squat - 3 sets
 2. Leg Press - 3 sets
 3. Romanian Deadlift - 3 sets
-4. Leg Curl - 3 sets
-5. Calf Raise - 2 sets
-TOTAL: 5 exercises ❌, 14 sets ✓ = REJECTED (not enough exercises)
+4. Leg Curl - 2 sets
+TOTAL: 4 exercises ❌, 11 sets ❌ = REJECTED (not enough exercises OR sets)
 
 **OUTPUT FORMAT (JSON) - RETURN ONLY THIS WEEK'S DATA:**
 
@@ -1185,12 +1214,91 @@ ${weekNumber === 1 ? `
 `}
 
 🚨 FINAL REMINDER BEFORE YOU OUTPUT:
-1. COUNT exercises in each 60-minute workout - must be 6-7 (not 5)
-2. COUNT total sets - 60-min workouts need 12+ sets minimum
+1. COUNT exercises in each 60-minute workout - must be 5+ (target: 5-6)
+2. COUNT total sets - 60-min workouts need 10+ sets minimum (target: 12-15 sets)
 3. VERIFY every exercise ID is an exact UUID from the list above
 4. If any workout fails validation, FIX IT before outputting JSON
 
 Generate Week ${weekNumber} as a complete, valid JSON object following the exact format above.`
+}
+
+/**
+ * Validates a single week's structure
+ * Used for week-by-week generation
+ */
+function validateWeekStructure(week: any): string | null {
+  if (!week.weekNumber || typeof week.weekNumber !== 'number') {
+    return 'Missing or invalid weekNumber'
+  }
+
+  if (!Array.isArray(week.workouts)) {
+    return 'Week missing workouts array'
+  }
+
+  for (const workout of week.workouts) {
+    if (!workout.workoutName || !workout.workoutType) {
+      return 'Workout missing name or type'
+    }
+
+    // Normalize and validate workout type
+    workout.workoutType = normalizeWorkoutType(workout.workoutType)
+
+    if (!Array.isArray(workout.exercises)) {
+      return 'Workout missing exercises array'
+    }
+
+    // Validate minimum exercise count based on workout duration
+    // Note: These are minimum thresholds - quality over quantity
+    const duration = workout.estimatedDuration || 60
+    let minExercises = 4 // Default minimum
+
+    if (duration >= 75) {
+      minExercises = 5 // Relaxed from 6
+    } else if (duration >= 60) {
+      minExercises = 4 // Relaxed from 5
+    } else if (duration >= 45) {
+      minExercises = 3 // Relaxed from 4
+    } else if (duration >= 30) {
+      minExercises = 3
+    }
+
+    if (workout.exercises.length < minExercises) {
+      return `Workout "${workout.workoutName}" (${duration} minutes) has only ${workout.exercises.length} exercises. Minimum ${minExercises} exercises required for a ${duration}-minute workout to properly fill the allocated time.`
+    }
+
+    // Validate total sets per workout based on duration
+    const totalSets = workout.exercises.reduce((sum: number, ex: any) => sum + (ex.sets || 0), 0)
+
+    // Set minimum based on duration (relaxed requirements for flexibility)
+    let minSets = 6
+    if (duration >= 60) {
+      minSets = 9 // 60+ minute workouts need 9+ sets (relaxed from 10)
+    } else if (duration >= 45) {
+      minSets = 8 // 45+ minute workouts need 8+ sets (relaxed from 9)
+    } else if (duration >= 30) {
+      minSets = 6 // 30+ minute workouts need 6+ sets
+    }
+
+    if (totalSets < minSets) {
+      return `Workout "${workout.workoutName}" has only ${totalSets} total sets. Minimum ${minSets} sets required for a ${duration}-minute workout.`
+    }
+
+    for (const exercise of workout.exercises) {
+      if (!exercise.exerciseId || !exercise.exerciseName) {
+        return 'Exercise missing ID or name'
+      }
+      // Validate that exerciseId is a valid UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      if (!uuidRegex.test(exercise.exerciseId)) {
+        return `Exercise "${exercise.exerciseName}" has invalid ID format "${exercise.exerciseId}". Must be a UUID from the available exercises list, not a sequential number.`
+      }
+      if (typeof exercise.sets !== 'number' || exercise.sets < 1) {
+        return 'Exercise has invalid sets count'
+      }
+    }
+  }
+
+  return null // Valid
 }
 
 // Valid workout types from database constraint
@@ -1263,17 +1371,18 @@ function validatePlanStructure(plan: any): string | null {
       }
 
       // Validate minimum exercise count based on workout duration
+      // Note: These are minimum thresholds - quality over quantity
       const duration = workout.estimatedDuration || 60
-      let minExercises = 5 // Default minimum
+      let minExercises = 4 // Default minimum
 
       if (duration >= 75) {
-        minExercises = 7
-      } else if (duration >= 60) {
         minExercises = 6
-      } else if (duration >= 45) {
+      } else if (duration >= 60) {
         minExercises = 5
-      } else if (duration >= 30) {
+      } else if (duration >= 45) {
         minExercises = 4
+      } else if (duration >= 30) {
+        minExercises = 3
       }
 
       if (workout.exercises.length < minExercises) {
@@ -1288,9 +1397,9 @@ function validatePlanStructure(plan: any): string | null {
       if (duration >= 60) {
         minSets = 12 // 60+ minute workouts need 12+ sets
       } else if (duration >= 45) {
-        minSets = 12 // 45+ minute workouts need 12+ sets
+        minSets = 10 // 45+ minute workouts need 10+ sets
       } else if (duration >= 30) {
-        minSets = 10 // 30+ minute workouts need 10+ sets
+        minSets = 8 // 30+ minute workouts need 8+ sets
       }
 
       if (totalSets < minSets) {

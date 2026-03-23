@@ -182,6 +182,7 @@ export function safeValidate<T>(schema: z.ZodSchema<T>, data: unknown) {
 
 export const workoutGenerationSchema = z.object({
   userId: z.string().uuid("Invalid user ID"),
+  weekNumber: z.number().int().min(1).max(4).optional(),
   preferences: z.object({
     trainingStyle: z.enum(["strength", "hypertrophy", "endurance", "mixed"]).optional(),
     splitPreference: z.enum(["push_pull_legs", "upper_lower", "full_body", "auto"]).optional(),
