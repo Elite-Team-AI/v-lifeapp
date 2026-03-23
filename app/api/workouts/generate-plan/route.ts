@@ -563,10 +563,17 @@ BEFORE YOU OUTPUT YOUR JSON:
       log.error("Generated week failed validation", new Error(weekValidationError), undefined, {
         userId,
         weekNumber,
-        validationError: weekValidationError
+        validationError: weekValidationError,
+        provider: aiProvider
       })
+      // Return user-friendly error message (hide technical details)
       return NextResponse.json(
-        { error: `Invalid week structure: ${weekValidationError}` },
+        {
+          error: 'Failed to generate workout plan',
+          message: 'Failed to generate. Please try again.',
+          // Include technical details only in development
+          ...(process.env.NODE_ENV === 'development' && { details: weekValidationError })
+        },
         { status: 500 }
       )
     }
