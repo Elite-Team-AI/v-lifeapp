@@ -1,13 +1,13 @@
 "use client"
 
-import { FitnessClient } from "./FitnessClient"
+import { FitnessClientWrapper } from "./FitnessClientWrapper"
 
 /**
- * Fitness page - client-only component
+ * Fitness page - uses wrapper for safe data loading
  *
- * Client component that uses AppDataContext.
- * Loading state is handled within FitnessClient component.
+ * The wrapper ensures all data is loaded before rendering FitnessClient,
+ * preventing any "appData is not defined" errors.
  */
 export default function FitnessPage() {
-  return <FitnessClient />
+  return <FitnessClientWrapper />
 }

@@ -147,7 +147,7 @@ function formatWeight(weightKg: number, useMetric: boolean) {
 export function FitnessClient() {
   const router = useRouter()
   const { user } = useAuth()
-  const { appData, isLoading } = useAppData()
+  const { appData } = useAppData()
   const [activeTab, setActiveTab] = useState<Tab>('workouts')
   const [showPlanGenerator, setShowPlanGenerator] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
@@ -168,17 +168,6 @@ export function FitnessClient() {
     { id: 'analytics' as Tab, label: 'Analytics', icon: BarChart3 },
     { id: 'progress' as Tab, label: 'Progress', icon: TrendingUp },
   ]
-
-  // Show loading state while appData is loading
-  if (isLoading || !appData) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-black via-neutral-950 to-black">
-        <Skeleton className="w-12 h-12 rounded-full mb-4" />
-        <Skeleton className="w-32 h-6 mb-2" />
-        <Skeleton className="w-48 h-4" />
-      </div>
-    )
-  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-black via-neutral-950 to-black pb-20">
