@@ -153,6 +153,23 @@ export function FitnessClient() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [useMetric, setUseMetric] = useState(false)
 
+  // Safety check - this should never happen as the wrapper ensures appData exists
+  // But we add this as a double safety measure
+  if (!appData) {
+    console.error('[FitnessClient] appData is undefined - this should not happen!')
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-black via-neutral-950 to-black">
+        <p className="text-red-400">Error: Fitness data not available</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 bg-yellow-500 text-black rounded-lg"
+        >
+          Reload Page
+        </button>
+      </div>
+    )
+  }
+
   // Load metric preference from localStorage (default to false for US/imperial)
   useEffect(() => {
     const savedMetric = localStorage.getItem('useMetric')
