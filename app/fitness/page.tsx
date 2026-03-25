@@ -1,16 +1,11 @@
 import { FitnessClient } from "./FitnessClient"
 
 /**
- * Fitness page - now a lightweight client component
+ * Fitness page - lightweight client component
  *
- * Data is fetched client-side using the useFitnessData hook,
- * eliminating server-side blocking and enabling instant navigation.
- *
- * Force dynamic rendering to ensure AppDataContext is available
- * (required for visual_coach_enabled preference)
+ * Data is fetched client-side using the AppDataContext,
+ * enabling instant navigation and access to user preferences.
  */
-export const dynamic = 'force-dynamic'
-
 export default function FitnessPage() {
   return <FitnessClient />
 }

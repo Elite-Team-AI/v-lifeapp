@@ -138,16 +138,31 @@ UI Update via AppData Context
 - Auth handled via Supabase Auth (email/password, OAuth ready)
 
 **Key Tables:**
-- `profiles` - User data, goals, preferences, timezone
+- `profiles` - User data, goals, preferences, timezone, training preferences (gym_access, available_equipment, training_days_per_week)
 - `habits` - Daily habits with categories (fitness, nutrition, wellness)
 - `habit_logs` - Completion tracking
 - `workouts` - Exercise sessions
+- `workout_exercises` - Exercises in workout with sets, reps, rest periods
+- `exercises` - Exercise library with muscle groups, equipment, image URLs
+- `exercise_logs` - Performance history for progressive overload tracking
+- `personalized_workout_plans` - AI-generated workout plans
+- `workout_plan_days` - Weekly schedule for workout plans
+- `workout_plan_exercises` - Exercises in workout plan days
 - `meals` - Meal entries with macros
+- `meal_logs` - What user ate (is_eaten, eaten_at, consumed_at)
 - `community_posts`, `post_reactions`, `comments` - Social features
 - `weight_entries`, `progress_photos` - Progress tracking
 - `subscriptions` - Billing/plan data
-- `daily_insights` - AI-generated insights (one per user per day)
-- Plus: `supplements`, `notifications_preferences`, `referral_stats`, `streaks`, etc.
+- `daily_insights` - AI-generated insights (one per user per local date)
+- `vitalflow_suggestions` - Daily AI habit suggestions
+- `vitalflow_habits_knowledge` - Knowledge base for VitalFlow suggestions
+- `achievements` - Gamification achievements
+- `user_achievements` - Unlocked achievements per user
+- `daily_missions` - Daily mission tracking
+- `supplements` - Supplement recommendations
+- `notifications_preferences` - User notification settings
+- `referral_stats` - Referral program tracking
+- `streaks` - Gamification streak tracking (habits, workouts)
 
 ### Environment Variables
 
@@ -166,7 +181,7 @@ UI Update via AppData Context
 Located in `lib/actions/*.ts`. Each action:
 1. Uses `"use server"` directive
 2. Accepts user input (validated with Zod schemas)
-3. Authenticates user with `requireUser()` helper
+3. Authenticates user with `getAuthUser()` or `requireUser()` helper
 4. Mutates database via Supabase
 5. Revalidates cache with `revalidateTag()` to update AppData context
 
@@ -174,18 +189,43 @@ Example:
 ```typescript
 // lib/actions/habits.ts
 export async function createHabit(input: CreateHabitInput) {
-  const user = await requireUser()
-  const validated = createHabitSchema.parse(input)
+  const { user, error: authError } = await getAuthUser()
+  if (authError || !user) {
+    return { success: false, error: "Not authenticated" }
+  }
 
-  const { data, error } = await db
+  const validated = createHabitSchema.parse(input)
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
     .from('habits')
     .insert({ ...validated, user_id: user.id })
+    .select()
+    .single()
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    return { success: false, error: error.message }
+  }
 
-  revalidateTag('user-habits')
-  return data
+  revalidateTag('user-habits', 'max')
+  return { success: true, habit: data, error: null }
 }
+```
+
+**CRITICAL Pattern for RLS:** When fetching multiple data types in parallel (e.g., in `/api/app-data`), use a **single Supabase client instance** for all operations. Creating multiple clients breaks Row-Level Security (RLS) because `auth.uid()` requires the auth context from the same client that performed the initial authentication.
+
+**Example:**
+```typescript
+// CORRECT: Single client shared across all queries
+const supabase = await createClient()
+const { user } = await supabase.auth.getUser()
+const profile = await getProfileInternal(user.id, supabase) // Pass same client
+const habits = await getUserHabitsInternal(user.id, timezone, supabase) // Pass same client
+
+// WRONG: Creates new clients, breaks RLS
+const { user } = await getAuthUser() // Creates client #1
+const supabase = await createClient() // Creates client #2
+// RLS fails because auth.uid() is in different client context
 ```
 
 ### Timezone Handling
@@ -198,18 +238,34 @@ export async function createHabit(input: CreateHabitInput) {
 ### Authentication & Authorization
 
 1. **Middleware Protection** (`middleware.ts`)
-   - Public routes: `/`, `/auth/*`, `/privacy-policy`, `/terms-of-service`
+   - Public routes: `/`, `/auth/*`, `/privacy-policy`, `/terms-of-service`, `/download`, `/help-support`
    - Protected routes: Everything else, redirects unauthenticated users to `/auth/login`
    - Session managed via secure HTTP-only cookies (handled by `@supabase/ssr`)
+   - **Performance Optimizations:**
+     - Skip prefetch requests if session cookie exists (instant prefetching)
+     - Trust session cookie for client-side navigations from authenticated routes (no validation call)
+     - Full validation only on initial page loads
+     - 3 optimization levels: prefetch skip → client navigation trust → full validation
 
 2. **User Helpers** (`lib/utils/user-helpers.ts`)
-   - `requireUser()` - Throws if not authenticated, returns current user
+   - `getAuthUser()` - Returns `{ user, error }` object (preferred for Server Actions)
+   - `requireUser()` - Throws if not authenticated, returns current user (legacy)
    - `getUser()` - Returns null if not authenticated
    - `getUserTimezone()` - Gets user's timezone from profile
+   - `getUserRole()` - Returns user role (user/chosen/super_admin)
+   - `isSuperAdmin()` - Check admin status
 
-3. **Row-Level Security (RLS)**
+3. **Supabase Clients** (`lib/supabase/server.ts`)
+   - `createClient()` - Request-scoped client with auth cookies (NOT cached)
+   - `getAuthUser()` - Memoized per-request using React's `cache()` to avoid multiple auth calls
+   - `createServiceClient()` - Service client without cookies (bypasses RLS, use carefully)
+   - `createAdminClient()` - Admin client with service role key (full access, use with caution)
+
+4. **Row-Level Security (RLS)**
    - All tables have RLS policies
    - Users can only access their own data
+   - Policies use `auth.uid()` to filter by authenticated user
+   - **CRITICAL:** RLS context is tied to the Supabase client instance - don't mix clients!
 
 ### API Routes vs Server Actions
 
@@ -226,20 +282,62 @@ export async function createHabit(input: CreateHabitInput) {
 - Complex request/response logic
 
 Key API routes:
-- `GET /api/app-data` - Bootstrap all user data
+- `GET /api/app-data` - Bootstrap all user data (single auth check, parallel queries)
 - `POST /api/vbot` - AI chatbot with OpenAI streaming
+- `POST /api/vbot-stt` - Speech-to-text (Google Gemini)
+- `POST /api/vbot-tts` - Text-to-speech (Google Gemini)
 - `POST /api/settings/*` - Various settings mutations
+
+### Internal Functions Pattern
+
+**Location:** `lib/actions/app-data-internal.ts`
+
+Internal functions accept `userId`, `timezone`, and `supabase` client as parameters instead of fetching auth themselves. This eliminates redundant auth checks when fetching multiple data types in parallel.
+
+**Naming Convention:** Functions end with `Internal` suffix (e.g., `getProfileInternal`, `getUserHabitsInternal`)
+
+**Usage:** Only use these from the `/api/app-data` route where auth is already verified with a shared Supabase client.
+
+**Example:**
+```typescript
+// api/app-data/route.ts
+const supabase = await createClient()
+const { user } = await supabase.auth.getUser() // Single auth check
+
+// Get profile first to extract timezone
+const profile = await getProfileInternal(user.id, supabase)
+const timezone = profile?.timezone || DEFAULT_TIMEZONE
+
+// Fetch all data in parallel with shared client
+const [habits, workouts, meals] = await Promise.all([
+  getUserHabitsInternal(user.id, timezone, supabase),
+  getWorkoutsInternal(user.id, timezone, supabase),
+  getMealsInternal(user.id, timezone, supabase),
+])
+```
+
+**Why This Matters:**
+- Prevents 9+ redundant auth checks (was calling `getAuthUser()` in each action)
+- Maintains single Supabase client context for RLS
+- Significantly reduces database load and response time
+- Bootstrap endpoint went from ~2-3s to ~500-800ms
 
 ## Important Features
 
 ### AI Integration
 
 **VBot (AI Chatbot):**
-- Streaming AI responses via OpenAI
-- Accessible from sidebar and dedicated page
+- Streaming AI responses via OpenAI (gpt-4o-mini), Anthropic Claude, or Google Gemini
+- Real-time access to ALL user data in system context:
+  - Profile, habits, workouts, meals, weight, progress
+  - Today's nutrition (calories, macros, remaining targets)
+  - Weekly workout schedule
+  - Exercise performance history (progressive overload tracking)
+- Accessible from sidebar, dedicated page, and AI Coach page
 - Uses `@ai-sdk/openai` for structured streaming
-- API route: `app/api/vbot/route.ts`
+- API routes: `app/api/vbot/route.ts`, `app/api/vbot-stt/route.ts` (speech-to-text), `app/api/vbot-tts/route.ts` (text-to-speech)
 - Can generate meal plans, provide coaching, answer fitness questions
+- System context is 500+ lines with comprehensive user data
 
 **Daily Insights:**
 - AI-generated personalized messages on dashboard
@@ -247,15 +345,51 @@ Key API routes:
 - Cached in `daily_insights` table
 - Powered by OpenAI (gpt-4o-mini model)
 - Server Action: `lib/actions/daily-insights.ts`
+- Called from Supabase Edge Function for background generation
 - Fallback message if generation fails
+
+**AI Workout Plan Generator:**
+- Generates personalized workout plans based on:
+  - User goals (muscle gain, weight loss, maintenance, endurance)
+  - Gym access (yes/no)
+  - Available equipment
+  - Training days per week (2-7 days)
+- Creates structured weekly schedule with exercises, sets, reps, rest periods
+- Progressive overload tracking
+- Location: `lib/actions/personalized-workouts.ts`
+- Modal: `workout-plan-generator-modal.tsx`
+
+**VitalFlow AI Habits:**
+- AI-powered daily habit suggestions (3-5 per day)
+- Based on user profile, goals, and historical data
+- Categories: movement, nutrition, sleep, mindset, recovery, hydration
+- Tracks energy delta (kcal) and time commitment
+- User can accept, skip, or complete suggestions
+- Location: `lib/actions/vitalflow-habits.ts`
 
 ### Gamification & Streaks
 
-- **Habits** track daily completion with streak calculation
-- **Streaks** are reset daily at midnight (timezone-aware)
-- **Weekly Progress** calculated as percentage of habits completed
-- **Milestones** tracked for major achievements
-- **Referral System** with credits and rewards
+**Features:**
+- XP system with levels and titles (Beginner → Legendary)
+- Achievements system with unlock conditions
+- Daily missions (complete 3 habits, log meal, complete workout)
+- Streak tracking (habits, workouts) with best streak records
+- Weekly progress percentage
+- Referral system with credits and rewards
+
+**Implementation:**
+- XP awarded for: habit completion, workout completion, meal logging, weight tracking
+- Levels calculated from total XP (exponential curve)
+- Achievements unlock based on streaks, total actions, milestones
+- Server Actions: `lib/actions/gamification.ts`
+- Tables: `achievements`, `user_achievements`, `daily_missions`, `streaks`
+
+**Example Achievements:**
+- First Habit (complete first habit)
+- Week Warrior (7-day habit streak)
+- Consistency King (30-day habit streak)
+- Gym Rat (log 10 workouts)
+- Century Club (log 100 workouts)
 
 ### Community Features
 
@@ -296,6 +430,18 @@ Key API routes:
 5. **Debouncing**
    - 5-second minimum interval between context refreshes
    - Prevents excessive API calls
+
+6. **Middleware Request Optimization**
+   - **Level 1:** Skip prefetch requests if session cookie exists (instant prefetching)
+   - **Level 2:** Trust session cookie for client-side navigations from protected routes (no auth call)
+   - **Level 3:** Full auth validation only on initial page loads
+   - Reduces middleware overhead by ~80% for authenticated users
+
+7. **Bootstrap API Optimization**
+   - Single auth check (was 9+ before)
+   - Parallel database queries with Promise.all()
+   - Shared Supabase client for all queries
+   - Response time reduced from ~2-3s to ~500-800ms
 
 ## Testing & Development
 
@@ -393,11 +539,48 @@ docker run --rm -p 8080:8080 v-life:local
 | Issue | Solution |
 |-------|----------|
 | Auth not working locally | Check `.env.local` has `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
-| Database queries return empty | Verify RLS policies allow user access; check user auth state |
+| Database queries return empty despite auth | **RLS context issue!** Ensure using single Supabase client. Check if mixing `getAuthUser()` with new `createClient()` call |
+| 401 errors in /api/app-data | RLS failure from multiple client instances. Use shared client pattern (see "Internal Functions Pattern") |
 | Timezone confusion | Check browser timezone vs profile timezone; use `getTodayInTimezone()` |
-| AI features not working | Verify `OPENAI_API_KEY` set in Supabase secrets (not .env) |
+| AI features not working | Verify `OPENAI_API_KEY` set in environment variables; check Supabase Edge Function secrets for daily insights |
 | Modals not rendering | Check browser console for lazy-load errors; verify `"use client"` directive |
 | Build fails with type errors | `next.config.mjs` has `ignoreBuildErrors: true`, but fix types for correctness |
+| Middleware redirecting authenticated users | Check session cookie exists; verify middleware optimizations aren't skipping validation incorrectly |
+| Daily insights not generating | Check Supabase Edge Function logs: `supabase functions logs daily-insight --follow` |
+| Habits not resetting daily | Verify user timezone is set correctly in profile; check `last_habit_reset` field |
+
+### Critical RLS Debugging Pattern
+
+If you see "No rows returned" or empty arrays despite being authenticated:
+
+1. **Check the client context:**
+   ```typescript
+   // Log auth state in the same client used for query
+   const supabase = await createClient()
+   const { data: { user } } = await supabase.auth.getUser()
+   console.log('Auth user:', user?.id)
+
+   // Use SAME client for query
+   const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id)
+   console.log('Query result:', data, error)
+   ```
+
+2. **Never create a new client after auth check:**
+   ```typescript
+   // ❌ WRONG - breaks RLS
+   const { user } = await getAuthUser()  // Creates client A
+   const supabase = await createClient()  // Creates client B (no auth context!)
+
+   // ✅ CORRECT - single client
+   const supabase = await createClient()
+   const { user } = await supabase.auth.getUser()
+   ```
+
+3. **Pass client to internal functions:**
+   ```typescript
+   // ✅ CORRECT - shared client maintains RLS context
+   const profile = await getProfileInternal(user.id, supabase)
+   ```
 
 ### Debug Utilities
 
@@ -451,9 +634,30 @@ const result = await withRetry(() => someAsyncOperation(), {
 - **Components**: PascalCase (Button.tsx, DashboardCard.tsx)
 - **Files/Folders**: kebab-case (add-habit-modal.tsx, user-helpers.ts)
 - **Server Actions**: camelCase in lib/actions/ (createHabit, updateProfile)
+- **Internal Functions**: camelCase + "Internal" suffix (getProfileInternal, getUserHabitsInternal)
 - **Hooks**: PascalCase with 'use' prefix (useAppData, useTimezoneSync)
 - **Types**: PascalCase singular (User, Habit, Profile)
 - **Constants**: UPPER_SNAKE_CASE (MAX_HABIT_LENGTH, REFRESH_INTERVAL)
+
+## Mobile Architecture (Capacitor)
+
+**Configuration:** `capacitor.config.ts`
+- App ID: `app.vlife.android`
+- Strategy: Remote web app (hosted on Vercel/Cloud Run)
+- Capacitor wraps in native container
+- No local build directory needed in the app
+- Updates instantly without app store approval
+
+**Key Features:**
+- Universal links (iOS) and App links (Android) for deep linking
+- Authentication callback handling for OAuth flows
+- Native capabilities: SplashScreen, StatusBar, App lifecycle
+- In-app purchases via RevenueCat
+
+**Deep Linking:**
+- Custom URL scheme: `vlife://`
+- Auth callback: `vlife://auth/callback`
+- Handled in `app/auth/callback/page.tsx`
 
 ## Documentation Files
 
@@ -472,10 +676,53 @@ All documentation files are located in the `docs/` folder:
 - **docs/SCHEMA_COMPARISON.md** - Database schema comparison
 - **docs/SCHEMA_DIFFERENCES.md** - Database schema differences
 
+## Key Architectural Decisions
+
+### 1. Server-First with Client Islands
+- Default to Server Components for better performance
+- Client Components only where interactivity needed
+- Results in smaller bundles and faster loads
+
+### 2. Global Context Over Per-Page Fetches
+- Single bootstrap fetch prevents waterfall requests
+- Data available immediately across all pages
+- Background refresh keeps data fresh without blocking UI
+
+### 3. Server Actions Over API Routes
+- Simpler code (no request/response handling)
+- Built-in form handling
+- Automatic validation with Zod
+- Use API routes only for streaming (VBot) or webhooks
+
+### 4. Timezone-Aware Everything
+- User timezone stored in profile
+- All date operations use user's local time
+- Habits/insights/streaks reset at local midnight
+
+### 5. Single Supabase Client Per Request
+- Prevents RLS auth context issues
+- Pass same client instance to internal functions
+- Critical for proper authentication
+
+### 6. Lazy-Loaded Modals
+- 20+ modals in app root
+- Loaded on demand with React.lazy()
+- Significantly reduces initial bundle
+
+### 7. Mobile-First Progressive Web App
+- Capacitor wrapper for native features
+- Remote web app (no local build)
+- Instant updates without app store
+
 ## Recent Changes & Context
 
-- Latest commit: "Update environment variable handling in Cloud Build and Dockerfile; add AI Fitness Coach button in FitnessClient"
-- onboarding now focuses on primary goal selection (experimental body visualizer retired)
+- Latest commit: "Fix: Force dynamic rendering for fitness page to resolve SSG build error"
+- Fitness page now uses dynamic rendering with `export const dynamic = 'force-dynamic'`
+- Middleware optimizations: Skip prefetch requests, trust session cookies for client navigations
+- Single Supabase client pattern implemented in `/api/app-data` to fix RLS issues
+- Onboarding now focuses on primary goal selection (experimental body visualizer retired)
 - All core features (dashboard, nutrition, workouts, community) wired to Supabase for state persistence
-- AI insights (daily, coaching) integrated with OpenAI
+- AI insights (daily, coaching) integrated with OpenAI, Anthropic, and Google Gemini
 - Push notifications fully implemented with Service Worker support
+- Personalized workout plans with progressive overload tracking
+- VitalFlow AI daily habit suggestions
