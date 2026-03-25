@@ -1083,7 +1083,12 @@ function FitnessProfileSection({ appData }: { appData: any }) {
   const [showHipInstructions, setShowHipInstructions] = useState(false)
   const [showAnkleInstructions, setShowAnkleInstructions] = useState(false)
 
-  const profile = appData?.profile
+  // Safety check - if appData is not available, return null
+  if (!appData || !appData.profile) {
+    return null
+  }
+
+  const profile = appData.profile
 
   // Parse equipment array from profile
   const parseEquipment = (equipment: any): string[] => {
@@ -1096,23 +1101,23 @@ function FitnessProfileSection({ appData }: { appData: any }) {
 
   // Form state
   const [formData, setFormData] = useState({
-    primaryGoal: profile?.primary_goal || '',
-    trainingStyle: profile?.training_style || '',
-    experienceLevel: profile?.experience_level || '',
-    gymAccess: profile?.gym_access || '',
-    trainingDaysPerWeek: profile?.training_days_per_week?.toString() || '',
-    availableTimeMinutes: profile?.available_time_minutes?.toString() || '45',
-    selectedEquipment: parseEquipment(profile?.custom_equipment),
-    preferredWorkoutTime: profile?.preferred_workout_time || '',
-    bodyFatPercentage: profile?.body_fat_percentage?.toString() || '',
-    goalBodyFatPercentage: profile?.goal_body_fat_percentage?.toString() || '',
-    shoulderMobility: profile?.shoulder_mobility?.toString() || '',
-    hipMobility: profile?.hip_mobility?.toString() || '',
-    ankleMobility: profile?.ankle_mobility?.toString() || '',
-    pushUps: profile?.push_ups?.toString() || '',
-    pullUps: profile?.pull_ups?.toString() || '',
-    squatDepth: profile?.squat_depth || '',
-    plankTime: profile?.plank_time?.toString() || ''
+    primaryGoal: profile.primary_goal || '',
+    trainingStyle: profile.training_style || '',
+    experienceLevel: profile.experience_level || '',
+    gymAccess: profile.gym_access || '',
+    trainingDaysPerWeek: profile.training_days_per_week?.toString() || '',
+    availableTimeMinutes: profile.available_time_minutes?.toString() || '45',
+    selectedEquipment: parseEquipment(profile.custom_equipment),
+    preferredWorkoutTime: profile.preferred_workout_time || '',
+    bodyFatPercentage: profile.body_fat_percentage?.toString() || '',
+    goalBodyFatPercentage: profile.goal_body_fat_percentage?.toString() || '',
+    shoulderMobility: profile.shoulder_mobility?.toString() || '',
+    hipMobility: profile.hip_mobility?.toString() || '',
+    ankleMobility: profile.ankle_mobility?.toString() || '',
+    pushUps: profile.push_ups?.toString() || '',
+    pullUps: profile.pull_ups?.toString() || '',
+    squatDepth: profile.squat_depth || '',
+    plankTime: profile.plank_time?.toString() || ''
   })
 
   // Update form data when profile changes
