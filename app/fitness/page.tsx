@@ -1,19 +1,13 @@
 "use client"
 
-import dynamic from "next/dynamic"
+import { FitnessClient } from "./FitnessClient"
 
 /**
  * Fitness page - client-only component
  *
- * Dynamically imported with SSR disabled to prevent build-time
- * static generation errors. AppDataContext is only available on
- * the client, so this page must render client-side only.
+ * Client component that uses AppDataContext.
+ * Loading state is handled within FitnessClient component.
  */
-const FitnessClient = dynamic(
-  () => import("./FitnessClient").then((mod) => ({ default: mod.FitnessClient })),
-  { ssr: false }
-)
-
 export default function FitnessPage() {
   return <FitnessClient />
 }
