@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton-loaders"
 /**
  * Wrapper component that handles all data loading for the fitness page.
  * This ensures FitnessClient only renders when data is fully available.
+ * Version: 2.0.0 - Complete rewrite to fix appData loading issues
  */
 export function FitnessClientWrapper() {
   const { appData, isLoading } = useAppData()
