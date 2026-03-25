@@ -244,6 +244,7 @@ export function FitnessClient() {
               refreshKey={refreshKey}
               onRefresh={handleRefreshPlan}
               onOpenGenerator={() => setShowPlanGenerator(true)}
+              appData={appData}
             />
           )}
           {activeTab === 'analytics' && (
@@ -278,11 +279,13 @@ export function FitnessClient() {
 function WorkoutsTab({
   refreshKey,
   onRefresh,
-  onOpenGenerator
+  onOpenGenerator,
+  appData
 }: {
   refreshKey: number
   onRefresh: () => void
   onOpenGenerator: () => void
+  appData: any
 }) {
   const router = useRouter()
   const [selectedWorkout, setSelectedWorkout] = useState<any>(null)
