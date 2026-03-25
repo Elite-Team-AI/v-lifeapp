@@ -356,7 +356,7 @@ function WorkoutsTab({
       </Suspense>
 
       {/* Your Fitness Profile */}
-      <FitnessProfileSection />
+      <FitnessProfileSection appData={appData} />
 
       {/* How AI Workouts Work */}
       <HowAIWorksSection />
@@ -1063,9 +1063,9 @@ function ProgressTab({ useMetric }: { useMetric: boolean }) {
 }
 
 // Fitness Profile Section with Inline Editing
-function FitnessProfileSection() {
+function FitnessProfileSection({ appData }: { appData: any }) {
   const { user } = useAuth()
-  const { appData, refresh } = useAppData()
+  const { refresh } = useAppData()
   const { toast } = useToast()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
