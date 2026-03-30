@@ -100,6 +100,27 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
     setProfile(currentProfile)
   }, [currentProfile])
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      // Save current scroll position
+      const scrollY = window.scrollY
+      document.body.style.position = 'fixed'
+      document.body.style.top = `-${scrollY}px`
+      document.body.style.width = '100%'
+      document.body.style.overflowY = 'scroll' // Prevent layout shift
+
+      return () => {
+        // Restore scroll position
+        document.body.style.position = ''
+        document.body.style.top = ''
+        document.body.style.width = ''
+        document.body.style.overflowY = ''
+        window.scrollTo(0, scrollY)
+      }
+    }
+  }, [isOpen])
+
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
@@ -248,14 +269,14 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
           onClick={onClose}
         >
           <motion.div
-            className="w-full max-w-2xl max-h-[calc(90vh-env(safe-area-inset-bottom))] flex flex-col"
+            className="w-full max-w-2xl max-h-[90vh] flex flex-col"
             initial={{ y: "100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 500 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <Card className="border-accent/30 bg-black/90 backdrop-blur-lg h-full flex flex-col">
+            <Card className="border-accent/30 bg-black/90 backdrop-blur-lg h-full flex flex-col overflow-hidden">
               {/* Fixed Header */}
               <div className="flex items-center justify-between border-b border-accent/20 p-4 flex-shrink-0">
                 <div className="flex items-center">
@@ -295,8 +316,16 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
               </div>
 
               {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto">
-                <div className="p-6 space-y-6">
+              <div
+                className="flex-1 overflow-y-auto overflow-x-hidden min-h-0"
+                style={{
+                  WebkitOverflowScrolling: 'touch',
+                  overscrollBehavior: 'contain'
+                }}
+                onTouchMove={(e) => e.stopPropagation()}
+                onWheel={(e) => e.stopPropagation()}
+              >
+                <div className="p-6 space-y-6 pb-8">
                   {/* Basic Info Tab */}
                   {activeTab === "basic" && (
                     <div className="space-y-6">
@@ -814,7 +843,7 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
               </div>
 
               {/* Fixed Footer */}
-              <div className="border-t border-accent/20 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] flex gap-3 flex-shrink-0">
+              <div className="border-t border-accent/20 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] flex gap-3 flex-shrink-0 bg-black/90 backdrop-blur-lg">
                 <ButtonGlow variant="outline-glow" onClick={onClose} className="flex-1" disabled={saving}>
                   Cancel
                 </ButtonGlow>
