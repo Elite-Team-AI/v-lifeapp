@@ -240,10 +240,10 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
     }
   }
 
-  const logExerciseSet = async (setIndex: number) => {
-    if (!workoutLogId || !currentExercise) return
+  const logExerciseSet = async (exercise: any, setIndex: number) => {
+    if (!workoutLogId || !exercise) return
 
-    const exerciseLog = exerciseLogs.get(currentExercise.exercise_id)
+    const exerciseLog = exerciseLogs.get(exercise.exercise_id)
     if (!exerciseLog) return
 
     const set = exerciseLog.sets[setIndex]
@@ -256,7 +256,7 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
 
       const updatedLog = { ...exerciseLog, sets: updatedSets }
       const newLogs = new Map(exerciseLogs)
-      newLogs.set(currentExercise.exercise_id, updatedLog)
+      newLogs.set(exercise.exercise_id, updatedLog)
       setExerciseLogs(newLogs)
 
       // Check if all sets are completed
@@ -267,7 +267,7 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
         console.log('Logging completed exercise:', {
           userId: user?.id,
           workoutLogId,
-          exerciseId: currentExercise.exercise_id,
+          exerciseId: exercise.exercise_id,
           sets: updatedSets.length
         })
 
@@ -277,9 +277,9 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
           body: JSON.stringify({
             userId: user?.id,
             workoutLogId,
-            exerciseId: currentExercise.exercise_id,
-            exerciseType: currentExercise.exercise?.exercise_type || 'strength',
-            planExerciseId: currentExercise.id,
+            exerciseId: exercise.exercise_id,
+            exerciseType: exercise.exercise?.exercise_type || 'strength',
+            planExerciseId: exercise.id,
             sets: updatedSets.map(s => ({
               reps: s.reps,
               weight: s.weight,
@@ -330,85 +330,97 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
     }
   }
 
-  const updateSet = (setIndex: number, field: 'reps' | 'weight' | 'rpe', value: number) => {
-    const exerciseLog = exerciseLogs.get(currentExercise.exercise_id)
+  const updateSet = (exercise: any, setIndex: number, field: 'reps' | 'weight' | 'rpe', value: number | undefined) => {
+    const exerciseLog = exerciseLogs.get(exercise.exercise_id)
     if (!exerciseLog) return
 
     const updatedSets = [...exerciseLog.sets]
     updatedSets[setIndex] = { ...updatedSets[setIndex], [field]: value }
 
     const newLogs = new Map(exerciseLogs)
-    newLogs.set(currentExercise.exercise_id, { ...exerciseLog, sets: updatedSets })
+    newLogs.set(exercise.exercise_id, { ...exerciseLog, sets: updatedSets })
     setExerciseLogs(newLogs)
   }
 
   const goToNextExercise = () => {
-    const exerciseLog = exerciseLogs.get(currentExercise.exercise_id)
+    // Validate all exercises in the current group
+    const allIssues: string[] = []
+    let hasAnyCompleted = false
+    let hasAnySkipped = false
 
-    if (!exerciseLog) {
-      // No log exists, show confirmation
+    for (const exercise of currentGroup) {
+      const exerciseLog = exerciseLogs.get(exercise.exercise_id)
+
+      if (!exerciseLog) {
+        hasAnySkipped = true
+        continue
+      }
+
+      const completedSets = exerciseLog.sets.filter(s => s.completed)
+
+      if (completedSets.length === 0) {
+        hasAnySkipped = true
+        continue
+      }
+
+      hasAnyCompleted = true
+
+      // Check for missing weight/RPE in completed sets
+      const missingWeight: number[] = []
+      const missingRPE: number[] = []
+
+      completedSets.forEach((set, index) => {
+        const actualSetNumber = exerciseLog.sets.findIndex(s => s === set) + 1
+
+        // Check for missing or zero weight
+        if (set.weight === 0 || set.weight === undefined || set.weight === null) {
+          missingWeight.push(actualSetNumber)
+        }
+
+        // Check for missing RPE
+        if (set.rpe === undefined || set.rpe === null) {
+          missingRPE.push(actualSetNumber)
+        }
+      })
+
+      if (missingWeight.length > 0) {
+        allIssues.push(`${exercise.exercise?.name}: Weight not logged for set${missingWeight.length > 1 ? 's' : ''}: ${missingWeight.join(', ')}`)
+      }
+      if (missingRPE.length > 0) {
+        allIssues.push(`${exercise.exercise?.name}: RPE not logged for set${missingRPE.length > 1 ? 's' : ''}: ${missingRPE.join(', ')}`)
+      }
+    }
+
+    // If no exercises were completed, show skip confirmation
+    if (!hasAnyCompleted) {
       setShowSkipExerciseConfirmation(true)
       return
     }
 
-    const completedSets = exerciseLog.sets.filter(s => s.completed)
-
-    // Check if any sets were completed
-    if (completedSets.length === 0) {
-      // No sets completed, show confirmation
-      setShowSkipExerciseConfirmation(true)
-      return
-    }
-
-    // Check for missing weight/RPE in completed sets
-    const missingWeight: number[] = []
-    const missingRPE: number[] = []
-
-    completedSets.forEach((set, index) => {
-      const actualSetNumber = exerciseLog.sets.findIndex(s => s === set) + 1
-
-      // Check for missing or zero weight
-      if (set.weight === 0 || set.weight === undefined || set.weight === null) {
-        missingWeight.push(actualSetNumber)
-      }
-
-      // Check for missing RPE
-      if (set.rpe === undefined || set.rpe === null) {
-        missingRPE.push(actualSetNumber)
-      }
-    })
-
-    const issues: string[] = []
-    if (missingWeight.length > 0) {
-      issues.push(`Weight not logged for set${missingWeight.length > 1 ? 's' : ''}: ${missingWeight.join(', ')}`)
-    }
-    if (missingRPE.length > 0) {
-      issues.push(`RPE not logged for set${missingRPE.length > 1 ? 's' : ''}: ${missingRPE.join(', ')}`)
-    }
-
-    if (issues.length > 0) {
+    // If there are validation issues, block advancement
+    if (allIssues.length > 0) {
       toast({
         title: "⚠️ Missing Information",
-        description: `${issues.join('\n')}\n\nPlease go back and log this information before advancing.`,
+        description: `${allIssues.join('\n')}\n\nPlease complete all exercises in this ${isSuperset ? 'superset' : 'group'} before advancing.`,
         variant: "destructive",
         duration: 6000
       })
-      return // Block advancement until values are logged
+      return
     }
 
-    // All validation passed, advance to next exercise
+    // All validation passed, advance to next group
     proceedToNextExercise()
   }
 
   const proceedToNextExercise = () => {
-    if (currentExerciseIndex < exercises.length - 1) {
-      setCurrentExerciseIndex(prev => prev + 1)
+    if (currentGroupIndex < exerciseGroups.length - 1) {
+      setCurrentGroupIndex(prev => prev + 1)
     }
   }
 
   const goToPreviousExercise = () => {
-    if (currentExerciseIndex > 0) {
-      setCurrentExerciseIndex(prev => prev - 1)
+    if (currentGroupIndex > 0) {
+      setCurrentGroupIndex(prev => prev - 1)
     }
   }
 
@@ -489,11 +501,15 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
   }
 
   const getProgressPercentage = () => {
-    const totalExercises = exercises.length
-    const completedExercises = Array.from(exerciseLogs.values()).filter(log =>
-      log.sets.every(s => s.completed)
-    ).length
-    return totalExercises > 0 ? (completedExercises / totalExercises) * 100 : 0
+    const totalGroups = exerciseGroups.length
+    const completedGroups = exerciseGroups.slice(0, currentGroupIndex).length
+    return totalGroups > 0 ? (completedGroups / totalGroups) * 100 : 0
+  }
+
+  // Helper function to get superset label (A1, A2, B1, B2, etc.)
+  const getSupersetLabel = (groupIndex: number, exerciseIndexInGroup: number) => {
+    const letter = String.fromCharCode(65 + groupIndex) // A, B, C, etc.
+    return `${letter}${exerciseIndexInGroup + 1}`
   }
 
   // Show completion summary
@@ -598,7 +614,8 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
           <div>
             <h1 className="text-xl font-bold text-white mb-1">{workout.workout_name}</h1>
             <p className="text-[#8FD1FF]/80 text-sm">
-              Exercise {currentExerciseIndex + 1} of {exercises.length}
+              {isSuperset ? `Superset ${currentGroupIndex + 1}` : `Exercise ${currentGroupIndex + 1}`} of {exerciseGroups.length}
+              {isSuperset && ` • ${currentGroup.length} exercises`}
             </p>
           </div>
 
@@ -613,114 +630,146 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
           </div>
         </div>
 
-        {/* Current Exercise */}
-        {currentExercise && (
+        {/* Current Exercise Group (Superset or Solo) */}
+        {currentGroup.length > 0 && (
           <div className="px-4 py-6">
-            <Card className="bg-gradient-to-br from-[#8FD1FF]/20 to-[#8FD1FF]/5 backdrop-blur-md border-[#8FD1FF]/30 p-6 rounded-3xl shadow-2xl mb-6">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="w-14 h-14 bg-[#8FD1FF] rounded-2xl flex items-center justify-center flex-shrink-0">
-                  <Dumbbell className="w-7 h-7 text-[#101938]" />
+            {isSuperset && (
+              <div className="mb-4 px-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="px-3 py-1 bg-[#F676CD]/20 border border-[#F676CD]/40 rounded-full">
+                    <span className="text-[#F676CD] font-bold text-sm">SUPERSET {String.fromCharCode(65 + currentGroupIndex)}</span>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-white mb-1">{currentExercise.exercise?.name}</h2>
-                  <p className="text-[#8FD1FF]/80 text-sm">
-                    {currentExercise.target_sets} sets × {currentExercise.target_reps_min}
-                    {currentExercise.target_reps_max && currentExercise.target_reps_max !== currentExercise.target_reps_min
-                      ? `-${currentExercise.target_reps_max}`
-                      : ''} reps
-                  </p>
-                </div>
+                <p className="text-[#8FD1FF]/70 text-sm">
+                  Complete all sets of each exercise with minimal rest between exercises
+                </p>
               </div>
+            )}
 
-              {currentExercise.exercise?.instructions && (
-                <div className="mb-4 p-4 bg-[#1D295B]/30 rounded-xl">
-                  <p className="text-[#8FD1FF]/90 text-sm">{currentExercise.exercise.instructions}</p>
-                </div>
-              )}
+            {/* Render all exercises in the group */}
+            {currentGroup.map((exercise: any, exerciseIndexInGroup: number) => {
+              const exerciseLabel = isSuperset ? getSupersetLabel(currentGroupIndex, exerciseIndexInGroup) : null
 
-              {/* Sets Logging */}
-              {(currentExercise.exercise?.exercise_type === 'strength' || !currentExercise.exercise?.exercise_type) && (
-                <div className="space-y-3">
-                  {exerciseLogs.get(currentExercise.exercise_id)?.sets.map((set, index) => (
-                    <div
-                      key={index}
-                      className={`p-4 rounded-xl border-2 transition-all ${
-                        set.completed
-                          ? 'bg-green-500/20 border-green-500/40'
-                          : 'bg-[#1D295B]/30 border-[#1D295B]/50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="flex items-center gap-2 flex-1">
-                          <span className="text-white font-bold">Set {index + 1}</span>
-                          {set.completed && <CheckCircle2 className="w-5 h-5 text-green-400" />}
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-3">
-                        <div>
-                          <label className="text-[#8FD1FF]/70 text-xs mb-1 block">Reps</label>
-                          <Input
-                            type="number"
-                            value={set.reps}
-                            onChange={(e) => updateSet(index, 'reps', Math.max(1, parseInt(e.target.value) || 1))}
-                            disabled={set.completed}
-                            min="1"
-                            className="bg-[#101938]/50 border-[#1D295B] text-white text-center"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[#8FD1FF]/70 text-xs mb-1 block">Weight (lbs)</label>
-                          <Input
-                            type="number"
-                            value={set.weight}
-                            onChange={(e) => updateSet(index, 'weight', Math.max(0, parseFloat(e.target.value) || 0))}
-                            disabled={set.completed}
-                            min="0"
-                            step="0.5"
-                            className="bg-[#101938]/50 border-[#1D295B] text-white text-center"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[#8FD1FF]/70 text-xs mb-1 block">RPE</label>
-                          <Input
-                            type="number"
-                            value={set.rpe ?? ''}
-                            onChange={(e) => {
-                              const val = e.target.value === '' ? undefined : parseInt(e.target.value)
-                              if (val === undefined || (val >= 1 && val <= 10)) {
-                                updateSet(index, 'rpe', val)
-                              }
-                            }}
-                            disabled={set.completed}
-                            placeholder="1-10"
-                            min="1"
-                            max="10"
-                            className="bg-[#101938]/50 border-[#1D295B] text-white text-center"
-                          />
-                        </div>
-                      </div>
-
-                      {!set.completed && (
-                        <Button
-                          onClick={() => logExerciseSet(index)}
-                          className="w-full mt-3 bg-[#FADF4A] hover:bg-[#FADF4A]/90 text-[#101938] rounded-lg font-bold"
-                        >
-                          <Check className="w-4 h-4 mr-2" />
-                          Complete Set
-                        </Button>
+              return (
+                <Card
+                  key={exercise.id}
+                  className={`bg-gradient-to-br from-[#8FD1FF]/20 to-[#8FD1FF]/5 backdrop-blur-md border-[#8FD1FF]/30 p-6 rounded-3xl shadow-2xl ${exerciseIndexInGroup > 0 ? 'mt-4' : 'mb-6'}`}
+                >
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="w-14 h-14 bg-[#8FD1FF] rounded-2xl flex items-center justify-center flex-shrink-0">
+                      {exerciseLabel ? (
+                        <span className="text-[#101938] font-bold text-lg">{exerciseLabel}</span>
+                      ) : (
+                        <Dumbbell className="w-7 h-7 text-[#101938]" />
                       )}
                     </div>
-                  ))}
-                </div>
-              )}
-            </Card>
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold text-white mb-1">{exercise.exercise?.name}</h2>
+                      <p className="text-[#8FD1FF]/80 text-sm">
+                        {exercise.target_sets} sets × {exercise.target_reps_min}
+                        {exercise.target_reps_max && exercise.target_reps_max !== exercise.target_reps_min
+                          ? `-${exercise.target_reps_max}`
+                          : ''} reps
+                      </p>
+                    </div>
+                  </div>
 
-            {/* Navigation */}
+                  {exercise.exercise?.instructions && (
+                    <div className="mb-4 p-4 bg-[#1D295B]/30 rounded-xl">
+                      <p className="text-[#8FD1FF]/90 text-sm">{exercise.exercise.instructions}</p>
+                    </div>
+                  )}
+
+                  {/* Sets Logging */}
+                  {(exercise.exercise?.exercise_type === 'strength' || !exercise.exercise?.exercise_type) && (
+                    <div className="space-y-3">
+                      {exerciseLogs.get(exercise.exercise_id)?.sets.map((set, index) => (
+                        <div
+                          key={index}
+                          className={`p-4 rounded-xl border-2 transition-all ${
+                            set.completed
+                              ? 'bg-green-500/20 border-green-500/40'
+                              : 'bg-[#1D295B]/30 border-[#1D295B]/50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="flex items-center gap-2 flex-1">
+                              <span className="text-white font-bold">Set {index + 1}</span>
+                              {set.completed && <CheckCircle2 className="w-5 h-5 text-green-400" />}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-3">
+                            <div>
+                              <label className="text-[#8FD1FF]/70 text-xs mb-1 block">Reps</label>
+                              <Input
+                                type="number"
+                                value={set.reps}
+                                onChange={(e) => updateSet(exercise, index, 'reps', Math.max(1, parseInt(e.target.value) || 1))}
+                                disabled={set.completed}
+                                min="1"
+                                className="bg-[#101938]/50 border-[#1D295B] text-white text-center"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[#8FD1FF]/70 text-xs mb-1 block">Weight (lbs)</label>
+                              <Input
+                                type="number"
+                                value={set.weight}
+                                onChange={(e) => updateSet(exercise, index, 'weight', Math.max(0, parseFloat(e.target.value) || 0))}
+                                disabled={set.completed}
+                                min="0"
+                                step="0.5"
+                                className="bg-[#101938]/50 border-[#1D295B] text-white text-center"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[#8FD1FF]/70 text-xs mb-1 block">RPE</label>
+                              <Input
+                                type="number"
+                                value={set.rpe ?? ''}
+                                onChange={(e) => {
+                                  const val = e.target.value === '' ? undefined : parseInt(e.target.value)
+                                  if (val === undefined || (val >= 1 && val <= 10)) {
+                                    updateSet(exercise, index, 'rpe', val)
+                                  }
+                                }}
+                                disabled={set.completed}
+                                placeholder="1-10"
+                                min="1"
+                                max="10"
+                                className="bg-[#101938]/50 border-[#1D295B] text-white text-center"
+                              />
+                            </div>
+                          </div>
+
+                          {!set.completed && (
+                            <Button
+                              onClick={() => logExerciseSet(exercise, index)}
+                              className="w-full mt-3 bg-[#FADF4A] hover:bg-[#FADF4A]/90 text-[#101938] rounded-lg font-bold"
+                            >
+                              <Check className="w-4 h-4 mr-2" />
+                              Complete Set
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Navigation - Outside exercise rendering but inside workout session */}
+        {currentGroup.length > 0 && (
+          <div className="px-4 pb-6"
+
             <div className="flex gap-3">
               <Button
                 onClick={goToPreviousExercise}
-                disabled={currentExerciseIndex === 0}
+                disabled={currentGroupIndex === 0}
                 variant="outline"
                 className="flex-1 bg-[#1D295B]/50 border-[#1D295B] text-white hover:bg-[#1D295B] disabled:opacity-30"
               >
@@ -728,12 +777,12 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
                 Previous
               </Button>
 
-              {currentExerciseIndex < exercises.length - 1 ? (
+              {currentGroupIndex < exerciseGroups.length - 1 ? (
                 <Button
                   onClick={goToNextExercise}
                   className="flex-1 bg-[#8FD1FF] hover:bg-[#8FD1FF]/90 text-[#101938] font-bold"
                 >
-                  Next Exercise
+                  {isSuperset ? 'Next Superset' : 'Next Exercise'}
                   <ChevronRight className="w-5 h-5 ml-2" />
                 </Button>
               ) : (
