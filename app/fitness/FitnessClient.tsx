@@ -254,6 +254,8 @@ export function FitnessClient() {
               onRefresh={handleRefreshPlan}
               onOpenGenerator={() => setShowPlanGenerator(true)}
               onOpenQuickWorkout={() => setShowQuickWorkout(true)}
+              quickWorkout={quickWorkout}
+              onQuickWorkoutComplete={() => setQuickWorkout(null)}
               appData={appData}
             />
           )}
@@ -302,16 +304,27 @@ function WorkoutsTab({
   onRefresh,
   onOpenGenerator,
   onOpenQuickWorkout,
+  quickWorkout,
+  onQuickWorkoutComplete,
   appData
 }: {
   refreshKey: number
   onRefresh: () => void
   onOpenGenerator: () => void
   onOpenQuickWorkout: () => void
+  quickWorkout: any
+  onQuickWorkoutComplete: () => void
   appData: any
 }) {
   const router = useRouter()
   const [selectedWorkout, setSelectedWorkout] = useState<any>(null)
+
+  // Auto-start quick workout when it's generated
+  useEffect(() => {
+    if (quickWorkout && !selectedWorkout) {
+      setSelectedWorkout(quickWorkout)
+    }
+  }, [quickWorkout])
 
   // Show workout session if a workout is selected
   if (selectedWorkout) {
@@ -319,6 +332,7 @@ function WorkoutsTab({
       <WorkoutErrorBoundary
         onReset={() => {
           setSelectedWorkout(null)
+          onQuickWorkoutComplete()
           onRefresh()
         }}
       >
@@ -327,10 +341,12 @@ function WorkoutsTab({
             workout={selectedWorkout}
             onComplete={() => {
               setSelectedWorkout(null)
+              onQuickWorkoutComplete()
               onRefresh()
             }}
             onCancel={() => {
               setSelectedWorkout(null)
+              onQuickWorkoutComplete()
               onRefresh()
             }}
           />
