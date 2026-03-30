@@ -61,6 +61,7 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
   const [completionSummary, setCompletionSummary] = useState<any>(null)
   const hasStartedSessionRef = useRef(false)
   const [showExitConfirmation, setShowExitConfirmation] = useState(false)
+  const [showSkipExerciseConfirmation, setShowSkipExerciseConfirmation] = useState(false)
 
   const exercises = workout.plan_exercises || []
   const currentExercise = exercises[currentExerciseIndex]
@@ -342,44 +343,64 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
   }
 
   const goToNextExercise = () => {
-    // Validate that all completed sets have weight and RPE logged
     const exerciseLog = exerciseLogs.get(currentExercise.exercise_id)
-    if (exerciseLog) {
-      const completedSets = exerciseLog.sets.filter(s => s.completed)
-      const missingWeight: number[] = []
-      const missingRPE: number[] = []
 
-      completedSets.forEach((set, index) => {
-        // Check for missing or zero weight
-        if (set.weight === 0 || set.weight === undefined || set.weight === null) {
-          missingWeight.push(index + 1)
-        }
-
-        // Check for missing RPE
-        if (set.rpe === undefined || set.rpe === null) {
-          missingRPE.push(index + 1)
-        }
-      })
-
-      const issues: string[] = []
-      if (missingWeight.length > 0) {
-        issues.push(`Weight not logged for set${missingWeight.length > 1 ? 's' : ''}: ${missingWeight.join(', ')}`)
-      }
-      if (missingRPE.length > 0) {
-        issues.push(`RPE not logged for set${missingRPE.length > 1 ? 's' : ''}: ${missingRPE.join(', ')}`)
-      }
-
-      if (issues.length > 0) {
-        toast({
-          title: "Missing Information",
-          description: `${issues.join('\n')}\n\nPlease go back and log this information before advancing to the next exercise.`,
-          variant: "destructive",
-          duration: 6000
-        })
-        return // Block advancement until values are logged
-      }
+    if (!exerciseLog) {
+      // No log exists, show confirmation
+      setShowSkipExerciseConfirmation(true)
+      return
     }
 
+    const completedSets = exerciseLog.sets.filter(s => s.completed)
+
+    // Check if any sets were completed
+    if (completedSets.length === 0) {
+      // No sets completed, show confirmation
+      setShowSkipExerciseConfirmation(true)
+      return
+    }
+
+    // Check for missing weight/RPE in completed sets
+    const missingWeight: number[] = []
+    const missingRPE: number[] = []
+
+    completedSets.forEach((set, index) => {
+      const actualSetNumber = exerciseLog.sets.findIndex(s => s === set) + 1
+
+      // Check for missing or zero weight
+      if (set.weight === 0 || set.weight === undefined || set.weight === null) {
+        missingWeight.push(actualSetNumber)
+      }
+
+      // Check for missing RPE
+      if (set.rpe === undefined || set.rpe === null) {
+        missingRPE.push(actualSetNumber)
+      }
+    })
+
+    const issues: string[] = []
+    if (missingWeight.length > 0) {
+      issues.push(`Weight not logged for set${missingWeight.length > 1 ? 's' : ''}: ${missingWeight.join(', ')}`)
+    }
+    if (missingRPE.length > 0) {
+      issues.push(`RPE not logged for set${missingRPE.length > 1 ? 's' : ''}: ${missingRPE.join(', ')}`)
+    }
+
+    if (issues.length > 0) {
+      toast({
+        title: "⚠️ Missing Information",
+        description: `${issues.join('\n')}\n\nPlease go back and log this information before advancing.`,
+        variant: "destructive",
+        duration: 6000
+      })
+      return // Block advancement until values are logged
+    }
+
+    // All validation passed, advance to next exercise
+    proceedToNextExercise()
+  }
+
+  const proceedToNextExercise = () => {
     if (currentExerciseIndex < exercises.length - 1) {
       setCurrentExerciseIndex(prev => prev + 1)
     }
@@ -751,6 +772,34 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
               className="bg-[#8FD1FF] hover:bg-[#8FD1FF]/90 text-[#101938] font-bold"
             >
               Exit Workout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Skip Exercise Confirmation Dialog */}
+      <AlertDialog open={showSkipExerciseConfirmation} onOpenChange={setShowSkipExerciseConfirmation}>
+        <AlertDialogContent className="bg-[#101938] border-[#1D295B]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Skip Exercise Without Logging?</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
+              You haven't completed any sets for this exercise. Are you sure you want to continue to the next exercise without logging any data?
+              <br /><br />
+              <span className="text-yellow-400 font-semibold">Note:</span> No data will be saved for this exercise if you skip it.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-[#1D295B]/50 border-[#1D295B] text-white hover:bg-[#1D295B]">
+              Go Back and Log Sets
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowSkipExerciseConfirmation(false)
+                proceedToNextExercise()
+              }}
+              className="bg-yellow-500 hover:bg-yellow-600 text-[#101938] font-bold"
+            >
+              Skip Exercise
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
