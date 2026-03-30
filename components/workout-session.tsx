@@ -342,6 +342,44 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
   }
 
   const goToNextExercise = () => {
+    // Validate that all completed sets have weight and RPE logged
+    const exerciseLog = exerciseLogs.get(currentExercise.exercise_id)
+    if (exerciseLog) {
+      const completedSets = exerciseLog.sets.filter(s => s.completed)
+      const missingWeight: number[] = []
+      const missingRPE: number[] = []
+
+      completedSets.forEach((set, index) => {
+        // Check for missing or zero weight
+        if (set.weight === 0 || set.weight === undefined || set.weight === null) {
+          missingWeight.push(index + 1)
+        }
+
+        // Check for missing RPE
+        if (set.rpe === undefined || set.rpe === null) {
+          missingRPE.push(index + 1)
+        }
+      })
+
+      const issues: string[] = []
+      if (missingWeight.length > 0) {
+        issues.push(`Weight not logged for set${missingWeight.length > 1 ? 's' : ''}: ${missingWeight.join(', ')}`)
+      }
+      if (missingRPE.length > 0) {
+        issues.push(`RPE not logged for set${missingRPE.length > 1 ? 's' : ''}: ${missingRPE.join(', ')}`)
+      }
+
+      if (issues.length > 0) {
+        toast({
+          title: "Missing Information",
+          description: `${issues.join('\n')}\n\nPlease go back and log this information before advancing to the next exercise.`,
+          variant: "destructive",
+          duration: 6000
+        })
+        return // Block advancement until values are logged
+      }
+    }
+
     if (currentExerciseIndex < exercises.length - 1) {
       setCurrentExerciseIndex(prev => prev + 1)
     }
