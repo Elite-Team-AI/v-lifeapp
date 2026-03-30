@@ -10,7 +10,8 @@ import { workoutLogStartSchema, safeValidate } from '@/lib/validations/api'
  *
  * Body:
  * - userId: string (required)
- * - workoutId: string (required) - ID from plan_workouts table
+ * - workoutId: string (required) - ID from plan_workouts table OR quick-{timestamp} for quick workouts
+ * - quickWorkoutData: object (optional) - Full workout data for quick workouts
  */
 export async function POST(request: NextRequest) {
   const log = createApiLogger(request)
@@ -37,10 +38,15 @@ export async function POST(request: NextRequest) {
     }
 
     const { userId, workoutId } = validation.data
+    const { quickWorkoutData } = body
+
+    // Check if this is a quick workout
+    const isQuickWorkout = workoutId.startsWith('quick-')
 
     log.info("Starting workout session", undefined, {
       userId,
-      workoutId
+      workoutId,
+      isQuickWorkout
     })
 
     // Validate required environment variables
@@ -66,39 +72,62 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // 1. Fetch the planned workout with exercises
-    const { data: plannedWorkout, error: workoutError } = await supabase
-      .from('plan_workouts')
-      .select(`
-        *,
-        plan_exercises (
-          *,
-          exercise:exercise_library (
-            id,
-            name,
-            category,
-            equipment,
-            difficulty,
-            primary_muscles,
-            instructions,
-            video_url,
-            exercise_type
-          )
-        )
-      `)
-      .eq('id', workoutId)
-      .single()
+    let plannedWorkout: any
 
-    if (workoutError || !plannedWorkout) {
-      log.warn("Planned workout not found", undefined, {
+    if (isQuickWorkout) {
+      // For quick workouts, use the provided workout data
+      if (!quickWorkoutData) {
+        log.warn("Quick workout data not provided", undefined, { userId, workoutId })
+        return NextResponse.json(
+          { error: 'Quick workout data is required for quick workouts' },
+          { status: 400 }
+        )
+      }
+
+      plannedWorkout = quickWorkoutData
+
+      log.info("Using quick workout data", undefined, {
         userId,
         workoutId,
-        errorCode: workoutError?.code
+        workoutName: plannedWorkout.workout_name
       })
-      return NextResponse.json(
-        { error: 'Planned workout not found' },
-        { status: 404 }
-      )
+    } else {
+      // For regular workouts, fetch from database
+      const { data: dbWorkout, error: workoutError } = await supabase
+        .from('plan_workouts')
+        .select(`
+          *,
+          plan_exercises (
+            *,
+            exercise:exercise_library (
+              id,
+              name,
+              category,
+              equipment,
+              difficulty,
+              primary_muscles,
+              instructions,
+              video_url,
+              exercise_type
+            )
+          )
+        `)
+        .eq('id', workoutId)
+        .single()
+
+      if (workoutError || !dbWorkout) {
+        log.warn("Planned workout not found", undefined, {
+          userId,
+          workoutId,
+          errorCode: workoutError?.code
+        })
+        return NextResponse.json(
+          { error: 'Planned workout not found' },
+          { status: 404 }
+        )
+      }
+
+      plannedWorkout = dbWorkout
     }
 
     // 2. Check if there's already an active workout log for this workout
@@ -160,8 +189,8 @@ export async function POST(request: NextRequest) {
       .from('workout_logs')
       .insert({
         user_id: userId,
-        workout_id: workoutId,
-        plan_id: plannedWorkout.plan_id,
+        workout_id: isQuickWorkout ? null : workoutId, // Quick workouts don't have a plan workout ID
+        plan_id: isQuickWorkout ? null : plannedWorkout.plan_id,
         workout_date: new Date().toISOString().split('T')[0],
         started_at: startTime,
         completion_status: 'in_progress',

@@ -108,19 +108,29 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
       setIsStarting(true)
       hasStartedSessionRef.current = true
 
+      const isQuickWorkout = workout.id?.startsWith('quick-') || workout.is_quick_workout
+
       console.log('Starting workout with:', {
         userId: user?.id,
         workoutId: workout.id,
+        isQuickWorkout,
         workout: workout
       })
+
+      const requestBody: any = {
+        userId: user?.id,
+        workoutId: workout.id
+      }
+
+      // For quick workouts, include the full workout data
+      if (isQuickWorkout) {
+        requestBody.quickWorkoutData = workout
+      }
 
       const response = await fetch('/api/workouts/logs/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user?.id,
-          workoutId: workout.id
-        })
+        body: JSON.stringify(requestBody)
       })
 
       const data = await response.json()

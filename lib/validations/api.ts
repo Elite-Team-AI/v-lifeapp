@@ -196,7 +196,16 @@ export type WorkoutGenerationRequest = z.infer<typeof workoutGenerationSchema>
 // Workout Logging API Schemas
 export const workoutLogStartSchema = z.object({
   userId: z.string().uuid("Invalid user ID"),
-  workoutId: z.string().uuid("Invalid workout ID"),
+  // Allow both UUID (for plan workouts) and quick workout IDs (format: quick-{timestamp})
+  workoutId: z.string().refine(
+    (id) => {
+      // Check if it's a UUID or a quick workout ID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      const quickWorkoutRegex = /^quick-\d+$/
+      return uuidRegex.test(id) || quickWorkoutRegex.test(id)
+    },
+    { message: "Invalid workout ID" }
+  ),
 })
 
 export type WorkoutLogStart = z.infer<typeof workoutLogStartSchema>
