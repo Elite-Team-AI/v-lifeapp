@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Calendar, Dumbbell, TrendingUp, CheckCircle2, Play, Sparkles, Loader2, RefreshCw, Info, ChevronDown, ChevronUp, Clock } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/hooks/use-auth"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface PersonalizedWorkoutPlanProps {
   onStartWorkout?: (workout: any) => void
@@ -18,6 +19,7 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
   const [generatingWeek, setGeneratingWeek] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showRationale, setShowRationale] = useState(false)
+  const [showUpcoming, setShowUpcoming] = useState(false)
   const [wakeLock, setWakeLock] = useState<any>(null)
 
   useEffect(() => {
@@ -558,140 +560,193 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
             </div>
           </div>
 
-          {/* Workouts Grid */}
-          <div className="space-y-3">
-            {currentPlan.weeklyWorkouts[currentPlan.currentWeek].map((workout: any, index: number) => {
-              const isCompleted = workout.is_completed
-              const isNext = !isCompleted && !currentPlan.weeklyWorkouts[currentPlan.currentWeek]
-                .slice(0, index)
-                .some((w: any) => !w.is_completed)
+          {(() => {
+            const weekWorkouts = currentPlan.weeklyWorkouts[currentPlan.currentWeek]
+            const nextWorkoutIndex = weekWorkouts.findIndex((w: any) => !w.is_completed)
+            const nextWorkout = nextWorkoutIndex >= 0 ? weekWorkouts[nextWorkoutIndex] : null
+            const upcomingWorkouts = nextWorkout ? weekWorkouts.slice(nextWorkoutIndex + 1).filter((w: any) => !w.is_completed) : []
+            const completedWorkouts = weekWorkouts.filter((w: any) => w.is_completed)
 
-              return (
-                <Card
-                  key={workout.id}
-                  className={`relative overflow-hidden transition-all duration-300 hover:scale-[1.02] ${
-                    isCompleted
-                      ? 'bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/30'
-                      : isNext
-                      ? 'bg-gradient-to-br from-[#FADF4A]/15 to-[#F9C74F]/5 border-[#FADF4A]/40 shadow-lg shadow-[#FADF4A]/10'
-                      : 'bg-gradient-to-br from-[#1D295B]/40 to-[#101938]/20 border-[#1D295B]/40'
-                  }`}
-                >
-                  {/* Accent Bar */}
-                  {isNext && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#FADF4A] to-[#F9C74F]" />
-                  )}
+            const WorkoutCard = ({ workout, isNext = false, isCompleted = false }: { workout: any, isNext?: boolean, isCompleted?: boolean }) => (
+              <Card
+                className={`relative overflow-hidden transition-all duration-300 hover:scale-[1.02] ${
+                  isCompleted
+                    ? 'bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/30'
+                    : isNext
+                    ? 'bg-gradient-to-br from-[#FADF4A]/15 to-[#F9C74F]/5 border-[#FADF4A]/40 shadow-lg shadow-[#FADF4A]/10'
+                    : 'bg-gradient-to-br from-[#1D295B]/40 to-[#101938]/20 border-[#1D295B]/40'
+                }`}
+              >
+                {/* Accent Bar */}
+                {isNext && (
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#FADF4A] to-[#F9C74F]" />
+                )}
 
-                  <CardContent className="p-5">
-                    <div className="space-y-4">
-                      {/* Header Section */}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-4 flex-1 min-w-0">
-                          {/* Status Icon */}
-                          <div
-                            className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
-                              isCompleted
-                                ? 'bg-gradient-to-br from-green-500/30 to-green-600/20 shadow-lg shadow-green-500/20'
-                                : isNext
-                                ? 'bg-gradient-to-br from-[#FADF4A] to-[#F9C74F] shadow-lg shadow-[#FADF4A]/30'
-                                : 'bg-[#1D295B]/60'
-                            }`}
-                          >
-                            {isCompleted ? (
-                              <CheckCircle2 className="w-6 h-6 text-green-400" />
-                            ) : (
-                              <Dumbbell
-                                className={`w-6 h-6 ${isNext ? 'text-[#101938]' : 'text-white/50'}`}
-                              />
+                <CardContent className="p-5">
+                  <div className="space-y-4">
+                    {/* Header Section */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-4 flex-1 min-w-0">
+                        {/* Status Icon */}
+                        <div
+                          className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                            isCompleted
+                              ? 'bg-gradient-to-br from-green-500/30 to-green-600/20 shadow-lg shadow-green-500/20'
+                              : isNext
+                              ? 'bg-gradient-to-br from-[#FADF4A] to-[#F9C74F] shadow-lg shadow-[#FADF4A]/30'
+                              : 'bg-[#1D295B]/60'
+                          }`}
+                        >
+                          {isCompleted ? (
+                            <CheckCircle2 className="w-6 h-6 text-green-400" />
+                          ) : (
+                            <Dumbbell
+                              className={`w-6 h-6 ${isNext ? 'text-[#101938]' : 'text-white/50'}`}
+                            />
+                          )}
+                        </div>
+
+                        {/* Workout Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start gap-2 mb-2">
+                            <h4 className={`text-lg font-bold ${isNext ? 'text-white' : 'text-white/90'} truncate flex-1`}>
+                              {workout.workout_name}
+                            </h4>
+                            {isNext && (
+                              <span className="px-3 py-1 bg-gradient-to-r from-[#FADF4A] to-[#F9C74F] text-[#101938] rounded-full text-xs font-bold uppercase tracking-wide shadow-lg">
+                                Up Next
+                              </span>
                             )}
                           </div>
 
-                          {/* Workout Info */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start gap-2 mb-2">
-                              <h4 className={`text-lg font-bold ${isNext ? 'text-white' : 'text-white/90'} truncate flex-1`}>
-                                {workout.workout_name}
-                              </h4>
-                              {isNext && (
-                                <span className="px-3 py-1 bg-gradient-to-r from-[#FADF4A] to-[#F9C74F] text-[#101938] rounded-full text-xs font-bold uppercase tracking-wide shadow-lg">
-                                  Up Next
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Workout Stats */}
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-3">
-                              <span className="flex items-center gap-1.5 text-sm text-white/70">
-                                <div className="w-5 h-5 rounded-lg bg-[#8FD1FF]/20 flex items-center justify-center">
-                                  <Calendar className="w-3 h-3 text-[#8FD1FF]" />
-                                </div>
-                                <span className="font-medium">Day {workout.day_of_week}</span>
-                              </span>
-                              <span className="flex items-center gap-1.5 text-sm text-white/70">
-                                <div className="w-5 h-5 rounded-lg bg-[#F676CD]/20 flex items-center justify-center">
-                                  <Clock className="w-3 h-3 text-[#F676CD]" />
-                                </div>
-                                <span className="font-medium">{workout.estimated_duration_minutes} min</span>
-                              </span>
-                              <span className="flex items-center gap-1.5 text-sm text-white/70">
-                                <div className="w-5 h-5 rounded-lg bg-[#FADF4A]/20 flex items-center justify-center">
-                                  <TrendingUp className="w-3 h-3 text-[#FADF4A]" />
-                                </div>
-                                <span className="font-medium">{workout.plan_exercises?.length || 0} exercises</span>
-                              </span>
-                            </div>
-
-                            {/* Muscle Groups */}
-                            {workout.muscle_groups && workout.muscle_groups.length > 0 && (
-                              <div className="flex flex-wrap gap-2">
-                                {workout.muscle_groups.map((muscle: string, idx: number) => (
-                                  <span
-                                    key={muscle}
-                                    className={`px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm ${
-                                      isNext
-                                        ? 'bg-[#8FD1FF]/25 text-[#8FD1FF] border border-[#8FD1FF]/30'
-                                        : 'bg-[#8FD1FF]/15 text-[#8FD1FF]/80 border border-[#8FD1FF]/20'
-                                    }`}
-                                  >
-                                    {muscle}
-                                  </span>
-                                ))}
+                          {/* Workout Stats */}
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-3">
+                            <span className="flex items-center gap-1.5 text-sm text-white/70">
+                              <div className="w-5 h-5 rounded-lg bg-[#8FD1FF]/20 flex items-center justify-center">
+                                <Calendar className="w-3 h-3 text-[#8FD1FF]" />
                               </div>
-                            )}
+                              <span className="font-medium">Day {workout.day_of_week}</span>
+                            </span>
+                            <span className="flex items-center gap-1.5 text-sm text-white/70">
+                              <div className="w-5 h-5 rounded-lg bg-[#F676CD]/20 flex items-center justify-center">
+                                <Clock className="w-3 h-3 text-[#F676CD]" />
+                              </div>
+                              <span className="font-medium">{workout.estimated_duration_minutes} min</span>
+                            </span>
+                            <span className="flex items-center gap-1.5 text-sm text-white/70">
+                              <div className="w-5 h-5 rounded-lg bg-[#FADF4A]/20 flex items-center justify-center">
+                                <TrendingUp className="w-3 h-3 text-[#FADF4A]" />
+                              </div>
+                              <span className="font-medium">{workout.plan_exercises?.length || 0} exercises</span>
+                            </span>
                           </div>
+
+                          {/* Muscle Groups */}
+                          {workout.muscle_groups && workout.muscle_groups.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {workout.muscle_groups.map((muscle: string, idx: number) => (
+                                <span
+                                  key={muscle}
+                                  className={`px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm ${
+                                    isNext
+                                      ? 'bg-[#8FD1FF]/25 text-[#8FD1FF] border border-[#8FD1FF]/30'
+                                      : 'bg-[#8FD1FF]/15 text-[#8FD1FF]/80 border border-[#8FD1FF]/20'
+                                  }`}
+                                >
+                                  {muscle}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
-
-                      {/* Action Button */}
-                      {!isCompleted && (
-                        <Button
-                          className={`w-full rounded-2xl font-bold py-4 text-base flex items-center justify-center gap-2 transition-all duration-300 transform active:scale-95 ${
-                            isNext
-                              ? 'bg-gradient-to-r from-[#FADF4A] to-[#F9C74F] hover:from-[#F9C74F] hover:to-[#FADF4A] text-[#101938] shadow-xl shadow-[#FADF4A]/30'
-                              : 'bg-[#1D295B]/60 hover:bg-[#1D295B]/80 text-white/90 border-2 border-white/10 hover:border-white/20'
-                          }`}
-                          onClick={() => onStartWorkout?.(workout)}
-                        >
-                          <Play className={`w-5 h-5 ${isNext ? '' : 'text-white/70'}`} />
-                          <span>{isNext ? 'Start Workout Now' : 'Start Workout'}</span>
-                        </Button>
-                      )}
-
-                      {/* Completion Status */}
-                      {isCompleted && workout.completed_date && (
-                        <div className="flex items-center justify-center gap-2 py-2 px-4 bg-green-500/10 rounded-xl border border-green-500/20">
-                          <CheckCircle2 className="w-4 h-4 text-green-400" />
-                          <span className="text-sm font-medium text-green-400">
-                            Completed {new Date(workout.completed_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          </span>
-                        </div>
-                      )}
                     </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
+
+                    {/* Action Button */}
+                    {!isCompleted && (
+                      <Button
+                        className={`w-full rounded-2xl font-bold py-4 text-base flex items-center justify-center gap-2 transition-all duration-300 transform active:scale-95 ${
+                          isNext
+                            ? 'bg-gradient-to-r from-[#FADF4A] to-[#F9C74F] hover:from-[#F9C74F] hover:to-[#FADF4A] text-[#101938] shadow-xl shadow-[#FADF4A]/30'
+                            : 'bg-[#1D295B]/60 hover:bg-[#1D295B]/80 text-white/90 border-2 border-white/10 hover:border-white/20'
+                        }`}
+                        onClick={() => onStartWorkout?.(workout)}
+                      >
+                        <Play className={`w-5 h-5 ${isNext ? '' : 'text-white/70'}`} />
+                        <span>{isNext ? 'Start Workout Now' : 'Start Workout'}</span>
+                      </Button>
+                    )}
+
+                    {/* Completion Status */}
+                    {isCompleted && workout.completed_date && (
+                      <div className="flex items-center justify-center gap-2 py-2 px-4 bg-green-500/10 rounded-xl border border-green-500/20">
+                        <CheckCircle2 className="w-4 h-4 text-green-400" />
+                        <span className="text-sm font-medium text-green-400">
+                          Completed {new Date(workout.completed_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+
+            return (
+              <div className="space-y-3">
+                {/* Up Next Workout */}
+                {nextWorkout && (
+                  <WorkoutCard workout={nextWorkout} isNext={true} />
+                )}
+
+                {/* Upcoming Workouts - Collapsible */}
+                {upcomingWorkouts.length > 0 && (
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => setShowUpcoming(!showUpcoming)}
+                      className="w-full flex items-center justify-between px-4 py-3 bg-[#1D295B]/30 hover:bg-[#1D295B]/50 border border-[#1D295B]/40 rounded-xl transition-all duration-200"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-[#8FD1FF]" />
+                        <span className="text-sm font-semibold text-white">
+                          Upcoming This Week ({upcomingWorkouts.length})
+                        </span>
+                      </div>
+                      {showUpcoming ? (
+                        <ChevronUp className="w-5 h-5 text-[#8FD1FF]" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-[#8FD1FF]" />
+                      )}
+                    </button>
+
+                    <AnimatePresence>
+                      {showUpcoming && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3, ease: "easeInOut" }}
+                          className="space-y-3 overflow-hidden"
+                        >
+                          {upcomingWorkouts.map((workout: any) => (
+                            <WorkoutCard key={workout.id} workout={workout} />
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
+
+                {/* Completed Workouts - Always Collapsed */}
+                {completedWorkouts.length > 0 && !nextWorkout && (
+                  <div className="space-y-3">
+                    {completedWorkouts.map((workout: any) => (
+                      <WorkoutCard key={workout.id} workout={workout} isCompleted={true} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </div>
       ) : (
         <Card className="bg-gradient-to-br from-green-500/20 to-green-500/5 backdrop-blur-md border-green-500/30 p-6 rounded-3xl shadow-2xl">
