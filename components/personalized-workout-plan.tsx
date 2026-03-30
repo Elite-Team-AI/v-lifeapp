@@ -1,8 +1,8 @@
 "use client"
 
-import { Card } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, Dumbbell, TrendingUp, CheckCircle2, Play, Sparkles, Loader2, RefreshCw, Info, ChevronDown, ChevronUp } from "lucide-react"
+import { Calendar, Dumbbell, TrendingUp, CheckCircle2, Play, Sparkles, Loader2, RefreshCw, Info, ChevronDown, ChevronUp, Clock } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/hooks/use-auth"
 
@@ -542,20 +542,23 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
 
       {/* This Week's Workouts */}
       {currentPlan.weeklyWorkouts && currentPlan.weeklyWorkouts[currentPlan.currentWeek] ? (
-        <Card className="bg-gradient-to-br from-[#FADF4A]/20 to-[#FADF4A]/5 backdrop-blur-md border-[#FADF4A]/30 p-6 rounded-3xl shadow-2xl">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-[#FADF4A] rounded-xl flex items-center justify-center flex-shrink-0">
-              <Calendar className="w-6 h-6 text-[#101938]" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-white">Week {currentPlan.currentWeek} Workouts</h3>
-              <p className="text-[#FADF4A]/80 text-sm">
-                {currentPlan.weeklyWorkouts[currentPlan.currentWeek].filter((w: any) => w.is_completed).length} of{' '}
-                {currentPlan.weeklyWorkouts[currentPlan.currentWeek].length} completed
-              </p>
+        <div className="space-y-4">
+          {/* Week Header */}
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#FADF4A] to-[#F9C74F] rounded-xl flex items-center justify-center shadow-lg">
+                <Calendar className="w-5 h-5 text-[#101938]" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Week {currentPlan.currentWeek} Schedule</h3>
+                <p className="text-[#8FD1FF]/70 text-sm">
+                  {currentPlan.weeklyWorkouts[currentPlan.currentWeek].filter((w: any) => w.is_completed).length}/{currentPlan.weeklyWorkouts[currentPlan.currentWeek].length} completed
+                </p>
+              </div>
             </div>
           </div>
 
+          {/* Workouts Grid */}
           <div className="space-y-3">
             {currentPlan.weeklyWorkouts[currentPlan.currentWeek].map((workout: any, index: number) => {
               const isCompleted = workout.is_completed
@@ -564,99 +567,132 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
                 .some((w: any) => !w.is_completed)
 
               return (
-                <div
+                <Card
                   key={workout.id}
-                  className={`rounded-xl p-4 border-2 transition-all ${
+                  className={`relative overflow-hidden transition-all duration-300 hover:scale-[1.02] ${
                     isCompleted
-                      ? 'bg-green-500/10 border-green-500/30'
+                      ? 'bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/30'
                       : isNext
-                      ? 'bg-[#8FD1FF]/10 border-[#8FD1FF]/50 shadow-lg'
-                      : 'bg-[#1D295B]/30 border-[#1D295B]/50'
+                      ? 'bg-gradient-to-br from-[#FADF4A]/15 to-[#F9C74F]/5 border-[#FADF4A]/40 shadow-lg shadow-[#FADF4A]/10'
+                      : 'bg-gradient-to-br from-[#1D295B]/40 to-[#101938]/20 border-[#1D295B]/40'
                   }`}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-start gap-3 flex-1">
-                      <div
-                        className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                          isCompleted
-                            ? 'bg-green-500/20'
-                            : isNext
-                            ? 'bg-[#FADF4A]'
-                            : 'bg-[#1D295B]/50'
-                        }`}
-                      >
-                        {isCompleted ? (
-                          <CheckCircle2 className="w-5 h-5 text-green-400" />
-                        ) : (
-                          <Dumbbell
-                            className={`w-5 h-5 ${isNext ? 'text-[#101938]' : 'text-white/50'}`}
-                          />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="text-white font-semibold">{workout.workout_name}</h4>
-                          {isNext && (
-                            <span className="px-2 py-0.5 bg-[#FADF4A]/20 text-[#FADF4A] rounded-full text-xs font-medium">
-                              Next
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 text-sm text-white/70 mb-2">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            Day {workout.day_of_week}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <TrendingUp className="w-3 h-3" />
-                            {workout.estimated_duration_minutes} min
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Dumbbell className="w-3 h-3" />
-                            {workout.plan_exercises?.length || 0} exercises
-                          </span>
-                        </div>
-                        {workout.muscle_groups && workout.muscle_groups.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {workout.muscle_groups.map((muscle: string) => (
-                              <span
-                                key={muscle}
-                                className="px-2 py-0.5 bg-[#8FD1FF]/20 text-[#8FD1FF] rounded-full text-xs"
-                              >
-                                {muscle}
-                              </span>
-                            ))}
+                  {/* Accent Bar */}
+                  {isNext && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#FADF4A] to-[#F9C74F]" />
+                  )}
+
+                  <CardContent className="p-5">
+                    <div className="space-y-4">
+                      {/* Header Section */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-4 flex-1 min-w-0">
+                          {/* Status Icon */}
+                          <div
+                            className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                              isCompleted
+                                ? 'bg-gradient-to-br from-green-500/30 to-green-600/20 shadow-lg shadow-green-500/20'
+                                : isNext
+                                ? 'bg-gradient-to-br from-[#FADF4A] to-[#F9C74F] shadow-lg shadow-[#FADF4A]/30'
+                                : 'bg-[#1D295B]/60'
+                            }`}
+                          >
+                            {isCompleted ? (
+                              <CheckCircle2 className="w-6 h-6 text-green-400" />
+                            ) : (
+                              <Dumbbell
+                                className={`w-6 h-6 ${isNext ? 'text-[#101938]' : 'text-white/50'}`}
+                              />
+                            )}
                           </div>
-                        )}
+
+                          {/* Workout Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start gap-2 mb-2">
+                              <h4 className={`text-lg font-bold ${isNext ? 'text-white' : 'text-white/90'} truncate flex-1`}>
+                                {workout.workout_name}
+                              </h4>
+                              {isNext && (
+                                <span className="px-3 py-1 bg-gradient-to-r from-[#FADF4A] to-[#F9C74F] text-[#101938] rounded-full text-xs font-bold uppercase tracking-wide shadow-lg">
+                                  Up Next
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Workout Stats */}
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-3">
+                              <span className="flex items-center gap-1.5 text-sm text-white/70">
+                                <div className="w-5 h-5 rounded-lg bg-[#8FD1FF]/20 flex items-center justify-center">
+                                  <Calendar className="w-3 h-3 text-[#8FD1FF]" />
+                                </div>
+                                <span className="font-medium">Day {workout.day_of_week}</span>
+                              </span>
+                              <span className="flex items-center gap-1.5 text-sm text-white/70">
+                                <div className="w-5 h-5 rounded-lg bg-[#F676CD]/20 flex items-center justify-center">
+                                  <Clock className="w-3 h-3 text-[#F676CD]" />
+                                </div>
+                                <span className="font-medium">{workout.estimated_duration_minutes} min</span>
+                              </span>
+                              <span className="flex items-center gap-1.5 text-sm text-white/70">
+                                <div className="w-5 h-5 rounded-lg bg-[#FADF4A]/20 flex items-center justify-center">
+                                  <TrendingUp className="w-3 h-3 text-[#FADF4A]" />
+                                </div>
+                                <span className="font-medium">{workout.plan_exercises?.length || 0} exercises</span>
+                              </span>
+                            </div>
+
+                            {/* Muscle Groups */}
+                            {workout.muscle_groups && workout.muscle_groups.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {workout.muscle_groups.map((muscle: string, idx: number) => (
+                                  <span
+                                    key={muscle}
+                                    className={`px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm ${
+                                      isNext
+                                        ? 'bg-[#8FD1FF]/25 text-[#8FD1FF] border border-[#8FD1FF]/30'
+                                        : 'bg-[#8FD1FF]/15 text-[#8FD1FF]/80 border border-[#8FD1FF]/20'
+                                    }`}
+                                  >
+                                    {muscle}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
 
-                  {!isCompleted && (
-                    <Button
-                      className={`w-full rounded-xl font-semibold py-3 text-sm flex items-center justify-center gap-2 transition-all duration-200 ${
-                        isNext
-                          ? 'bg-[#FADF4A] hover:bg-[#FADF4A]/90 text-[#101938] shadow-md'
-                          : 'bg-[#1D295B]/50 hover:bg-[#1D295B]/70 text-white/80 border border-white/10'
-                      }`}
-                      onClick={() => onStartWorkout?.(workout)}
-                    >
-                      <Play className="w-4 h-4" />
-                      {isNext ? 'Start Workout' : 'Start'}
-                    </Button>
-                  )}
+                      {/* Action Button */}
+                      {!isCompleted && (
+                        <Button
+                          className={`w-full rounded-2xl font-bold py-4 text-base flex items-center justify-center gap-2 transition-all duration-300 transform active:scale-95 ${
+                            isNext
+                              ? 'bg-gradient-to-r from-[#FADF4A] to-[#F9C74F] hover:from-[#F9C74F] hover:to-[#FADF4A] text-[#101938] shadow-xl shadow-[#FADF4A]/30'
+                              : 'bg-[#1D295B]/60 hover:bg-[#1D295B]/80 text-white/90 border-2 border-white/10 hover:border-white/20'
+                          }`}
+                          onClick={() => onStartWorkout?.(workout)}
+                        >
+                          <Play className={`w-5 h-5 ${isNext ? '' : 'text-white/70'}`} />
+                          <span>{isNext ? 'Start Workout Now' : 'Start Workout'}</span>
+                        </Button>
+                      )}
 
-                  {isCompleted && workout.completed_date && (
-                    <div className="text-xs text-green-400/80 mt-2 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Completed on {new Date(workout.completed_date).toLocaleDateString()}
+                      {/* Completion Status */}
+                      {isCompleted && workout.completed_date && (
+                        <div className="flex items-center justify-center gap-2 py-2 px-4 bg-green-500/10 rounded-xl border border-green-500/20">
+                          <CheckCircle2 className="w-4 h-4 text-green-400" />
+                          <span className="text-sm font-medium text-green-400">
+                            Completed {new Date(workout.completed_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </CardContent>
+                </Card>
               )
             })}
           </div>
-        </Card>
+        </div>
       ) : (
         <Card className="bg-gradient-to-br from-green-500/20 to-green-500/5 backdrop-blur-md border-green-500/30 p-6 rounded-3xl shadow-2xl">
           <div className="text-center py-6">

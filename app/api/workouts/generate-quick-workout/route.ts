@@ -1,8 +1,8 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import Anthropic from '@anthropic-ai/sdk'
 import { createApiLogger } from '@/lib/utils/logger'
+import { createClient } from '@/lib/supabase/server'
 
 /**
  * Generate quick workout using AI with automatic fallback
@@ -137,45 +137,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get user from request (assuming auth middleware has set this)
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    // Get authenticated user using proper Supabase server client
+    const supabase = await createClient()
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return NextResponse.json(
-        { error: 'Database service not configured' },
-        { status: 500 }
-      )
-    }
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    })
-
-    // Get auth user from cookies
-    const cookieHeader = request.headers.get('cookie') || ''
-    const sessionMatch = cookieHeader.match(/sb-[^=]+-auth-token=([^;]+)/)
-
-    let userId: string | null = null
-
-    if (sessionMatch) {
-      try {
-        const sessionData = JSON.parse(decodeURIComponent(sessionMatch[1]))
-        userId = sessionData?.user?.id
-      } catch (e) {
-        log.warn('Failed to parse session from cookie', e as Error)
-      }
-    }
-
-    if (!userId) {
+    if (authError || !user) {
+      log.warn('Authentication failed', authError || new Error('No user found'))
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       )
     }
+
+    const userId = user.id
 
     log.info('Generating quick workout', undefined, {
       userId,
