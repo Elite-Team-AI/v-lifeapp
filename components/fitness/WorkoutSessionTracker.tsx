@@ -24,6 +24,16 @@ import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   logExerciseSet,
   completeWorkoutSession,
   type WorkoutSession,
@@ -51,6 +61,8 @@ export function WorkoutSessionTracker({ workout, onComplete, onExit }: WorkoutSe
   const [isLogging, setIsLogging] = useState(false)
   const [isCompleting, setIsCompleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showIncompleteWarning, setShowIncompleteWarning] = useState(false)
+  const [pendingLog, setPendingLog] = useState<{ exerciseId: string; setIndex: number } | null>(null)
 
   // Rest timer state
   const [restTimer, setRestTimer] = useState<number | null>(null)
@@ -112,11 +124,26 @@ export function WorkoutSessionTracker({ workout, onComplete, onExit }: WorkoutSe
     }))
   }
 
-  const logSet = async (exerciseId: string, setIndex: number) => {
+  const logSet = async (exerciseId: string, setIndex: number, skipValidation = false) => {
     const exercise = workout.exercises.find((ex) => ex.id === exerciseId)
     if (!exercise) return
 
     const setLog = setLogs[exerciseId][setIndex]
+
+    // Validate that all required fields are filled (unless user confirmed to skip)
+    if (!skipValidation) {
+      const hasWeight = setLog.weight > 0
+      const hasReps = setLog.reps > 0
+      const hasRPE = !exercise.targetRpe || (setLog.rpe && setLog.rpe > 0)
+
+      if (!hasWeight || !hasReps || !hasRPE) {
+        // Show confirmation dialog
+        setPendingLog({ exerciseId, setIndex })
+        setShowIncompleteWarning(true)
+        return
+      }
+    }
+
     setIsLogging(true)
     setError(null)
 
@@ -169,6 +196,19 @@ export function WorkoutSessionTracker({ workout, onComplete, onExit }: WorkoutSe
   const skipRestTimer = () => {
     setIsResting(false)
     setRestTimer(null)
+  }
+
+  const handleConfirmIncomplete = () => {
+    if (pendingLog) {
+      logSet(pendingLog.exerciseId, pendingLog.setIndex, true)
+    }
+    setShowIncompleteWarning(false)
+    setPendingLog(null)
+  }
+
+  const handleCancelIncomplete = () => {
+    setShowIncompleteWarning(false)
+    setPendingLog(null)
   }
 
   const handleCompleteWorkout = async () => {
@@ -521,6 +561,26 @@ export function WorkoutSessionTracker({ workout, onComplete, onExit }: WorkoutSe
           Complete all exercises to finish your workout
         </p>
       )}
+
+      {/* Incomplete Data Warning Dialog */}
+      <AlertDialog open={showIncompleteWarning} onOpenChange={setShowIncompleteWarning}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Incomplete Information</AlertDialogTitle>
+            <AlertDialogDescription>
+              You haven't filled out all the information for this set (weight, reps, or RPE). Are you sure you want to log it anyway?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelIncomplete}>
+              Go Back
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmIncomplete}>
+              Log Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

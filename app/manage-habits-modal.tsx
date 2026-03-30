@@ -196,7 +196,7 @@ export function ManageHabitsModal({ isOpen, onClose, habits, onHabitsChange }: M
           transition={{ type: "spring", damping: 25, stiffness: 500 }}
           onClick={(e) => e.stopPropagation()}
         >
-          <Card className="border-accent/30 bg-black/90 backdrop-blur-lg h-[90vh] flex flex-col">
+          <Card className="border-accent/30 bg-black/90 backdrop-blur-lg max-h-[calc(90vh-env(safe-area-inset-bottom))] flex flex-col">
             <div className="flex items-center justify-between border-b border-accent/20 p-4 flex-shrink-0">
               <div className="flex items-center">
                 <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-full bg-accent/20">
@@ -218,7 +218,7 @@ export function ManageHabitsModal({ isOpen, onClose, habits, onHabitsChange }: M
               </motion.button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
               {(isAddingNew || editingHabit) && (
                 <Card className="mb-4 border-accent/30 bg-accent/5 p-4">
                   <h3 className="mb-3 text-sm font-semibold text-accent">

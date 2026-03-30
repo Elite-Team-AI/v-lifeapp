@@ -143,7 +143,7 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
           onClick={onClose}
         >
           <motion.div
-            className="w-full max-w-md h-[90vh] flex flex-col"
+            className="w-full max-w-md max-h-[calc(90vh-env(safe-area-inset-bottom))] flex flex-col"
             initial={{ y: "100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0 }}
@@ -361,7 +361,7 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
               </div>
 
               {/* Fixed Footer */}
-              <div className="border-t border-accent/20 p-4 flex gap-3 flex-shrink-0 bg-black/90">
+              <div className="border-t border-accent/20 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] flex gap-3 flex-shrink-0 bg-black/90">
                 <ButtonGlow variant="outline-glow" onClick={onClose} className="flex-1" disabled={isPosting}>
                   Cancel
                 </ButtonGlow>

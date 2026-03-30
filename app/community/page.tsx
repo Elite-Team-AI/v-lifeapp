@@ -1058,7 +1058,7 @@ export default function Community() {
 
       {/* Floating Create Post Button */}
       <motion.div
-        className="fixed bottom-20 right-4 z-50"
+        className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-50"
         initial={{ opacity: 0, scale: 0, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ delay: 1.5, type: "spring", stiffness: 200 }}

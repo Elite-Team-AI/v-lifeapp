@@ -540,48 +540,122 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
         </Card>
       )}
 
-      {/* Next Workout */}
-      {todaysWorkout ? (
+      {/* This Week's Workouts */}
+      {currentPlan.weeklyWorkouts && currentPlan.weeklyWorkouts[currentPlan.currentWeek] ? (
         <Card className="bg-gradient-to-br from-[#FADF4A]/20 to-[#FADF4A]/5 backdrop-blur-md border-[#FADF4A]/30 p-6 rounded-3xl shadow-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[#FADF4A] rounded-xl flex items-center justify-center flex-shrink-0">
-                <Dumbbell className="w-6 h-6 text-[#101938]" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-white">{todaysWorkout.workout_name}</h3>
-                <p className="text-[#FADF4A]/80 text-sm">{todaysWorkout.estimated_duration_minutes} minutes</p>
-              </div>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-[#FADF4A] rounded-xl flex items-center justify-center flex-shrink-0">
+              <Calendar className="w-6 h-6 text-[#101938]" />
             </div>
-            <div className="text-right">
-              <div className="text-xs text-[#8FD1FF]/70">Week {todaysWorkout.week_number}</div>
-              <div className="text-xs text-[#8FD1FF]/70">Day {todaysWorkout.day_of_week}</div>
+            <div>
+              <h3 className="text-xl font-bold text-white">Week {currentPlan.currentWeek} Workouts</h3>
+              <p className="text-[#FADF4A]/80 text-sm">
+                {currentPlan.weeklyWorkouts[currentPlan.currentWeek].filter((w: any) => w.is_completed).length} of{' '}
+                {currentPlan.weeklyWorkouts[currentPlan.currentWeek].length} completed
+              </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-4">
-            {todaysWorkout.muscle_groups?.map((muscle: string) => (
-              <span
-                key={muscle}
-                className="px-3 py-1 bg-[#FADF4A]/20 text-[#FADF4A] rounded-full text-xs font-medium"
-              >
-                {muscle}
-              </span>
-            ))}
-          </div>
+          <div className="space-y-3">
+            {currentPlan.weeklyWorkouts[currentPlan.currentWeek].map((workout: any, index: number) => {
+              const isCompleted = workout.is_completed
+              const isNext = !isCompleted && !currentPlan.weeklyWorkouts[currentPlan.currentWeek]
+                .slice(0, index)
+                .some((w: any) => !w.is_completed)
 
-          <div className="flex items-center gap-2 mb-4 text-[#8FD1FF]/80 text-sm">
-            <TrendingUp className="w-4 h-4" />
-            <span>{todaysWorkout.plan_exercises?.length || 0} exercises</span>
-          </div>
+              return (
+                <div
+                  key={workout.id}
+                  className={`rounded-xl p-4 border-2 transition-all ${
+                    isCompleted
+                      ? 'bg-green-500/10 border-green-500/30'
+                      : isNext
+                      ? 'bg-[#8FD1FF]/10 border-[#8FD1FF]/50 shadow-lg'
+                      : 'bg-[#1D295B]/30 border-[#1D295B]/50'
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start gap-3 flex-1">
+                      <div
+                        className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                          isCompleted
+                            ? 'bg-green-500/20'
+                            : isNext
+                            ? 'bg-[#FADF4A]'
+                            : 'bg-[#1D295B]/50'
+                        }`}
+                      >
+                        {isCompleted ? (
+                          <CheckCircle2 className="w-5 h-5 text-green-400" />
+                        ) : (
+                          <Dumbbell
+                            className={`w-5 h-5 ${isNext ? 'text-[#101938]' : 'text-white/50'}`}
+                          />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="text-white font-semibold">{workout.workout_name}</h4>
+                          {isNext && (
+                            <span className="px-2 py-0.5 bg-[#FADF4A]/20 text-[#FADF4A] rounded-full text-xs font-medium">
+                              Next
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-white/70 mb-2">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            Day {workout.day_of_week}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3" />
+                            {workout.estimated_duration_minutes} min
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Dumbbell className="w-3 h-3" />
+                            {workout.plan_exercises?.length || 0} exercises
+                          </span>
+                        </div>
+                        {workout.muscle_groups && workout.muscle_groups.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {workout.muscle_groups.map((muscle: string) => (
+                              <span
+                                key={muscle}
+                                className="px-2 py-0.5 bg-[#8FD1FF]/20 text-[#8FD1FF] rounded-full text-xs"
+                              >
+                                {muscle}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
-          <Button
-            className="w-full bg-[#FADF4A] hover:bg-[#FADF4A]/90 text-[#101938] rounded-xl font-bold py-4 text-base flex items-center justify-center gap-2 shadow-lg transition-all duration-200 active:scale-[0.98]"
-            onClick={() => onStartWorkout?.(todaysWorkout)}
-          >
-            <Play className="w-5 h-5" />
-            Start Workout
-          </Button>
+                  {!isCompleted && (
+                    <Button
+                      className={`w-full rounded-xl font-semibold py-3 text-sm flex items-center justify-center gap-2 transition-all duration-200 ${
+                        isNext
+                          ? 'bg-[#FADF4A] hover:bg-[#FADF4A]/90 text-[#101938] shadow-md'
+                          : 'bg-[#1D295B]/50 hover:bg-[#1D295B]/70 text-white/80 border border-white/10'
+                      }`}
+                      onClick={() => onStartWorkout?.(workout)}
+                    >
+                      <Play className="w-4 h-4" />
+                      {isNext ? 'Start Workout' : 'Start'}
+                    </Button>
+                  )}
+
+                  {isCompleted && workout.completed_date && (
+                    <div className="text-xs text-green-400/80 mt-2 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Completed on {new Date(workout.completed_date).toLocaleDateString()}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         </Card>
       ) : (
         <Card className="bg-gradient-to-br from-green-500/20 to-green-500/5 backdrop-blur-md border-green-500/30 p-6 rounded-3xl shadow-2xl">

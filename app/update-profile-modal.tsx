@@ -248,7 +248,7 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
           onClick={onClose}
         >
           <motion.div
-            className="w-full max-w-2xl h-[90vh] flex flex-col"
+            className="w-full max-w-2xl max-h-[calc(90vh-env(safe-area-inset-bottom))] flex flex-col"
             initial={{ y: "100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0 }}
@@ -814,7 +814,7 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
               </div>
 
               {/* Fixed Footer */}
-              <div className="border-t border-accent/20 p-4 flex gap-3 flex-shrink-0">
+              <div className="border-t border-accent/20 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] flex gap-3 flex-shrink-0">
                 <ButtonGlow variant="outline-glow" onClick={onClose} className="flex-1" disabled={saving}>
                   Cancel
                 </ButtonGlow>

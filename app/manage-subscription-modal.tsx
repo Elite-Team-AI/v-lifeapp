@@ -391,7 +391,7 @@ export function ManageSubscriptionModal({ isOpen, onClose }: ManageSubscriptionM
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto border-white/10 bg-gradient-to-b from-black to-charcoal">
+      <DialogContent className="max-h-[calc(90vh-env(safe-area-inset-bottom))] overflow-y-auto border-white/10 bg-gradient-to-b from-black to-charcoal">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-white">
             <CreditCard className="h-5 w-5 text-accent" />

@@ -112,7 +112,7 @@ export function OnboardingChecklistModal({ isOpen, onClose, profileData }: Onboa
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] bg-neutral-900 border-white/10 text-white max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px] bg-neutral-900 border-white/10 text-white max-h-[calc(90vh-env(safe-area-inset-bottom))] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent">
             Welcome to V-Life! 🎉

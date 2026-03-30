@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense, lazy } from "react"
+import { useState, useEffect, useRef, Suspense, lazy } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -22,7 +22,11 @@ import {
   Award,
   Edit2,
   X,
-  Check
+  Check,
+  Timer,
+  Play,
+  Pause,
+  RotateCcw
 } from "lucide-react"
 import { BottomNav } from "@/components/bottom-nav"
 import { Card, CardContent } from "@/components/ui/card"
@@ -53,6 +57,9 @@ import { WorkoutErrorBoundary } from "@/components/workout-error-boundary"
 // Lazy load components
 const WorkoutPlanGeneratorModal = lazy(() =>
   import("@/app/workout-plan-generator-modal").then((mod) => ({ default: mod.WorkoutPlanGeneratorModal }))
+)
+const QuickWorkoutModal = lazy(() =>
+  import("@/app/quick-workout-modal").then((mod) => ({ default: mod.QuickWorkoutModal }))
 )
 const WorkoutSession = lazy(() =>
   import("@/components/workout-session").then((mod) => ({ default: mod.WorkoutSession }))
@@ -150,6 +157,8 @@ export function FitnessClient() {
   const { appData } = useAppData()
   const [activeTab, setActiveTab] = useState<Tab>('workouts')
   const [showPlanGenerator, setShowPlanGenerator] = useState(false)
+  const [showQuickWorkout, setShowQuickWorkout] = useState(false)
+  const [quickWorkout, setQuickWorkout] = useState<any>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [useMetric, setUseMetric] = useState(false)
 
@@ -244,6 +253,7 @@ export function FitnessClient() {
               refreshKey={refreshKey}
               onRefresh={handleRefreshPlan}
               onOpenGenerator={() => setShowPlanGenerator(true)}
+              onOpenQuickWorkout={() => setShowQuickWorkout(true)}
               appData={appData}
             />
           )}
@@ -270,6 +280,17 @@ export function FitnessClient() {
             }}
           />
         )}
+        {showQuickWorkout && (
+          <QuickWorkoutModal
+            isOpen={showQuickWorkout}
+            onClose={() => setShowQuickWorkout(false)}
+            onWorkoutGenerated={(workout) => {
+              // Store the quick workout and close modal
+              setQuickWorkout(workout)
+              setShowQuickWorkout(false)
+            }}
+          />
+        )}
       </Suspense>
     </div>
   )
@@ -280,11 +301,13 @@ function WorkoutsTab({
   refreshKey,
   onRefresh,
   onOpenGenerator,
+  onOpenQuickWorkout,
   appData
 }: {
   refreshKey: number
   onRefresh: () => void
   onOpenGenerator: () => void
+  onOpenQuickWorkout: () => void
   appData: any
 }) {
   const router = useRouter()
@@ -363,6 +386,36 @@ function WorkoutsTab({
           onStartWorkout={(workout) => setSelectedWorkout(workout)}
         />
       </Suspense>
+
+      {/* Quick Workout Card */}
+      <Card className="bg-gradient-to-br from-[#8FD1FF]/20 to-[#8FD1FF]/5 backdrop-blur-md border-[#8FD1FF]/30 overflow-hidden">
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-14 h-14 bg-[#FADF4A] rounded-2xl flex items-center justify-center flex-shrink-0">
+              <Zap className="w-7 h-7 text-[#101938]" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-white mb-1">
+                Quick Workout
+              </h3>
+              <p className="text-sm text-[#8FD1FF]/80 mb-3">
+                Need an extra session? Generate a single workout for any body part
+              </p>
+              <p className="text-xs text-[#8FD1FF]/60 mb-4">
+                Perfect for when you want to hit the gym on a rest day or target a specific muscle group
+              </p>
+              <ButtonGlow
+                onClick={onOpenQuickWorkout}
+                className="gap-2 bg-[#FADF4A] hover:bg-[#FADF4A]/90 text-[#101938] w-full font-semibold"
+                size="sm"
+              >
+                <Zap className="w-4 h-4" />
+                Generate Quick Workout
+              </ButtonGlow>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Your Fitness Profile */}
       <FitnessProfileSection appData={appData} />
@@ -1078,6 +1131,7 @@ function FitnessProfileSection({ appData }: { appData: any }) {
   const { toast } = useToast()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isAutoSaving, setIsAutoSaving] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [isEquipmentExpanded, setIsEquipmentExpanded] = useState(false)
   const [customEquipmentInput, setCustomEquipmentInput] = useState('')
@@ -1085,6 +1139,15 @@ function FitnessProfileSection({ appData }: { appData: any }) {
   const [showShoulderInstructions, setShowShoulderInstructions] = useState(false)
   const [showHipInstructions, setShowHipInstructions] = useState(false)
   const [showAnkleInstructions, setShowAnkleInstructions] = useState(false)
+
+  // Auto-save refs
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const isInitialMountRef = useRef(true)
+
+  // Timer state for fitness assessment
+  const [timerSeconds, setTimerSeconds] = useState(0)
+  const [isTimerRunning, setIsTimerRunning] = useState(false)
+  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null)
 
   // Safety check - if appData is not available, return null
   if (!appData || !appData.profile) {
@@ -1147,6 +1210,64 @@ function FitnessProfileSection({ appData }: { appData: any }) {
       })
     }
   }, [profile])
+
+  // Auto-save when formData changes (debounced)
+  useEffect(() => {
+    // Skip on initial mount and when not editing
+    if (isInitialMountRef.current || !isEditing) {
+      isInitialMountRef.current = false
+      return
+    }
+
+    // Clear existing timer
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current)
+    }
+
+    // Set new timer for auto-save after 2 seconds of no changes
+    autoSaveTimerRef.current = setTimeout(async () => {
+      setIsAutoSaving(true)
+
+      try {
+        const result = await updateProfile({
+          primaryGoal: formData.primaryGoal,
+          programType: formData.trainingStyle,
+          experienceLevel: formData.experienceLevel,
+          gymAccess: formData.gymAccess,
+          trainingDaysPerWeek: formData.trainingDaysPerWeek ? parseInt(formData.trainingDaysPerWeek) : undefined,
+          availableTimeMinutes: formData.availableTimeMinutes ? parseInt(formData.availableTimeMinutes) : undefined,
+          customEquipment: formData.selectedEquipment.length > 0 ? formData.selectedEquipment.join(',') : undefined,
+          preferredWorkoutTime: formData.preferredWorkoutTime || undefined,
+          bodyFatPercentage: formData.bodyFatPercentage ? parseFloat(formData.bodyFatPercentage) : undefined,
+          goalBodyFatPercentage: formData.goalBodyFatPercentage ? parseFloat(formData.goalBodyFatPercentage) : undefined,
+          shoulderMobility: formData.shoulderMobility ? parseInt(formData.shoulderMobility) : undefined,
+          hipMobility: formData.hipMobility ? parseInt(formData.hipMobility) : undefined,
+          ankleMobility: formData.ankleMobility ? parseInt(formData.ankleMobility) : undefined,
+          pushUps: formData.pushUps ? parseInt(formData.pushUps) : undefined,
+          pullUps: formData.pullUps ? parseInt(formData.pullUps) : undefined,
+          squatDepth: formData.squatDepth || undefined,
+          plankTime: formData.plankTime ? parseInt(formData.plankTime) : undefined
+        })
+
+        if (!result.error) {
+          // Silently refresh app data in background
+          await refresh()
+        }
+      } catch (error) {
+        // Silently fail for auto-save
+        console.error('Auto-save failed:', error)
+      } finally {
+        setIsAutoSaving(false)
+      }
+    }, 2000)
+
+    // Cleanup timer on unmount or when dependencies change
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current)
+      }
+    }
+  }, [formData, isEditing])
 
   // Helper function to format primary goal
   const formatGoal = (goal?: string): string => {
@@ -1232,6 +1353,60 @@ function FitnessProfileSection({ appData }: { appData: any }) {
     })
   }
 
+  // Timer functions for fitness assessment
+  const startTimer = () => {
+    setIsTimerRunning(true)
+  }
+
+  const pauseTimer = () => {
+    setIsTimerRunning(false)
+  }
+
+  const resetTimer = () => {
+    setIsTimerRunning(false)
+    setTimerSeconds(0)
+  }
+
+  const formatTimerDisplay = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
+  const useTimerInPlankField = () => {
+    setFormData({ ...formData, plankTime: timerSeconds.toString() })
+    resetTimer()
+    toast({
+      title: "Timer value set",
+      description: `Plank time updated to ${timerSeconds} seconds`
+    })
+  }
+
+  // Timer interval effect
+  useEffect(() => {
+    if (isTimerRunning) {
+      const interval = setInterval(() => {
+        setTimerSeconds((prev) => prev + 1)
+      }, 1000)
+      setTimerInterval(interval)
+      return () => clearInterval(interval)
+    } else {
+      if (timerInterval) {
+        clearInterval(timerInterval)
+        setTimerInterval(null)
+      }
+    }
+  }, [isTimerRunning])
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerInterval) {
+        clearInterval(timerInterval)
+      }
+    }
+  }, [timerInterval])
+
   const handleSave = async () => {
     try {
       setIsSaving(true)
@@ -1305,6 +1480,12 @@ function FitnessProfileSection({ appData }: { appData: any }) {
     })
     setCustomEquipmentInput('')
     setIsEditing(false)
+    // Clear any pending auto-save timer
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current)
+    }
+    // Reset initial mount ref so next edit session won't auto-save immediately
+    isInitialMountRef.current = true
   }
 
   const equipment = parseEquipment(profile?.custom_equipment)
@@ -1326,6 +1507,11 @@ function FitnessProfileSection({ appData }: { appData: any }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {isEditing && isAutoSaving && (
+              <span className="text-xs text-neutral-400 animate-pulse">
+                Auto-saving...
+              </span>
+            )}
             {!isEditing && isExpanded && (
               <Button
                 variant="ghost"
@@ -1333,6 +1519,8 @@ function FitnessProfileSection({ appData }: { appData: any }) {
                 onClick={(e) => {
                   e.stopPropagation()
                   setIsEditing(true)
+                  // Reset initial mount ref so auto-save doesn't trigger immediately
+                  isInitialMountRef.current = true
                 }}
                 className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-400/10"
               >
@@ -1911,14 +2099,91 @@ function FitnessProfileSection({ appData }: { appData: any }) {
 
           {/* Fitness Assessment */}
           <div className="p-3 bg-neutral-800/50 rounded-lg">
-            <div className="flex items-center gap-3 mb-3">
-              <Trophy className="w-4 h-4 text-amber-400" />
-              <span className="text-sm text-neutral-400">Fitness Assessment</span>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <Trophy className="w-4 h-4 text-amber-400" />
+                <span className="text-sm text-neutral-400">Fitness Assessment</span>
+              </div>
+              {isEditing && (
+                <div className="flex items-center gap-2">
+                  <Timer className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="text-xs text-neutral-500">Timer Available</span>
+                </div>
+              )}
             </div>
+
+            {isEditing && (
+              <>
+                {/* Timer Component */}
+                <div className="mb-4 p-3 bg-neutral-900/70 rounded-lg border border-amber-400/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-amber-400" />
+                      <span className="text-xs font-medium text-amber-400">Assessment Timer</span>
+                    </div>
+                    <div className="text-2xl font-mono font-bold text-white">
+                      {formatTimerDisplay(timerSeconds)}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {!isTimerRunning ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={startTimer}
+                        className="flex-1 bg-amber-500 hover:bg-amber-600 text-black text-xs h-8"
+                      >
+                        <Play className="w-3 h-3 mr-1" />
+                        Start
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={pauseTimer}
+                        className="flex-1 bg-amber-500 hover:bg-amber-600 text-black text-xs h-8"
+                      >
+                        <Pause className="w-3 h-3 mr-1" />
+                        Pause
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={resetTimer}
+                      variant="outline"
+                      className="flex-1 border-white/10 hover:bg-white/5 text-xs h-8"
+                    >
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                      Reset
+                    </Button>
+                    {timerSeconds > 0 && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={useTimerInPlankField}
+                        variant="outline"
+                        className="flex-1 border-amber-400/30 hover:bg-amber-400/10 text-amber-400 text-xs h-8"
+                      >
+                        Use for Plank
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Assessment Instructions Header */}
+                <div className="mb-3 p-2 bg-amber-500/10 rounded border border-amber-500/20">
+                  <p className="text-xs text-amber-400/90 font-medium">
+                    Max number of unbroken reps for each movement
+                  </p>
+                </div>
+              </>
+            )}
+
             {isEditing ? (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs text-neutral-400 mb-1">Push-ups</Label>
+                  <Label className="text-xs text-neutral-400 mb-1">Push-ups (unbroken)</Label>
                   <Input
                     type="number"
                     min="0"
@@ -1929,7 +2194,7 @@ function FitnessProfileSection({ appData }: { appData: any }) {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-neutral-400 mb-1">Pull-ups</Label>
+                  <Label className="text-xs text-neutral-400 mb-1">Pull-ups (unbroken)</Label>
                   <Input
                     type="number"
                     min="0"
@@ -1953,7 +2218,7 @@ function FitnessProfileSection({ appData }: { appData: any }) {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-xs text-neutral-400 mb-1">Plank Time (sec)</Label>
+                  <Label className="text-xs text-neutral-400 mb-1">Plank time (seconds)</Label>
                   <Input
                     type="number"
                     min="0"
@@ -1967,13 +2232,13 @@ function FitnessProfileSection({ appData }: { appData: any }) {
             ) : (
               <div className="grid grid-cols-2 gap-3 mt-2">
                 <div>
-                  <div className="text-xs text-neutral-500 mb-1">Push-ups</div>
+                  <div className="text-xs text-neutral-500 mb-1">Push-ups (unbroken)</div>
                   <div className="text-sm font-medium text-white">
                     {profile?.push_ups || 'Not Set'}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-neutral-500 mb-1">Pull-ups</div>
+                  <div className="text-xs text-neutral-500 mb-1">Pull-ups (unbroken)</div>
                   <div className="text-sm font-medium text-white">
                     {profile?.pull_ups || 'Not Set'}
                   </div>
@@ -1985,7 +2250,7 @@ function FitnessProfileSection({ appData }: { appData: any }) {
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-neutral-500 mb-1">Plank Time</div>
+                  <div className="text-xs text-neutral-500 mb-1">Plank time (seconds)</div>
                   <div className="text-sm font-medium text-white">
                     {profile?.plank_time ? `${profile.plank_time}s` : 'Not Set'}
                   </div>
