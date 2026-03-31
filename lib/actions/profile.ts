@@ -158,7 +158,16 @@ export async function updateProfile(profileData: {
     }
     
     console.log("[updateProfile] User ID:", user.id)
+    console.log("[updateProfile] Incoming profileData:", profileData)
     console.log("[updateProfile] Data to upsert:", dataToUpsert)
+    console.log("[updateProfile] Critical fields check:", {
+      age: profileData.age,
+      parsedAge: dataToUpsert.age,
+      heightFeet: profileData.heightFeet,
+      parsedHeightFeet: dataToUpsert.height_feet,
+      weight: profileData.weight,
+      parsedWeight: dataToUpsert.weight
+    })
 
     await retryWithBackoff(
       async () => {
