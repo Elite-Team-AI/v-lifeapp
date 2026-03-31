@@ -96,7 +96,18 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
   const { toast } = useToast()
 
   useEffect(() => {
-    console.log("[v0] UpdateProfileModal received profile:", currentProfile)
+    console.log("[UpdateProfileModal] Received currentProfile:", currentProfile)
+    console.log("[UpdateProfileModal] Profile fields:", {
+      name: currentProfile.name,
+      age: currentProfile.age,
+      gender: currentProfile.gender,
+      heightFeet: currentProfile.heightFeet,
+      heightInches: currentProfile.heightInches,
+      weight: currentProfile.weight,
+      goalWeight: currentProfile.goalWeight,
+      activityLevel: currentProfile.activityLevel,
+      gymAccess: currentProfile.gymAccess
+    })
     setProfile(currentProfile)
   }, [currentProfile])
 

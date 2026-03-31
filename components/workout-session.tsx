@@ -685,7 +685,7 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
 
         {/* Current Exercise Group (Superset or Solo) */}
         {currentGroup.length > 0 && (
-          <div className="px-4 py-6 pb-24">
+          <div className="px-4 py-6 pb-28">
             {isSuperset && (
               <div className="mb-6 p-4 bg-gradient-to-r from-[#F676CD]/20 via-[#F676CD]/10 to-transparent border-l-4 border-[#F676CD] rounded-xl backdrop-blur-sm">
                 <div className="flex items-center gap-3 mb-2">

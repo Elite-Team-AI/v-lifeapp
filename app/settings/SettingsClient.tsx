@@ -107,7 +107,9 @@ export default function SettingsClient() {
     }
 
     const profile = appData.profile
-    return {
+    console.log("[SettingsClient] Raw profile from appData:", profile)
+
+    const mappedData = {
       name: profile.name || "",
       avatar_url: profile.avatar_url || undefined,
       age: profile.age?.toString() || "",
@@ -131,6 +133,9 @@ export default function SettingsClient() {
       trainingDaysPerWeek: profile.training_days_per_week || 4,
       timezone: profile.timezone || "America/New_York",
     }
+
+    console.log("[SettingsClient] Mapped profileData:", mappedData)
+    return mappedData
   }, [appData?.profile])
 
   const referralStats = useMemo<ReferralStats>(() => {
