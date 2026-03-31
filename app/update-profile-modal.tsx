@@ -333,7 +333,14 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                   WebkitOverflowScrolling: 'touch',
                   overscrollBehavior: 'contain'
                 }}
-                onTouchMove={(e) => e.stopPropagation()}
+                onTouchMove={(e) => {
+                  // Allow touch events on slider elements
+                  const target = e.target as HTMLElement
+                  if (target.closest('[data-slot="slider"]') || target.closest('[role="slider"]')) {
+                    return
+                  }
+                  e.stopPropagation()
+                }}
                 onWheel={(e) => e.stopPropagation()}
               >
                 <div className="p-6 space-y-6 pb-4">
@@ -508,14 +515,16 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                           </div>
                         )}
 
-                        <Slider
-                          value={[typeof profile.activityLevel === 'number' ? profile.activityLevel : Number(profile.activityLevel) || 3]}
-                          onValueChange={(value) => updateProfileState({ activityLevel: value[0] })}
-                          max={5}
-                          min={1}
-                          step={1}
-                          className="py-4"
-                        />
+                        <div className="py-2 px-1">
+                          <Slider
+                            value={[typeof profile.activityLevel === 'number' ? profile.activityLevel : Number(profile.activityLevel) || 3]}
+                            onValueChange={(value) => updateProfileState({ activityLevel: value[0] })}
+                            max={5}
+                            min={1}
+                            step={1}
+                            className="py-4"
+                          />
+                        </div>
                         <div className="flex justify-between text-xs text-white/50">
                           <span>Sedentary</span>
                           <span>Very Active</span>
@@ -854,7 +863,7 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
               </div>
 
               {/* Fixed Footer */}
-              <div className="border-t border-accent/20 p-4 pb-[calc(5.25rem+env(safe-area-inset-bottom))] flex gap-3 flex-shrink-0 bg-black/90 backdrop-blur-lg">
+              <div className="border-t border-accent/20 p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] flex gap-3 flex-shrink-0 bg-black/90 backdrop-blur-lg">
                 <ButtonGlow variant="outline-glow" onClick={onClose} className="flex-1" disabled={saving}>
                   Cancel
                 </ButtonGlow>
