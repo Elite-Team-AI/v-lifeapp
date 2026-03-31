@@ -64,6 +64,20 @@ export default function SettingsClient() {
   const [isStartingFresh, setIsStartingFresh] = useState(false)
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default")
 
+  // Helper function to convert activity level string to number
+  const activityLevelToNumber = (level: string | number | null | undefined): number => {
+    if (typeof level === 'number') return level
+
+    switch (level) {
+      case 'sedentary': return 1
+      case 'lightly_active': return 2
+      case 'moderately_active': return 3
+      case 'very_active': return 4
+      case 'extremely_active': return 5
+      default: return 3
+    }
+  }
+
   // Derive data from cached app data using useMemo
   const profileData = useMemo(() => {
     if (!appData?.profile) {
@@ -91,7 +105,7 @@ export default function SettingsClient() {
         timezone: "America/New_York",
       }
     }
-    
+
     const profile = appData.profile
     return {
       name: profile.name || "",
@@ -104,7 +118,7 @@ export default function SettingsClient() {
       goalWeight: profile.goal_weight?.toString() || "",
       calorieGoal: profile.calorie_goal?.toString() || "",
       primaryGoal: profile.primary_goal || "",
-      activityLevel: profile.activity_level || 3,
+      activityLevel: activityLevelToNumber(profile.activity_level),
       gymAccess: profile.gym_access || "",
       selectedGym: profile.selected_gym || "",
       customEquipment: profile.custom_equipment || "",
