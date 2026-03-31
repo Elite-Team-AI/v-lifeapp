@@ -225,14 +225,14 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm p-4 pb-24"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm p-4 pb-28"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
         >
           <motion.div
-            className="w-full max-w-md max-h-[calc(90vh-6rem)] flex flex-col mb-2"
+            className="w-full max-w-md max-h-[calc(100vh-8rem)] flex flex-col"
             initial={{ y: "100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0 }}
@@ -536,7 +536,7 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
               </div>
 
               {/* Fixed Footer with Navigation */}
-              <div className="border-t border-accent/20 p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] flex gap-3 flex-shrink-0 bg-black/90 backdrop-blur-lg">
+              <div className="border-t border-accent/20 p-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] flex gap-3 flex-shrink-0 bg-black/90 backdrop-blur-lg">
                 {currentStep > 1 && currentStep < 5 ? (
                   <ButtonGlow
                     variant="outline-glow"
