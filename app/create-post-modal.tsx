@@ -70,6 +70,7 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
   const [content, setContent] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isPosting, setIsPosting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
@@ -110,6 +111,7 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
       setContent("")
       setSelectedCategory("")
       setSelectedImage(null)
+      setSelectedFile(null)
     }
   }, [isOpen])
 
@@ -119,6 +121,7 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
       if (file) {
         const imageUrl = URL.createObjectURL(file)
         setSelectedImage(imageUrl)
+        setSelectedFile(file) // Store the actual file for upload
       }
     } catch (error) {
       console.error("[CreatePost] Image select error:", error)
@@ -138,13 +141,31 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
     setIsPosting(true)
 
     try {
-      // Simulate posting delay
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      let imageUrl: string | undefined = undefined
+
+      // Upload image to storage if one was selected
+      if (selectedFile) {
+        const formData = new FormData()
+        formData.append("file", selectedFile)
+
+        const { uploadPostImage } = await import("@/lib/actions/community")
+        const result = await uploadPostImage(formData)
+
+        if (result.success && result.imageUrl) {
+          imageUrl = result.imageUrl
+        } else {
+          toast({
+            title: "Image upload failed",
+            description: result.error || "Failed to upload image. Posting without image.",
+            variant: "destructive",
+          })
+        }
+      }
 
       onCreatePost({
         title: title.trim(),
         content: content.trim(),
-        image: selectedImage || undefined,
+        image: imageUrl,
         category: selectedCategory,
       })
 
@@ -153,10 +174,16 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
       setTitle("")
       setContent("")
       setSelectedImage(null)
+      setSelectedFile(null)
       setSelectedCategory("")
       onClose()
     } catch (error) {
       console.error("Failed to create post:", error)
+      toast({
+        title: "Failed to create post",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setIsPosting(false)
     }
@@ -454,7 +481,10 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
                               />
                             </div>
                             <motion.button
-                              onClick={() => setSelectedImage(null)}
+                              onClick={() => {
+                                setSelectedImage(null)
+                                setSelectedFile(null)
+                              }}
                               className="absolute top-2 right-2 rounded-full bg-black/70 p-2 hover:bg-black/90 min-w-[40px] min-h-[40px] flex items-center justify-center"
                               whileTap={{ scale: 0.9 }}
                               whileHover={{ scale: 1.05 }}

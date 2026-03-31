@@ -5,6 +5,73 @@ import { revalidatePath, revalidateTag, unstable_cache } from "next/cache"
 import type { TransformedPost, TransformedComment } from "@/lib/types"
 import { DEFAULT_AVATAR } from "@/lib/stock-images"
 
+// Upload post image to Supabase storage
+export async function uploadPostImage(formData: FormData): Promise<{
+  success: boolean
+  imageUrl?: string
+  error?: string
+}> {
+  try {
+    const file = formData.get("file") as File | null
+
+    if (!file) {
+      return { success: false, error: "No file provided" }
+    }
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      return { success: false, error: "Please upload an image file" }
+    }
+
+    // Validate file size (max 10MB for posts)
+    if (file.size > 10 * 1024 * 1024) {
+      return { success: false, error: "Please upload an image smaller than 10MB" }
+    }
+
+    const supabase = await createClient()
+
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return { success: false, error: "Not authenticated" }
+    }
+
+    // Convert File to ArrayBuffer for upload
+    const arrayBuffer = await file.arrayBuffer()
+    const fileBuffer = Buffer.from(arrayBuffer)
+
+    // Upload to Supabase storage
+    const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg"
+    const fileName = `${user.id}/${Date.now()}.${fileExt}`
+
+    const { error: uploadError } = await supabase.storage
+      .from("post-images")
+      .upload(fileName, fileBuffer, {
+        upsert: false,
+        contentType: file.type
+      })
+
+    if (uploadError) {
+      console.error("[uploadPostImage] Upload error:", uploadError)
+      return { success: false, error: uploadError.message || "Upload failed" }
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from("post-images")
+      .getPublicUrl(fileName)
+
+    return { success: true, imageUrl: publicUrl }
+  } catch (error) {
+    console.error("[uploadPostImage] Unexpected error:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to upload image"
+    }
+  }
+}
+
 // Helper to get user avatar with fallback
 function getUserAvatar(avatarUrl: string | null | undefined): string {
   return avatarUrl || DEFAULT_AVATAR
