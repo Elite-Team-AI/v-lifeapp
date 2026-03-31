@@ -8,6 +8,7 @@ import { BottomNav } from "@/components/bottom-nav"
 import { CircularProgress } from "@/components/ui/circular-progress"
 import { AmbientBackground } from "@/components/ambient-background"
 import { VitalFlowDailyHabits } from "@/components/vitalflow-daily-habits"
+import { ProfileCompletenessBanner } from "@/components/profile-completeness-banner"
 import { useState, lazy, Suspense, useEffect, useMemo, memo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useTimezoneSync } from "@/lib/hooks/use-timezone"
@@ -230,6 +231,13 @@ function DashboardClient() {
             </motion.div>
           </div>
         </motion.div>
+
+        {/* Profile Completeness Check */}
+        {appData?.profile && (
+          <motion.div variants={itemVariants}>
+            <ProfileCompletenessBanner profile={appData.profile} />
+          </motion.div>
+        )}
 
         {/* Progress Card - Now with Circular Progress */}
         <motion.div className="mb-6" variants={itemVariants}>

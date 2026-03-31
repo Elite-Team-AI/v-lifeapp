@@ -46,6 +46,18 @@ export default function ProfileSetup() {
   ]
 
   const handleContinue = () => {
+    console.log("[Onboarding] handleContinue called with data:", {
+      name,
+      age,
+      gender,
+      heightFeet,
+      heightInches,
+      weight,
+      goalWeight,
+      gymAccess,
+      activityLevel
+    })
+
     updateData({
       name,
       age,
@@ -62,6 +74,20 @@ export default function ProfileSetup() {
       activityLevel,
     })
     router.push("/onboarding/goals")
+  }
+
+  // Check if all required fields are filled
+  const isFormValid = () => {
+    return (
+      name.trim() !== "" &&
+      age.trim() !== "" &&
+      gender.trim() !== "" &&
+      heightFeet.trim() !== "" &&
+      heightInches.trim() !== "" &&
+      weight.trim() !== "" &&
+      goalWeight.trim() !== "" &&
+      gymAccess !== null
+    )
   }
 
   return (
@@ -621,21 +647,36 @@ export default function ProfileSetup() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.0 }}
-            whileHover={{ scale: 1.02, y: -2 }}
-            whileTap={{ scale: 0.98 }}
           >
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
-              <ButtonGlow
-                variant="accent-glow"
-                className="w-full h-12 text-base font-semibold tracking-wide relative"
-                onClick={handleContinue}
-                disabled={!name.trim()}
+            {!isFormValid() && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30"
               >
-                Continue
-                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </ButtonGlow>
-            </div>
+                <p className="text-sm text-red-200">
+                  Please fill out all required fields: Name, Age, Gender, Height, Weight, Goal Weight, and Gym Access
+                </p>
+              </motion.div>
+            )}
+
+            <motion.div
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-accent to-yellow-300 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
+                <ButtonGlow
+                  variant="accent-glow"
+                  className="w-full h-12 text-base font-semibold tracking-wide relative"
+                  onClick={handleContinue}
+                  disabled={!isFormValid()}
+                >
+                  Continue
+                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </ButtonGlow>
+              </div>
+            </motion.div>
           </motion.div>
         </motion.div>
       </motion.div>

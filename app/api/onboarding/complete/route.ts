@@ -19,6 +19,29 @@ export async function POST(req: Request) {
     const payload: OnboardingData = await req.json()
     console.log("[API] Onboarding complete - received payload:", payload)
 
+    // Validate required fields
+    const missingFields: string[] = []
+    if (!payload.name || payload.name.trim() === "") missingFields.push("name")
+    if (!payload.age || payload.age.trim() === "") missingFields.push("age")
+    if (!payload.gender || payload.gender.trim() === "") missingFields.push("gender")
+    if (!payload.heightFeet || payload.heightFeet.trim() === "") missingFields.push("heightFeet")
+    if (!payload.heightInches || payload.heightInches.trim() === "") missingFields.push("heightInches")
+    if (!payload.weight || payload.weight.trim() === "") missingFields.push("weight")
+    if (!payload.goalWeight || payload.goalWeight.trim() === "") missingFields.push("goalWeight")
+    if (!payload.primaryGoal || payload.primaryGoal.trim() === "") missingFields.push("primaryGoal")
+    if (!payload.gymAccess) missingFields.push("gymAccess")
+
+    if (missingFields.length > 0) {
+      console.error("[API] Missing required fields:", missingFields)
+      return NextResponse.json(
+        {
+          error: `Missing required fields: ${missingFields.join(", ")}. Please go back and complete your profile.`,
+          missingFields
+        },
+        { status: 400 }
+      )
+    }
+
     // Build the profile data to upsert
     const profileData = {
       id: user.id,
