@@ -565,6 +565,52 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                           ))}
                         </div>
                       </div>
+
+                      {/* Body Fat Percentage Section */}
+                      <div className="pt-4 border-t border-white/10">
+                        <Label className="text-white text-lg mb-2">Body Composition (Optional)</Label>
+                        <p className="text-white/60 text-sm mb-4">
+                          Track body fat percentage for more accurate progress measurement. If both weight and body fat are set, body fat will be prioritized for AI planning.
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="bodyFat">Current Body Fat %</Label>
+                            <Input
+                              id="bodyFat"
+                              type="number"
+                              step="0.1"
+                              min="3"
+                              max="60"
+                              placeholder="e.g., 18.5"
+                              value={profile.bodyFatPercentage || ""}
+                              onChange={(e) => updateProfileState({ bodyFatPercentage: e.target.value })}
+                            />
+                            <p className="text-xs text-white/50">Enter your current body fat percentage if known</p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="goalBodyFat">Goal Body Fat %</Label>
+                            <Input
+                              id="goalBodyFat"
+                              type="number"
+                              step="0.1"
+                              min="3"
+                              max="60"
+                              placeholder="e.g., 15.0"
+                              value={profile.goalBodyFatPercentage || ""}
+                              onChange={(e) => updateProfileState({ goalBodyFatPercentage: e.target.value })}
+                            />
+                            <p className="text-xs text-white/50">Your target body fat percentage</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 p-3 bg-accent/10 border border-accent/30 rounded-lg">
+                          <p className="text-xs text-white/80">
+                            <strong className="text-accent">💡 Tip:</strong> Body fat percentage is a more accurate indicator of fitness progress than weight alone. Use both metrics for best results!
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
 
