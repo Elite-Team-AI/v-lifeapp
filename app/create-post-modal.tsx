@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, Camera, Trophy, Dumbbell, Utensils, Heart, Send, Loader2 } from "lucide-react"
 import { ButtonGlow } from "@/components/ui/button-glow"
@@ -80,6 +80,27 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
     motivation: motivationTemplates,
   }
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      // Save current scroll position
+      const scrollY = window.scrollY
+      document.body.style.position = 'fixed'
+      document.body.style.top = `-${scrollY}px`
+      document.body.style.width = '100%'
+      document.body.style.overflowY = 'scroll' // Prevent layout shift
+
+      return () => {
+        // Restore scroll position
+        document.body.style.position = ''
+        document.body.style.top = ''
+        document.body.style.width = ''
+        document.body.style.overflowY = ''
+        window.scrollTo(0, scrollY)
+      }
+    }
+  }, [isOpen])
+
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       const file = event.target.files?.[0]
@@ -136,21 +157,21 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm p-4 pb-modal-safe"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm p-4 pb-24"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
         >
           <motion.div
-            className="w-full max-w-md max-h-[calc(90vh-env(safe-area-inset-bottom))] flex flex-col"
+            className="w-full max-w-md max-h-[calc(90vh-6rem)] flex flex-col mb-2"
             initial={{ y: "100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 500 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <Card className="border-accent/30 bg-black/90 backdrop-blur-lg h-full flex flex-col">
+            <Card className="border-accent/30 bg-black/90 backdrop-blur-lg h-full flex flex-col overflow-hidden">
               {/* Fixed Header */}
               <div className="flex items-center justify-between border-b border-accent/20 p-4 flex-shrink-0">
                 <div className="flex items-center">
@@ -176,7 +197,15 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
               </div>
 
               {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto min-h-0">
+              <div
+                className="flex-1 overflow-y-auto overflow-x-hidden min-h-0"
+                style={{
+                  WebkitOverflowScrolling: 'touch',
+                  overscrollBehavior: 'contain'
+                }}
+                onTouchMove={(e) => e.stopPropagation()}
+                onWheel={(e) => e.stopPropagation()}
+              >
                 <div className="p-4 space-y-4">
                   {/* Category Selection */}
                   <div className="space-y-2">
@@ -361,7 +390,7 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
               </div>
 
               {/* Fixed Footer */}
-              <div className="border-t border-accent/20 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] flex gap-3 flex-shrink-0 bg-black/90">
+              <div className="border-t border-accent/20 p-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] flex gap-3 flex-shrink-0 bg-black/90 backdrop-blur-lg">
                 <ButtonGlow variant="outline-glow" onClick={onClose} className="flex-1" disabled={isPosting}>
                   Cancel
                 </ButtonGlow>
