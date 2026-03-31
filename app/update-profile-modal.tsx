@@ -262,14 +262,14 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 pb-24"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
         >
           <motion.div
-            className="w-full max-w-2xl max-h-[90vh] flex flex-col"
+            className="w-full max-w-2xl max-h-[calc(90vh-6rem)] flex flex-col"
             initial={{ y: "100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0 }}
@@ -325,7 +325,7 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                 onTouchMove={(e) => e.stopPropagation()}
                 onWheel={(e) => e.stopPropagation()}
               >
-                <div className="p-6 space-y-6 pb-8">
+                <div className="p-6 space-y-6 pb-4">
                   {/* Basic Info Tab */}
                   {activeTab === "basic" && (
                     <div className="space-y-6">
@@ -843,7 +843,7 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
               </div>
 
               {/* Fixed Footer */}
-              <div className="border-t border-accent/20 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] flex gap-3 flex-shrink-0 bg-black/90 backdrop-blur-lg">
+              <div className="border-t border-accent/20 p-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] flex gap-3 flex-shrink-0 bg-black/90 backdrop-blur-lg">
                 <ButtonGlow variant="outline-glow" onClick={onClose} className="flex-1" disabled={saving}>
                   Cancel
                 </ButtonGlow>
