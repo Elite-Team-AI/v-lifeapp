@@ -162,14 +162,15 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
         }
       }
 
-      onCreatePost({
+      // Wait for post creation to complete
+      await onCreatePost({
         title: title.trim(),
         content: content.trim(),
         image: imageUrl,
         category: selectedCategory,
       })
 
-      // Reset form
+      // Reset form only after successful post
       setCurrentStep(1)
       setTitle("")
       setContent("")
@@ -178,10 +179,10 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
       setSelectedCategory("")
       onClose()
     } catch (error) {
-      console.error("Failed to create post:", error)
+      console.error("[CreatePostModal] Error in handlePost:", error)
       toast({
         title: "Failed to create post",
-        description: "Something went wrong. Please try again.",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
         variant: "destructive",
       })
     } finally {

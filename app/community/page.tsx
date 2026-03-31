@@ -328,20 +328,26 @@ export default function Community() {
           description: "Your post has been shared with the community.",
         })
       } else {
-        console.error("Error creating post:", result.error)
+        const errorMsg = result.error || "Something went wrong. Please try again."
+        console.error("[Community] Error creating post:", errorMsg)
         toast({
           title: "Failed to create post",
-          description: result.error || "Something went wrong. Please try again.",
+          description: errorMsg,
           variant: "destructive",
         })
+        // Throw error so modal can catch it and stay open
+        throw new Error(errorMsg)
       }
     } catch (error) {
-      console.error("Error creating post:", error)
+      const errorMsg = error instanceof Error ? error.message : "Something went wrong. Please try again."
+      console.error("[Community] Exception creating post:", error)
       toast({
         title: "Failed to create post",
-        description: "Something went wrong. Please try again.",
+        description: errorMsg,
         variant: "destructive",
       })
+      // Re-throw so modal can catch it
+      throw error
     }
   }
 
