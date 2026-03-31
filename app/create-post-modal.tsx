@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Camera, Trophy, Dumbbell, Utensils, Heart, Send, Loader2 } from "lucide-react"
+import { X, Camera, Trophy, Dumbbell, Utensils, Heart, Send, Loader2, ChevronLeft, ChevronRight } from "lucide-react"
 import { ButtonGlow } from "@/components/ui/button-glow"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -65,9 +65,10 @@ const motivationTemplates = [
 ]
 
 export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userAvatar }: CreatePostModalProps) {
+  const [currentStep, setCurrentStep] = useState(1)
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("achievement")
+  const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [isPosting, setIsPosting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -101,6 +102,17 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
     }
   }, [isOpen])
 
+  // Reset state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentStep(1)
+      setTitle("")
+      setContent("")
+      setSelectedCategory("")
+      setSelectedImage(null)
+    }
+  }, [isOpen])
+
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       const file = event.target.files?.[0]
@@ -120,10 +132,6 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
 
   const selectedCategoryData = postCategories.find((cat) => cat.id === selectedCategory)
 
-  const useTemplate = (template: string) => {
-    setTitle(template)
-  }
-
   const handlePost = async () => {
     if (!title.trim()) return
 
@@ -141,15 +149,75 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
       })
 
       // Reset form
+      setCurrentStep(1)
       setTitle("")
       setContent("")
       setSelectedImage(null)
-      setSelectedCategory("achievement")
+      setSelectedCategory("")
       onClose()
     } catch (error) {
       console.error("Failed to create post:", error)
     } finally {
       setIsPosting(false)
+    }
+  }
+
+  const canProceedToNextStep = () => {
+    switch (currentStep) {
+      case 1:
+        return selectedCategory !== ""
+      case 2:
+        return title.trim() !== ""
+      case 3:
+        return true // Details are optional
+      case 4:
+        return true // Photo is optional
+      default:
+        return false
+    }
+  }
+
+  const handleNext = () => {
+    if (canProceedToNextStep()) {
+      setCurrentStep((prev) => Math.min(prev + 1, 5))
+    }
+  }
+
+  const handleBack = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 1))
+  }
+
+  const getStepTitle = () => {
+    switch (currentStep) {
+      case 1:
+        return "Choose Category"
+      case 2:
+        return "What's Your Title?"
+      case 3:
+        return "Add Details"
+      case 4:
+        return "Add Photo (Optional)"
+      case 5:
+        return "Review & Post"
+      default:
+        return "Create Post"
+    }
+  }
+
+  const getStepSubtitle = () => {
+    switch (currentStep) {
+      case 1:
+        return "What are you posting about?"
+      case 2:
+        return "Give your post a title"
+      case 3:
+        return "Tell us more about your experience"
+      case 4:
+        return "Add a photo to your post"
+      case 5:
+        return "Review your post before sharing"
+      default:
+        return "Share your journey with the community"
     }
   }
 
@@ -172,28 +240,47 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
             onClick={(e) => e.stopPropagation()}
           >
             <Card className="border-accent/30 bg-black/90 backdrop-blur-lg h-full flex flex-col overflow-hidden">
-              {/* Fixed Header */}
-              <div className="flex items-center justify-between border-b border-accent/20 p-4 flex-shrink-0">
-                <div className="flex items-center">
-                  <Avatar className="h-10 w-10 border border-white/10 mr-3">
-                    <AvatarImage src={userAvatar || "/placeholder.svg"} alt={userName} />
-                    <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-bold text-white">Create Post</h3>
-                    <p className="text-xs text-accent">Share your journey with the community</p>
+              {/* Fixed Header with Progress */}
+              <div className="flex-shrink-0 border-b border-accent/20">
+                <div className="flex items-center justify-between p-4 pb-3">
+                  <div className="flex items-center">
+                    <Avatar className="h-10 w-10 border border-white/10 mr-3">
+                      <AvatarImage src={userAvatar || "/placeholder.svg"} alt={userName} />
+                      <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-bold text-white">{getStepTitle()}</h3>
+                      <p className="text-xs text-accent">{getStepSubtitle()}</p>
+                    </div>
+                  </div>
+                  <motion.button
+                    onClick={onClose}
+                    className="rounded-full p-2.5 hover:bg-white/10 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    disabled={isPosting}
+                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  >
+                    <X className="h-5 w-5 text-white/60" />
+                  </motion.button>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="px-4 pb-3">
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((step) => (
+                      <div
+                        key={step}
+                        className={`h-1 flex-1 rounded-full transition-all ${
+                          step <= currentStep ? "bg-accent" : "bg-white/10"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex justify-between items-center mt-2">
+                    <p className="text-xs text-white/50">Step {currentStep} of 5</p>
                   </div>
                 </div>
-                <motion.button
-                  onClick={onClose}
-                  className="rounded-full p-2.5 hover:bg-white/10 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                  disabled={isPosting}
-                  whileTap={{ scale: 0.9 }}
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                >
-                  <X className="h-5 w-5 text-white/60" />
-                </motion.button>
               </div>
 
               {/* Scrollable Content */}
@@ -207,204 +294,293 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
                 onWheel={(e) => e.stopPropagation()}
               >
                 <div className="p-4 space-y-4">
-                  {/* Category Selection */}
-                  <div className="space-y-2">
-                    <Label className="text-white">Category</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {postCategories.map((category) => (
-                        <motion.div
-                          key={category.id}
-                          whileTap={{ scale: 0.98 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                        >
-                          <Card
-                            className={`cursor-pointer transition-all hover:border-accent/50 min-h-[80px] ${
-                              selectedCategory === category.id
-                                ? "border-accent border-glow bg-accent/10"
-                                : "border-white/10 bg-black/30"
-                            }`}
-                            onClick={() => setSelectedCategory(category.id)}
-                          >
-                            <CardContent className="p-3 text-center">
-                              <div
-                                className={`mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-full ${
-                                  selectedCategory === category.id ? "bg-accent/20" : category.bg
-                                }`}
-                              >
-                                <category.icon
-                                  className={`h-4 w-4 ${selectedCategory === category.id ? "text-accent" : category.color}`}
-                                />
-                              </div>
-                              <span
-                                className={`text-xs font-medium ${
-                                  selectedCategory === category.id ? "text-accent" : "text-white/70"
-                                }`}
-                              >
-                                {category.name}
-                              </span>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Quick Templates */}
-                  <div className="space-y-2">
-                    <Label className="text-white">Quick Templates</Label>
-                    <div className="space-y-2 max-h-24 overflow-y-auto">
-                      {templates[selectedCategory].map((template, index) => (
-                        <motion.button
-                          key={index}
-                          onClick={() => setTitle(template)}
-                          className="w-full text-left rounded-lg border border-white/10 bg-black/30 p-2.5 text-sm text-white/80 transition-all hover:border-accent/50 hover:bg-accent/5 active:border-accent min-h-[44px]"
-                          whileTap={{ scale: 0.98 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                        >
-                          {template}
-                        </motion.button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Title Input */}
-                  <div className="space-y-2">
-                    <Label htmlFor="post-title" className="text-white">
-                      Title *
-                    </Label>
-                    <Input
-                      id="post-title"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder={`Share your ${selectedCategoryData?.name.toLowerCase()}...`}
-                      className="w-full"
-                      maxLength={100}
-                    />
-                    <div className="flex justify-between text-xs text-white/60">
-                      <span>Required field</span>
-                      <span>{title.length}/100</span>
-                    </div>
-                  </div>
-
-                  {/* Content Input */}
-                  <div className="space-y-2">
-                    <Label htmlFor="post-content" className="text-white">
-                      Details (Optional)
-                    </Label>
-                    <textarea
-                      id="post-content"
-                      value={content}
-                      onChange={(e) => setContent(e.target.value)}
-                      placeholder="Tell us more about your experience..."
-                      className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
-                      maxLength={500}
-                      rows={3}
-                    />
-                    <div className="text-right text-xs text-white/60">{content.length}/500</div>
-                  </div>
-
-                  {/* Image Upload */}
-                  <div className="space-y-2">
-                    <Label className="text-white">Add Photo (Optional)</Label>
-                    {!selectedImage ? (
-                      <motion.button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-full aspect-[4/3] flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-white/20 bg-black/30 transition-all hover:border-accent/50 hover:bg-accent/5 active:border-accent"
-                        whileTap={{ scale: 0.98 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  <AnimatePresence mode="wait">
+                    {/* Step 1: Category Selection */}
+                    {currentStep === 1 && (
+                      <motion.div
+                        key="step1"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-3"
                       >
-                        <Camera className="mb-2 h-6 w-6 text-white/50" />
-                        <p className="text-sm text-white/70">Tap to add a photo</p>
-                        <p className="text-xs text-white/50 mt-1">JPG, PNG up to 10MB</p>
-                      </motion.button>
-                    ) : (
-                      <div className="relative">
-                        <div className="aspect-[4/3] w-full rounded-lg overflow-hidden">
-                          <img
-                            src={selectedImage || "/placeholder.svg"}
-                            alt="Selected post image"
-                            className="h-full w-full object-cover"
-                          />
+                        <div className="grid grid-cols-2 gap-3">
+                          {postCategories.map((category) => (
+                            <motion.div
+                              key={category.id}
+                              whileTap={{ scale: 0.98 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                            >
+                              <Card
+                                className={`cursor-pointer transition-all hover:border-accent/50 min-h-[100px] ${
+                                  selectedCategory === category.id
+                                    ? "border-accent border-glow bg-accent/10"
+                                    : "border-white/10 bg-black/30"
+                                }`}
+                                onClick={() => setSelectedCategory(category.id)}
+                              >
+                                <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
+                                  <div
+                                    className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full ${
+                                      selectedCategory === category.id ? "bg-accent/20" : category.bg
+                                    }`}
+                                  >
+                                    <category.icon
+                                      className={`h-6 w-6 ${selectedCategory === category.id ? "text-accent" : category.color}`}
+                                    />
+                                  </div>
+                                  <span
+                                    className={`text-sm font-medium ${
+                                      selectedCategory === category.id ? "text-accent" : "text-white/70"
+                                    }`}
+                                  >
+                                    {category.name}
+                                  </span>
+                                </CardContent>
+                              </Card>
+                            </motion.div>
+                          ))}
                         </div>
-                        <motion.button
-                          onClick={() => setSelectedImage(null)}
-                          className="absolute top-2 right-2 rounded-full bg-black/70 p-2 hover:bg-black/90 min-w-[40px] min-h-[40px] flex items-center justify-center"
-                          whileTap={{ scale: 0.9 }}
-                          whileHover={{ scale: 1.05 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                        >
-                          <X className="h-4 w-4 text-white" />
-                        </motion.button>
-                      </div>
+                      </motion.div>
                     )}
 
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageSelect}
-                      className="hidden"
-                    />
-                  </div>
-
-                  {/* Preview */}
-                  {title && (
-                    <div className="space-y-2">
-                      <Label className="text-white">Preview</Label>
-                      <Card className="border-white/10 bg-black/30">
-                        <CardContent className="p-3">
-                          <div className="flex items-center mb-2">
-                            <Avatar className="h-8 w-8 border border-white/10 mr-2">
-                              <AvatarImage src={userAvatar || "/placeholder.svg"} alt={userName} />
-                              <AvatarFallback className="text-xs">{userName.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <h4 className="text-sm font-medium text-white">{userName}</h4>
-                              <p className="text-xs text-white/60">Just now</p>
-                            </div>
+                    {/* Step 2: Title with Templates */}
+                    {currentStep === 2 && (
+                      <motion.div
+                        key="step2"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-4"
+                      >
+                        {/* Quick Templates */}
+                        <div className="space-y-2">
+                          <Label className="text-white">Quick Templates</Label>
+                          <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                            {templates[selectedCategory]?.map((template, index) => (
+                              <motion.button
+                                key={index}
+                                onClick={() => setTitle(template)}
+                                className="w-full text-left rounded-lg border border-white/10 bg-black/30 p-3 text-sm text-white/80 transition-all hover:border-accent/50 hover:bg-accent/5 active:border-accent min-h-[44px]"
+                                whileTap={{ scale: 0.98 }}
+                                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                              >
+                                {template}
+                              </motion.button>
+                            ))}
                           </div>
-                          <h3 className="font-bold text-white text-sm mb-1">{title}</h3>
-                          {content && <p className="text-sm text-white/80 mb-2">{content}</p>}
-                          {selectedImage && (
-                            <div className="aspect-[4/3] w-full rounded overflow-hidden mb-2">
+                        </div>
+
+                        {/* Title Input */}
+                        <div className="space-y-2">
+                          <Label htmlFor="post-title" className="text-white">
+                            Or Write Your Own
+                          </Label>
+                          <Input
+                            id="post-title"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder={`Share your ${selectedCategoryData?.name.toLowerCase()}...`}
+                            className="w-full"
+                            maxLength={100}
+                            autoFocus
+                          />
+                          <div className="flex justify-between text-xs text-white/60">
+                            <span>Required field</span>
+                            <span>{title.length}/100</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Step 3: Details */}
+                    {currentStep === 3 && (
+                      <motion.div
+                        key="step3"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-2"
+                      >
+                        <Label htmlFor="post-content" className="text-white">
+                          Tell Us More (Optional)
+                        </Label>
+                        <textarea
+                          id="post-content"
+                          value={content}
+                          onChange={(e) => setContent(e.target.value)}
+                          placeholder="Share more details about your experience..."
+                          className="flex min-h-[150px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                          maxLength={500}
+                          rows={6}
+                          autoFocus
+                        />
+                        <div className="text-right text-xs text-white/60">{content.length}/500</div>
+                      </motion.div>
+                    )}
+
+                    {/* Step 4: Add Photo */}
+                    {currentStep === 4 && (
+                      <motion.div
+                        key="step4"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-2"
+                      >
+                        <Label className="text-white">Add a Photo (Optional)</Label>
+                        {!selectedImage ? (
+                          <motion.button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="w-full aspect-[4/3] flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-white/20 bg-black/30 transition-all hover:border-accent/50 hover:bg-accent/5 active:border-accent"
+                            whileTap={{ scale: 0.98 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                          >
+                            <Camera className="mb-2 h-8 w-8 text-white/50" />
+                            <p className="text-sm text-white/70">Tap to add a photo</p>
+                            <p className="text-xs text-white/50 mt-1">JPG, PNG up to 10MB</p>
+                          </motion.button>
+                        ) : (
+                          <div className="relative">
+                            <div className="aspect-[4/3] w-full rounded-lg overflow-hidden">
                               <img
                                 src={selectedImage || "/placeholder.svg"}
-                                alt="Post preview"
+                                alt="Selected post image"
                                 className="h-full w-full object-cover"
                               />
                             </div>
-                          )}
-                          <div className="flex items-center text-white/40 text-xs">
-                            <Heart className="h-3 w-3 mr-1" />
-                            <span className="mr-4">0</span>
-                            <span>0 comments</span>
+                            <motion.button
+                              onClick={() => setSelectedImage(null)}
+                              className="absolute top-2 right-2 rounded-full bg-black/70 p-2 hover:bg-black/90 min-w-[40px] min-h-[40px] flex items-center justify-center"
+                              whileTap={{ scale: 0.9 }}
+                              whileHover={{ scale: 1.05 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                            >
+                              <X className="h-4 w-4 text-white" />
+                            </motion.button>
                           </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  )}
+                        )}
 
-                  {/* Bottom padding for safe scrolling */}
-                  <div className="h-4"></div>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageSelect}
+                          className="hidden"
+                        />
+                      </motion.div>
+                    )}
+
+                    {/* Step 5: Preview */}
+                    {currentStep === 5 && (
+                      <motion.div
+                        key="step5"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-2"
+                      >
+                        <Label className="text-white">Preview Your Post</Label>
+                        <Card className="border-white/10 bg-black/30">
+                          <CardContent className="p-4">
+                            <div className="flex items-center mb-3">
+                              <Avatar className="h-10 w-10 border border-white/10 mr-3">
+                                <AvatarImage src={userAvatar || "/placeholder.svg"} alt={userName} />
+                                <AvatarFallback className="text-sm">{userName.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <h4 className="text-sm font-medium text-white">{userName}</h4>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-xs text-white/60">Just now</p>
+                                  {selectedCategoryData && (
+                                    <>
+                                      <span className="text-white/40">•</span>
+                                      <div className="flex items-center gap-1">
+                                        <selectedCategoryData.icon className={`h-3 w-3 ${selectedCategoryData.color}`} />
+                                        <span className={`text-xs ${selectedCategoryData.color}`}>
+                                          {selectedCategoryData.name}
+                                        </span>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <h3 className="font-bold text-white text-base mb-2">{title}</h3>
+                            {content && <p className="text-sm text-white/80 mb-3 whitespace-pre-wrap">{content}</p>}
+                            {selectedImage && (
+                              <div className="aspect-[4/3] w-full rounded-lg overflow-hidden mb-3">
+                                <img
+                                  src={selectedImage || "/placeholder.svg"}
+                                  alt="Post preview"
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+                            )}
+                            <div className="flex items-center text-white/40 text-xs pt-2 border-t border-white/10">
+                              <Heart className="h-3 w-3 mr-1" />
+                              <span className="mr-4">0</span>
+                              <span>0 comments</span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
 
-              {/* Fixed Footer */}
+              {/* Fixed Footer with Navigation */}
               <div className="border-t border-accent/20 p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] flex gap-3 flex-shrink-0 bg-black/90 backdrop-blur-lg">
-                <ButtonGlow variant="outline-glow" onClick={onClose} className="flex-1" disabled={isPosting}>
-                  Cancel
-                </ButtonGlow>
-                <ButtonGlow
-                  variant="accent-glow"
-                  onClick={handlePost}
-                  disabled={!title.trim()}
-                  isLoading={isPosting}
-                  loadingText="Posting..."
-                  className="flex-1"
-                >
-                  <Send className="mr-2 h-4 w-4" />
-                  Post
-                </ButtonGlow>
+                {currentStep > 1 && currentStep < 5 ? (
+                  <ButtonGlow
+                    variant="outline-glow"
+                    onClick={handleBack}
+                    className="flex-1"
+                    disabled={isPosting}
+                  >
+                    <ChevronLeft className="mr-2 h-4 w-4" />
+                    Back
+                  </ButtonGlow>
+                ) : currentStep === 1 ? (
+                  <ButtonGlow variant="outline-glow" onClick={onClose} className="flex-1" disabled={isPosting}>
+                    Cancel
+                  </ButtonGlow>
+                ) : null}
+
+                {currentStep < 5 ? (
+                  <ButtonGlow
+                    variant="accent-glow"
+                    onClick={handleNext}
+                    disabled={!canProceedToNextStep()}
+                    className="flex-1"
+                  >
+                    {currentStep === 4 ? "Review" : "Next"}
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </ButtonGlow>
+                ) : (
+                  <>
+                    <ButtonGlow variant="outline-glow" onClick={handleBack} className="flex-1" disabled={isPosting}>
+                      Back
+                    </ButtonGlow>
+                    <ButtonGlow
+                      variant="accent-glow"
+                      onClick={handlePost}
+                      disabled={!title.trim()}
+                      isLoading={isPosting}
+                      loadingText="Posting..."
+                      className="flex-1"
+                    >
+                      <Send className="mr-2 h-4 w-4" />
+                      Post
+                    </ButtonGlow>
+                  </>
+                )}
               </div>
             </Card>
           </motion.div>
