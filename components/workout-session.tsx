@@ -62,8 +62,36 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
   const hasStartedSessionRef = useRef(false)
   const [showExitConfirmation, setShowExitConfirmation] = useState(false)
   const [showSkipExerciseConfirmation, setShowSkipExerciseConfirmation] = useState(false)
+  const [currentGroupIndex, setCurrentGroupIndex] = useState(0)
 
   const exercises = workout.plan_exercises || []
+
+  // Group exercises by superset (if is_superset is true, group consecutive exercises with same superset_group)
+  const exerciseGroups: any[][] = []
+  let currentGroupBuffer: any[] = []
+  let lastSupersetGroup: string | null = null
+
+  exercises.forEach((ex: any, idx: number) => {
+    if (ex.is_superset && ex.superset_group === lastSupersetGroup) {
+      // Continue current superset group
+      currentGroupBuffer.push(ex)
+    } else {
+      // Start new group
+      if (currentGroupBuffer.length > 0) {
+        exerciseGroups.push(currentGroupBuffer)
+      }
+      currentGroupBuffer = [ex]
+      lastSupersetGroup = ex.is_superset ? ex.superset_group : null
+    }
+  })
+
+  // Push final group
+  if (currentGroupBuffer.length > 0) {
+    exerciseGroups.push(currentGroupBuffer)
+  }
+
+  const currentGroup = exerciseGroups[currentGroupIndex] || []
+  const isSuperset = currentGroup.length > 1
   const currentExercise = exercises[currentExerciseIndex]
 
   // Debug logging
@@ -515,64 +543,78 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
   // Show completion summary
   if (showCompletionSummary && completionSummary) {
     return (
-      <div className="fixed inset-0 bg-[#101938] z-50 overflow-auto">
+      <div className="fixed inset-0 bg-gradient-to-b from-[#101938] via-[#1D295B]/20 to-[#101938] z-50 overflow-auto">
         <div className="min-h-full flex items-center justify-center p-4">
-          <Card className="bg-gradient-to-br from-[#FADF4A]/20 to-[#FADF4A]/5 backdrop-blur-md border-[#FADF4A]/30 p-8 rounded-3xl shadow-2xl max-w-md w-full">
-            <div className="text-center mb-6">
-              <div className="w-20 h-20 bg-[#FADF4A] rounded-full flex items-center justify-center mx-auto mb-4">
-                <Trophy className="w-10 h-10 text-[#101938]" />
-              </div>
-              <h2 className="text-3xl font-bold text-white mb-2">Workout Complete!</h2>
-              <p className="text-[#8FD1FF]/80">Great work today</p>
-            </div>
+          <Card className="relative overflow-hidden bg-gradient-to-br from-[#1D295B]/90 via-[#1D295B]/80 to-[#101938]/90 backdrop-blur-xl border-2 border-[#FADF4A]/30 p-8 rounded-3xl shadow-2xl max-w-md w-full">
+            {/* Accent gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#FADF4A]/10 via-transparent to-[#F676CD]/10 pointer-events-none" />
 
-            <div className="space-y-4 mb-6">
-              <div className="bg-[#1D295B]/50 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[#8FD1FF]/80 text-sm">Duration</span>
-                  <span className="text-white font-bold text-lg">{completionSummary.duration} min</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-[#1D295B]/50 rounded-xl p-4 text-center">
-                  <div className="text-2xl font-bold text-[#FADF4A] mb-1">{completionSummary.totalExercises}</div>
-                  <div className="text-[#8FD1FF]/80 text-xs">Exercises</div>
-                </div>
-                <div className="bg-[#1D295B]/50 rounded-xl p-4 text-center">
-                  <div className="text-2xl font-bold text-[#F676CD] mb-1">{completionSummary.totalSets}</div>
-                  <div className="text-[#8FD1FF]/80 text-xs">Sets</div>
-                </div>
-              </div>
-
-              {completionSummary.totalVolume > 0 && (
-                <div className="bg-[#1D295B]/50 rounded-xl p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[#8FD1FF]/80 text-sm">Total Volume</span>
-                    <span className="text-white font-bold">{completionSummary.totalVolume.toLocaleString()} lbs</span>
+            <div className="relative z-10">
+              <div className="text-center mb-8">
+                <div className="relative inline-block mb-4">
+                  <div className="absolute inset-0 bg-[#FADF4A] rounded-full blur-xl opacity-50 animate-pulse" />
+                  <div className="relative w-24 h-24 bg-gradient-to-br from-[#FADF4A] to-[#F9C74F] rounded-full flex items-center justify-center shadow-2xl shadow-[#FADF4A]/50">
+                    <Trophy className="w-12 h-12 text-[#101938]" />
                   </div>
                 </div>
-              )}
+                <h2 className="text-4xl font-bold text-white mb-2">Workout Complete!</h2>
+                <p className="text-[#8FD1FF] text-lg">🎉 Great work today</p>
+              </div>
 
-              {completionSummary.avgRPE && (
-                <div className="bg-[#1D295B]/50 rounded-xl p-4">
+              <div className="space-y-3 mb-8">
+                <div className="bg-gradient-to-r from-[#101938]/80 to-[#1D295B]/60 backdrop-blur-sm border border-[#8FD1FF]/20 rounded-2xl p-5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[#8FD1FF]/80 text-sm">Avg RPE</span>
-                    <span className="text-white font-bold">{completionSummary.avgRPE.toFixed(1)}/10</span>
+                    <span className="text-[#8FD1FF] text-base font-semibold flex items-center gap-2">
+                      <Timer className="w-5 h-5" />
+                      Duration
+                    </span>
+                    <span className="text-white font-bold text-2xl">{completionSummary.duration} min</span>
                   </div>
                 </div>
-              )}
-            </div>
 
-            <Button
-              className="w-full bg-[#FADF4A] hover:bg-[#FADF4A]/90 text-[#101938] rounded-xl font-bold py-4 text-lg"
-              onClick={() => {
-                setShowCompletionSummary(false)
-                onComplete()
-              }}
-            >
-              Back to Dashboard
-            </Button>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gradient-to-br from-[#FADF4A]/20 to-[#FADF4A]/5 backdrop-blur-sm border border-[#FADF4A]/30 rounded-2xl p-5 text-center">
+                    <div className="text-3xl font-bold text-[#FADF4A] mb-1">{completionSummary.totalExercises}</div>
+                    <div className="text-white/80 text-sm font-semibold">Exercises</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-[#F676CD]/20 to-[#F676CD]/5 backdrop-blur-sm border border-[#F676CD]/30 rounded-2xl p-5 text-center">
+                    <div className="text-3xl font-bold text-[#F676CD] mb-1">{completionSummary.totalSets}</div>
+                    <div className="text-white/80 text-sm font-semibold">Sets</div>
+                  </div>
+                </div>
+
+                {completionSummary.totalVolume > 0 && (
+                  <div className="bg-gradient-to-r from-[#8FD1FF]/20 to-[#8FD1FF]/5 backdrop-blur-sm border border-[#8FD1FF]/30 rounded-2xl p-5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#8FD1FF] text-base font-semibold flex items-center gap-2">
+                        <Dumbbell className="w-5 h-5" />
+                        Total Volume
+                      </span>
+                      <span className="text-white font-bold text-xl">{completionSummary.totalVolume.toLocaleString()} lbs</span>
+                    </div>
+                  </div>
+                )}
+
+                {completionSummary.avgRPE && (
+                  <div className="bg-gradient-to-r from-[#F676CD]/20 to-[#F676CD]/5 backdrop-blur-sm border border-[#F676CD]/30 rounded-2xl p-5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#F676CD] text-base font-semibold">Avg RPE</span>
+                      <span className="text-white font-bold text-xl">{completionSummary.avgRPE.toFixed(1)}/10</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <Button
+                className="w-full h-16 bg-gradient-to-r from-[#FADF4A] to-[#F9C74F] hover:from-[#F9C74F] hover:to-[#FADF4A] text-[#101938] rounded-2xl font-bold text-lg shadow-2xl shadow-[#FADF4A]/40 transition-all duration-300 transform active:scale-95"
+                onClick={() => {
+                  setShowCompletionSummary(false)
+                  onComplete()
+                }}
+              >
+                Back to Dashboard
+              </Button>
+            </div>
           </Card>
         </div>
       </div>
@@ -584,64 +626,76 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
     <div className="fixed inset-0 bg-[#101938] z-50 overflow-auto">
       <div className="min-h-full pb-20">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-[#101938]/95 backdrop-blur-md border-b border-[#1D295B]/40 px-4 py-4">
-          <div className="flex items-center justify-between mb-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowExitConfirmation(true)}
-              className="text-[#8FD1FF] hover:bg-[#1D295B]/50"
-            >
-              <X className="w-5 h-5" />
-            </Button>
-
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-[#FADF4A]">
-                <Timer className="w-5 h-5" />
-                <span className="font-mono font-bold text-lg">{formatTime(elapsedSeconds)}</span>
-              </div>
+        <div className="sticky top-0 z-10 bg-gradient-to-b from-[#101938] via-[#101938]/98 to-[#101938]/95 backdrop-blur-xl border-b border-[#8FD1FF]/20 shadow-lg shadow-[#101938]/50">
+          <div className="px-4 py-5">
+            <div className="flex items-center justify-between mb-4">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsTimerRunning(!isTimerRunning)}
-                className="text-[#8FD1FF] hover:bg-[#1D295B]/50"
+                onClick={() => setShowExitConfirmation(true)}
+                className="text-white/80 hover:text-white hover:bg-[#1D295B]/60 rounded-xl h-10 w-10 p-0 transition-all"
               >
-                {isTimerRunning ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                <X className="w-5 h-5" />
               </Button>
+
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#FADF4A]/20 to-[#F9C74F]/20 border border-[#FADF4A]/30 rounded-xl">
+                  <Timer className="w-5 h-5 text-[#FADF4A]" />
+                  <span className="font-mono font-bold text-lg text-[#FADF4A]">{formatTime(elapsedSeconds)}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsTimerRunning(!isTimerRunning)}
+                  className="text-white/80 hover:text-white hover:bg-[#1D295B]/60 rounded-xl h-10 w-10 p-0 transition-all"
+                >
+                  {isTimerRunning ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                </Button>
+              </div>
             </div>
-          </div>
 
-          <div>
-            <h1 className="text-xl font-bold text-white mb-1">{workout.workout_name}</h1>
-            <p className="text-[#8FD1FF]/80 text-sm">
-              {isSuperset ? `Superset ${currentGroupIndex + 1}` : `Exercise ${currentGroupIndex + 1}`} of {exerciseGroups.length}
-              {isSuperset && ` • ${currentGroup.length} exercises`}
-            </p>
-          </div>
+            <div className="mb-4">
+              <h1 className="text-2xl font-bold text-white mb-2 leading-tight">{workout.workout_name}</h1>
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 bg-[#8FD1FF]/20 border border-[#8FD1FF]/40 rounded-full text-[#8FD1FF] text-sm font-semibold">
+                  {isSuperset ? `Superset ${currentGroupIndex + 1}` : `Exercise ${currentGroupIndex + 1}`} of {exerciseGroups.length}
+                </span>
+                {isSuperset && (
+                  <span className="px-3 py-1 bg-[#F676CD]/20 border border-[#F676CD]/40 rounded-full text-[#F676CD] text-sm font-semibold">
+                    {currentGroup.length} exercises
+                  </span>
+                )}
+              </div>
+            </div>
 
-          {/* Progress bar */}
-          <div className="mt-3">
-            <div className="w-full h-2 bg-[#1D295B]/50 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-[#FADF4A] to-[#F676CD] rounded-full transition-all duration-300"
-                style={{ width: `${getProgressPercentage()}%` }}
-              />
+            {/* Progress bar */}
+            <div className="relative">
+              <div className="w-full h-3 bg-[#1D295B]/50 rounded-full overflow-hidden shadow-inner">
+                <div
+                  className="h-full bg-gradient-to-r from-[#8FD1FF] via-[#FADF4A] to-[#F676CD] rounded-full transition-all duration-500 shadow-lg shadow-[#FADF4A]/30"
+                  style={{ width: `${getProgressPercentage()}%` }}
+                />
+              </div>
+              <div className="absolute -top-1 right-0 text-xs font-bold text-white/60">
+                {Math.round(getProgressPercentage())}%
+              </div>
             </div>
           </div>
         </div>
 
         {/* Current Exercise Group (Superset or Solo) */}
         {currentGroup.length > 0 && (
-          <div className="px-4 py-6">
+          <div className="px-4 py-6 pb-24">
             {isSuperset && (
-              <div className="mb-4 px-2">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="px-3 py-1 bg-[#F676CD]/20 border border-[#F676CD]/40 rounded-full">
-                    <span className="text-[#F676CD] font-bold text-sm">SUPERSET {String.fromCharCode(65 + currentGroupIndex)}</span>
+              <div className="mb-6 p-4 bg-gradient-to-r from-[#F676CD]/20 via-[#F676CD]/10 to-transparent border-l-4 border-[#F676CD] rounded-xl backdrop-blur-sm">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="px-4 py-1.5 bg-gradient-to-r from-[#F676CD] to-[#E55AAD] rounded-full shadow-lg shadow-[#F676CD]/30">
+                    <span className="text-white font-bold text-sm tracking-wide">SUPERSET {String.fromCharCode(65 + currentGroupIndex)}</span>
                   </div>
+                  <div className="flex-1 h-px bg-gradient-to-r from-[#F676CD]/50 to-transparent" />
                 </div>
-                <p className="text-[#8FD1FF]/70 text-sm">
-                  Complete all sets of each exercise with minimal rest between exercises
+                <p className="text-[#8FD1FF]/90 text-sm leading-relaxed">
+                  💪 Complete all sets of each exercise with minimal rest between exercises
                 </p>
               </div>
             )}
@@ -653,148 +707,256 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
               return (
                 <Card
                   key={exercise.id}
-                  className={`bg-gradient-to-br from-[#8FD1FF]/20 to-[#8FD1FF]/5 backdrop-blur-md border-[#8FD1FF]/30 p-6 rounded-3xl shadow-2xl ${exerciseIndexInGroup > 0 ? 'mt-4' : 'mb-6'}`}
+                  className={`relative overflow-hidden bg-gradient-to-br from-[#1D295B]/80 via-[#1D295B]/60 to-[#101938]/40 backdrop-blur-xl border-2 border-[#8FD1FF]/30 p-6 rounded-3xl shadow-2xl ${exerciseIndexInGroup > 0 ? 'mt-4' : 'mb-6'}`}
                 >
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="w-14 h-14 bg-[#8FD1FF] rounded-2xl flex items-center justify-center flex-shrink-0">
-                      {exerciseLabel ? (
-                        <span className="text-[#101938] font-bold text-lg">{exerciseLabel}</span>
-                      ) : (
-                        <Dumbbell className="w-7 h-7 text-[#101938]" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h2 className="text-2xl font-bold text-white mb-1">{exercise.exercise?.name}</h2>
-                      <p className="text-[#8FD1FF]/80 text-sm">
-                        {exercise.target_sets} sets × {exercise.target_reps_min}
-                        {exercise.target_reps_max && exercise.target_reps_max !== exercise.target_reps_min
-                          ? `-${exercise.target_reps_max}`
-                          : ''} reps
-                      </p>
-                    </div>
-                  </div>
+                  {/* Accent gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#8FD1FF]/5 via-transparent to-[#F676CD]/5 pointer-events-none" />
 
-                  {exercise.exercise?.instructions && (
-                    <div className="mb-4 p-4 bg-[#1D295B]/30 rounded-xl">
-                      <p className="text-[#8FD1FF]/90 text-sm">{exercise.exercise.instructions}</p>
+                  {/* Content */}
+                  <div className="relative z-10">
+                    <div className="flex items-start gap-4 mb-5">
+                      <div className="w-16 h-16 bg-gradient-to-br from-[#8FD1FF] to-[#6BB8E8] rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-[#8FD1FF]/30">
+                        {exerciseLabel ? (
+                          <span className="text-[#101938] font-bold text-xl">{exerciseLabel}</span>
+                        ) : (
+                          <Dumbbell className="w-8 h-8 text-[#101938]" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h2 className="text-2xl font-bold text-white mb-2 leading-tight">{exercise.exercise?.name}</h2>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-3 py-1 bg-[#FADF4A]/20 border border-[#FADF4A]/40 rounded-full text-[#FADF4A] text-xs font-semibold">
+                            {exercise.target_sets} sets
+                          </span>
+                          <span className="px-3 py-1 bg-[#F676CD]/20 border border-[#F676CD]/40 rounded-full text-[#F676CD] text-xs font-semibold">
+                            {exercise.target_reps_min}
+                            {exercise.target_reps_max && exercise.target_reps_max !== exercise.target_reps_min
+                              ? `-${exercise.target_reps_max}`
+                              : ''} reps
+                          </span>
+                          {exercise.rest_seconds && (
+                            <span className="px-3 py-1 bg-[#8FD1FF]/20 border border-[#8FD1FF]/40 rounded-full text-[#8FD1FF] text-xs font-semibold">
+                              {exercise.rest_seconds}s rest
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  )}
+
+                    {exercise.exercise?.instructions && (
+                      <div className="mb-5 p-4 bg-[#101938]/50 backdrop-blur-sm border border-[#8FD1FF]/20 rounded-xl">
+                        <p className="text-[#8FD1FF]/90 text-sm leading-relaxed">{exercise.exercise.instructions}</p>
+                      </div>
+                    )}
 
                   {/* Sets Logging */}
                   {(exercise.exercise?.exercise_type === 'strength' || !exercise.exercise?.exercise_type) && (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {exerciseLogs.get(exercise.exercise_id)?.sets.map((set, index) => (
                         <div
                           key={index}
-                          className={`p-4 rounded-xl border-2 transition-all ${
+                          className={`relative overflow-hidden rounded-2xl border-2 transition-all duration-300 ${
                             set.completed
-                              ? 'bg-green-500/20 border-green-500/40'
-                              : 'bg-[#1D295B]/30 border-[#1D295B]/50'
+                              ? 'bg-gradient-to-br from-green-500/25 to-green-600/10 border-green-500/50 shadow-lg shadow-green-500/20'
+                              : 'bg-gradient-to-br from-[#1D295B]/60 to-[#101938]/40 border-[#8FD1FF]/20 hover:border-[#8FD1FF]/40'
                           }`}
                         >
-                          <div className="flex items-center gap-3 mb-3">
-                            <div className="flex items-center gap-2 flex-1">
-                              <span className="text-white font-bold">Set {index + 1}</span>
-                              {set.completed && <CheckCircle2 className="w-5 h-5 text-green-400" />}
+                          {/* Set Number Badge */}
+                          <div className="flex items-center justify-between p-4 pb-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg ${
+                                set.completed
+                                  ? 'bg-green-500/30 text-green-300'
+                                  : 'bg-[#FADF4A]/20 text-[#FADF4A]'
+                              }`}>
+                                {index + 1}
+                              </div>
+                              <div>
+                                <span className={`font-bold text-base ${set.completed ? 'text-green-300' : 'text-white'}`}>
+                                  Set {index + 1}
+                                </span>
+                                {set.completed && (
+                                  <div className="flex items-center gap-1 mt-0.5">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+                                    <span className="text-green-400 text-xs font-medium">Completed</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
+                            {set.completed && (
+                              <div className="px-3 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
+                                <span className="text-green-400 text-xs font-bold">✓ DONE</span>
+                              </div>
+                            )}
                           </div>
 
-                          <div className="grid grid-cols-3 gap-3">
-                            <div>
-                              <label className="text-[#8FD1FF]/70 text-xs mb-1 block">Reps</label>
-                              <Input
-                                type="number"
-                                value={set.reps}
-                                onChange={(e) => updateSet(exercise, index, 'reps', Math.max(1, parseInt(e.target.value) || 1))}
-                                disabled={set.completed}
-                                min="1"
-                                className="bg-[#101938]/50 border-[#1D295B] text-white text-center"
-                              />
+                          {/* Input Grid */}
+                          <div className="px-4 pb-4">
+                            <div className="grid grid-cols-3 gap-3 mb-3">
+                              {/* Reps Input */}
+                              <div>
+                                <label className="text-[#8FD1FF] text-xs font-semibold mb-2 block uppercase tracking-wide">Reps</label>
+                                <div className={`relative ${set.completed ? 'opacity-60' : ''}`}>
+                                  <Input
+                                    type="number"
+                                    value={set.reps}
+                                    onChange={(e) => updateSet(exercise, index, 'reps', Math.max(1, parseInt(e.target.value) || 1))}
+                                    disabled={set.completed}
+                                    min="1"
+                                    className={`h-14 text-center text-xl font-bold border-2 rounded-xl transition-all ${
+                                      set.completed
+                                        ? 'bg-[#101938]/30 border-green-500/30 text-green-300'
+                                        : 'bg-[#101938]/80 border-[#8FD1FF]/30 text-white hover:border-[#8FD1FF]/50 focus:border-[#8FD1FF] focus:ring-2 focus:ring-[#8FD1FF]/20'
+                                    }`}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Weight Input */}
+                              <div>
+                                <label className="text-[#F676CD] text-xs font-semibold mb-2 block uppercase tracking-wide">Weight</label>
+                                <div className={`relative ${set.completed ? 'opacity-60' : ''}`}>
+                                  <Input
+                                    type="number"
+                                    value={set.weight}
+                                    onChange={(e) => updateSet(exercise, index, 'weight', Math.max(0, parseFloat(e.target.value) || 0))}
+                                    disabled={set.completed}
+                                    min="0"
+                                    step="2.5"
+                                    className={`h-14 text-center text-xl font-bold border-2 rounded-xl transition-all ${
+                                      set.completed
+                                        ? 'bg-[#101938]/30 border-green-500/30 text-green-300'
+                                        : 'bg-[#101938]/80 border-[#F676CD]/30 text-white hover:border-[#F676CD]/50 focus:border-[#F676CD] focus:ring-2 focus:ring-[#F676CD]/20'
+                                    }`}
+                                  />
+                                  <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold ${
+                                    set.completed ? 'text-green-400/60' : 'text-[#F676CD]/60'
+                                  }`}>
+                                    lbs
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* RPE Input */}
+                              <div>
+                                <label className="text-[#FADF4A] text-xs font-semibold mb-2 block uppercase tracking-wide">RPE</label>
+                                <div className={`relative ${set.completed ? 'opacity-60' : ''}`}>
+                                  <Input
+                                    type="number"
+                                    value={set.rpe ?? ''}
+                                    onChange={(e) => {
+                                      const val = e.target.value === '' ? undefined : parseInt(e.target.value)
+                                      if (val === undefined || (val >= 1 && val <= 10)) {
+                                        updateSet(exercise, index, 'rpe', val)
+                                      }
+                                    }}
+                                    disabled={set.completed}
+                                    placeholder="1-10"
+                                    min="1"
+                                    max="10"
+                                    className={`h-14 text-center text-xl font-bold border-2 rounded-xl transition-all ${
+                                      set.completed
+                                        ? 'bg-[#101938]/30 border-green-500/30 text-green-300'
+                                        : 'bg-[#101938]/80 border-[#FADF4A]/30 text-white hover:border-[#FADF4A]/50 focus:border-[#FADF4A] focus:ring-2 focus:ring-[#FADF4A]/20'
+                                    }`}
+                                  />
+                                  <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold ${
+                                    set.completed ? 'text-green-400/60' : 'text-[#FADF4A]/60'
+                                  }`}>
+                                    /10
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <label className="text-[#8FD1FF]/70 text-xs mb-1 block">Weight (lbs)</label>
-                              <Input
-                                type="number"
-                                value={set.weight}
-                                onChange={(e) => updateSet(exercise, index, 'weight', Math.max(0, parseFloat(e.target.value) || 0))}
-                                disabled={set.completed}
-                                min="0"
-                                step="0.5"
-                                className="bg-[#101938]/50 border-[#1D295B] text-white text-center"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-[#8FD1FF]/70 text-xs mb-1 block">RPE</label>
-                              <Input
-                                type="number"
-                                value={set.rpe ?? ''}
-                                onChange={(e) => {
-                                  const val = e.target.value === '' ? undefined : parseInt(e.target.value)
-                                  if (val === undefined || (val >= 1 && val <= 10)) {
-                                    updateSet(exercise, index, 'rpe', val)
-                                  }
-                                }}
-                                disabled={set.completed}
-                                placeholder="1-10"
-                                min="1"
-                                max="10"
-                                className="bg-[#101938]/50 border-[#1D295B] text-white text-center"
-                              />
-                            </div>
+
+                            {/* Complete Set Button */}
+                            {!set.completed && (
+                              <Button
+                                onClick={() => logExerciseSet(exercise, index)}
+                                className="w-full h-14 bg-gradient-to-r from-[#FADF4A] to-[#F9C74F] hover:from-[#F9C74F] hover:to-[#FADF4A] text-[#101938] rounded-xl font-bold text-base shadow-lg shadow-[#FADF4A]/30 transition-all duration-300 transform active:scale-95"
+                              >
+                                <Check className="w-5 h-5 mr-2" />
+                                Complete Set {index + 1}
+                              </Button>
+                            )}
+
+                            {/* Completed Set Stats */}
+                            {set.completed && (
+                              <div className="grid grid-cols-3 gap-2 mt-2">
+                                <div className="bg-green-500/10 rounded-lg p-2 text-center">
+                                  <div className="text-green-400 text-xs font-medium">Reps</div>
+                                  <div className="text-green-300 font-bold">{set.reps}</div>
+                                </div>
+                                <div className="bg-green-500/10 rounded-lg p-2 text-center">
+                                  <div className="text-green-400 text-xs font-medium">Weight</div>
+                                  <div className="text-green-300 font-bold">{set.weight} lbs</div>
+                                </div>
+                                <div className="bg-green-500/10 rounded-lg p-2 text-center">
+                                  <div className="text-green-400 text-xs font-medium">RPE</div>
+                                  <div className="text-green-300 font-bold">{set.rpe || '-'}/10</div>
+                                </div>
+                              </div>
+                            )}
                           </div>
 
+                          {/* Accent Line for Active Set */}
                           {!set.completed && (
-                            <Button
-                              onClick={() => logExerciseSet(exercise, index)}
-                              className="w-full mt-3 bg-[#FADF4A] hover:bg-[#FADF4A]/90 text-[#101938] rounded-lg font-bold"
-                            >
-                              <Check className="w-4 h-4 mr-2" />
-                              Complete Set
-                            </Button>
+                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[#8FD1FF] via-[#FADF4A] to-[#F676CD]" />
                           )}
                         </div>
                       ))}
                     </div>
                   )}
+                  </div>
                 </Card>
               )
             })}
           </div>
         )}
 
-        {/* Navigation - Outside exercise rendering but inside workout session */}
+        {/* Navigation - Fixed bottom bar */}
         {currentGroup.length > 0 && (
-          <div className="px-4 pb-6"
-
-            <div className="flex gap-3">
-              <Button
-                onClick={goToPreviousExercise}
-                disabled={currentGroupIndex === 0}
-                variant="outline"
-                className="flex-1 bg-[#1D295B]/50 border-[#1D295B] text-white hover:bg-[#1D295B] disabled:opacity-30"
-              >
-                <ChevronLeft className="w-5 h-5 mr-2" />
-                Previous
-              </Button>
-
-              {currentGroupIndex < exerciseGroups.length - 1 ? (
+          <div className="fixed bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-[#101938] via-[#101938]/98 to-[#101938]/95 backdrop-blur-xl border-t border-[#8FD1FF]/20 shadow-2xl">
+            <div className="px-4 py-4">
+              <div className="flex gap-3">
                 <Button
-                  onClick={goToNextExercise}
-                  className="flex-1 bg-[#8FD1FF] hover:bg-[#8FD1FF]/90 text-[#101938] font-bold"
+                  onClick={goToPreviousExercise}
+                  disabled={currentGroupIndex === 0}
+                  variant="outline"
+                  className="flex-1 h-14 bg-[#1D295B]/50 border-2 border-[#8FD1FF]/30 text-white hover:bg-[#1D295B] hover:border-[#8FD1FF]/50 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl font-semibold text-base transition-all"
                 >
-                  {isSuperset ? 'Next Superset' : 'Next Exercise'}
-                  <ChevronRight className="w-5 h-5 ml-2" />
+                  <ChevronLeft className="w-5 h-5 mr-2" />
+                  Previous
                 </Button>
-              ) : (
-                <Button
-                  onClick={completeWorkout}
-                  disabled={isCompleting}
-                  className="flex-1 bg-[#FADF4A] hover:bg-[#FADF4A]/90 text-[#101938] font-bold"
-                >
-                  {isCompleting ? 'Finishing...' : 'Finish Workout'}
-                  <Trophy className="w-5 h-5 ml-2" />
-                </Button>
-              )}
+
+                {currentGroupIndex < exerciseGroups.length - 1 ? (
+                  <Button
+                    onClick={goToNextExercise}
+                    className="flex-1 h-14 bg-gradient-to-r from-[#8FD1FF] to-[#6BB8E8] hover:from-[#6BB8E8] hover:to-[#8FD1FF] text-[#101938] font-bold text-base rounded-xl shadow-lg shadow-[#8FD1FF]/30 transition-all duration-300 transform active:scale-95"
+                  >
+                    {isSuperset ? 'Next Superset' : 'Next Exercise'}
+                    <ChevronRight className="w-5 h-5 ml-2" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={completeWorkout}
+                    disabled={isCompleting}
+                    className="flex-1 h-14 bg-gradient-to-r from-[#FADF4A] to-[#F9C74F] hover:from-[#F9C74F] hover:to-[#FADF4A] text-[#101938] font-bold text-base rounded-xl shadow-lg shadow-[#FADF4A]/30 transition-all duration-300 transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isCompleting ? (
+                      <>
+                        <div className="w-5 h-5 mr-2 border-2 border-[#101938]/30 border-t-[#101938] rounded-full animate-spin" />
+                        Finishing...
+                      </>
+                    ) : (
+                      <>
+                        Finish Workout
+                        <Trophy className="w-5 h-5 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         )}
