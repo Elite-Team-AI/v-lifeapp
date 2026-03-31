@@ -25,6 +25,8 @@ interface ProfileData {
   heightInches: string
   weight: string
   goalWeight: string
+  bodyFatPercentage?: string
+  goalBodyFatPercentage?: string
   calorieGoal?: string
   primaryGoal: string
   activityLevel: number | string
@@ -38,6 +40,15 @@ interface ProfileData {
   availableTimeMinutes?: number
   trainingDaysPerWeek?: number
   timezone?: string
+  shoulderMobility?: string
+  hipMobility?: string
+  ankleMobility?: string
+  pushUps?: string
+  pullUps?: string
+  squatDepth?: string
+  plankTime?: string
+  experienceLevel?: string
+  preferredWorkoutTime?: string
 }
 
 interface UpdateProfileModalProps {
@@ -199,7 +210,20 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
     setSaving(true)
 
     try {
-      const result = await updateProfile(profile)
+      // Parse numeric fields before sending to updateProfile
+      const profileDataToSave = {
+        ...profile,
+        bodyFatPercentage: profile.bodyFatPercentage ? parseFloat(profile.bodyFatPercentage) : undefined,
+        goalBodyFatPercentage: profile.goalBodyFatPercentage ? parseFloat(profile.goalBodyFatPercentage) : undefined,
+        shoulderMobility: profile.shoulderMobility ? parseInt(profile.shoulderMobility) : undefined,
+        hipMobility: profile.hipMobility ? parseInt(profile.hipMobility) : undefined,
+        ankleMobility: profile.ankleMobility ? parseInt(profile.ankleMobility) : undefined,
+        pushUps: profile.pushUps ? parseInt(profile.pushUps) : undefined,
+        pullUps: profile.pullUps ? parseInt(profile.pullUps) : undefined,
+        plankTime: profile.plankTime ? parseInt(profile.plankTime) : undefined,
+      }
+
+      const result = await updateProfile(profileDataToSave as any)
 
       if (result.error) {
         toast({
@@ -334,9 +358,15 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                   overscrollBehavior: 'contain'
                 }}
                 onTouchMove={(e) => {
-                  // Allow touch events on slider elements
+                  // Allow touch events on slider elements - check the entire path
                   const target = e.target as HTMLElement
-                  if (target.closest('[data-slot="slider"]') || target.closest('[role="slider"]')) {
+                  if (
+                    target.closest('[data-slot="slider"]') ||
+                    target.closest('[data-slot="slider-thumb"]') ||
+                    target.closest('[data-slot="slider-track"]') ||
+                    target.closest('[role="slider"]')
+                  ) {
+                    // Don't interfere with slider touch events
                     return
                   }
                   e.stopPropagation()
