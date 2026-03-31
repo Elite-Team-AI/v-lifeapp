@@ -79,6 +79,7 @@ export async function updateProfile(profileData: {
   pullUps?: number
   squatDepth?: string
   plankTime?: number
+  visual_coach_enabled?: boolean
 }): Promise<{ success?: boolean; error?: string }> {
   const { user, error: authError } = await getAuthUser()
 
@@ -152,6 +153,7 @@ export async function updateProfile(profileData: {
       plank_time: profileData.plankTime,
       timezone: profileData.timezone,
       onboarding_completed: profileData.onboardingCompleted,
+      visual_coach_enabled: profileData.visual_coach_enabled,
       updated_at: new Date().toISOString(),
     }
     

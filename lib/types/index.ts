@@ -102,6 +102,7 @@ export interface Profile {
   is_admin: boolean | null
   user_role: UserRole
   voice_preferences?: VoicePreferences | null
+  visual_coach_enabled?: boolean | null
   created_at: string
   updated_at: string
 }

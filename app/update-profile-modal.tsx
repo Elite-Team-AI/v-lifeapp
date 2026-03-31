@@ -854,7 +854,7 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
               </div>
 
               {/* Fixed Footer */}
-              <div className="border-t border-accent/20 p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] flex gap-3 flex-shrink-0 bg-black/90 backdrop-blur-lg">
+              <div className="border-t border-accent/20 p-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] flex gap-3 flex-shrink-0 bg-black/90 backdrop-blur-lg">
                 <ButtonGlow variant="outline-glow" onClick={onClose} className="flex-1" disabled={saving}>
                   Cancel
                 </ButtonGlow>

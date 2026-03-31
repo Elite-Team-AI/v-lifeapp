@@ -64,10 +64,12 @@ export default function SettingsClient() {
   const [isStartingFresh, setIsStartingFresh] = useState(false)
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default")
 
-  // Helper function to convert activity level string to number
-  const activityLevelToNumber = (level: string | number | null | undefined): number => {
+  // Helper function to ensure activity level is a number (handles both string and number inputs)
+  const normalizeActivityLevel = (level: string | number | null | undefined): number => {
+    // If it's already a number, return it
     if (typeof level === 'number') return level
 
+    // If it's a string enum, convert to number
     switch (level) {
       case 'sedentary': return 1
       case 'lightly_active': return 2
@@ -120,7 +122,7 @@ export default function SettingsClient() {
       goalWeight: profile.goal_weight?.toString() || "",
       calorieGoal: profile.calorie_goal?.toString() || "",
       primaryGoal: profile.primary_goal || "",
-      activityLevel: activityLevelToNumber(profile.activity_level),
+      activityLevel: normalizeActivityLevel(profile.activity_level),
       gymAccess: profile.gym_access || "",
       selectedGym: profile.selected_gym || "",
       customEquipment: profile.custom_equipment || "",
