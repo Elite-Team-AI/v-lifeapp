@@ -30,31 +30,60 @@ function Slider({
       value={value}
       min={min}
       max={max}
-      className={cn(
-        'relative flex w-full items-center select-none data-[disabled]:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col',
-        className,
-      )}
-      style={{ touchAction: 'none' }}
+      style={{
+        position: 'relative',
+        display: 'flex',
+        width: '100%',
+        alignItems: 'center',
+        userSelect: 'none',
+        touchAction: 'none',
+        WebkitUserSelect: 'none',
+        cursor: 'pointer',
+        height: '44px'
+      }}
       {...props}
     >
       <SliderPrimitive.Track
         data-slot="slider-track"
-        className={
-          'bg-muted relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-3 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-3 cursor-pointer'
-        }
+        style={{
+          position: 'relative',
+          height: '8px',
+          width: '100%',
+          flexGrow: 1,
+          overflow: 'hidden',
+          borderRadius: '9999px',
+          backgroundColor: 'rgb(38 38 38)',
+          touchAction: 'none',
+          WebkitTapHighlightColor: 'transparent',
+          cursor: 'pointer'
+        }}
       >
         <SliderPrimitive.Range
           data-slot="slider-range"
-          className={
-            'bg-primary absolute data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full'
-          }
+          style={{
+            position: 'absolute',
+            height: '100%',
+            backgroundColor: 'rgb(250 204 21)'
+          }}
         />
       </SliderPrimitive.Track>
       {Array.from({ length: _values.length }, (_, index) => (
         <SliderPrimitive.Thumb
           data-slot="slider-thumb"
           key={index}
-          className="border-primary ring-ring/50 block size-8 shrink-0 rounded-full border-2 bg-white shadow-md transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50 touch-manipulation cursor-grab active:cursor-grabbing"
+          style={{
+            display: 'block',
+            width: '44px',
+            height: '44px',
+            borderRadius: '9999px',
+            border: '3px solid rgb(250 204 21)',
+            backgroundColor: 'white',
+            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+            touchAction: 'none',
+            WebkitTapHighlightColor: 'transparent',
+            cursor: 'grab',
+            outline: 'none'
+          }}
         />
       ))}
     </SliderPrimitive.Root>

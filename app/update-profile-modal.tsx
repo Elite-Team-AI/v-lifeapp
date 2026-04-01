@@ -374,32 +374,6 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                   WebkitOverflowScrolling: 'touch',
                   overscrollBehavior: 'contain'
                 }}
-                onTouchStart={(e) => {
-                  // Check if touch started on slider - if so, prevent scroll
-                  const target = e.target as HTMLElement
-                  if (
-                    target.closest('[data-slot="slider"]') ||
-                    target.closest('[data-slot="slider-thumb"]') ||
-                    target.closest('[data-slot="slider-track"]')
-                  ) {
-                    e.stopPropagation()
-                  }
-                }}
-                onTouchMove={(e) => {
-                  // Allow touch events on slider elements - check the entire path
-                  const target = e.target as HTMLElement
-                  if (
-                    target.closest('[data-slot="slider"]') ||
-                    target.closest('[data-slot="slider-thumb"]') ||
-                    target.closest('[data-slot="slider-track"]')
-                  ) {
-                    // Stop propagation to prevent modal scroll from interfering
-                    e.stopPropagation()
-                    return
-                  }
-                  e.stopPropagation()
-                }}
-                onWheel={(e) => e.stopPropagation()}
               >
                 <div className="p-6 space-y-6 pb-4">
                   {/* Basic Info Tab */}
@@ -573,7 +547,21 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                           </div>
                         )}
 
-                        <div className="py-4 px-2" style={{ touchAction: 'none' }}>
+                        <div
+                          className="py-4 px-2 relative"
+                          style={{ touchAction: 'none', zIndex: 10 }}
+                          onTouchStart={(e) => {
+                            // Prevent modal from handling this touch
+                            e.stopPropagation()
+                          }}
+                          onTouchMove={(e) => {
+                            // Prevent modal scroll during slider interaction
+                            e.stopPropagation()
+                          }}
+                          onTouchEnd={(e) => {
+                            e.stopPropagation()
+                          }}
+                        >
                           <Slider
                             value={[typeof profile.activityLevel === 'number' ? profile.activityLevel : Number(profile.activityLevel) || 3]}
                             onValueChange={(value) => updateProfileState({ activityLevel: value[0] })}
