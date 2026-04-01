@@ -31,15 +31,16 @@ function Slider({
       min={min}
       max={max}
       className={cn(
-        'relative flex w-full touch-pan-y items-center select-none data-[disabled]:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col',
+        'relative flex w-full items-center select-none data-[disabled]:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col',
         className,
       )}
+      style={{ touchAction: 'none' }}
       {...props}
     >
       <SliderPrimitive.Track
         data-slot="slider-track"
         className={
-          'bg-muted relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-2 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-2'
+          'bg-muted relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-3 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-3 cursor-pointer'
         }
       >
         <SliderPrimitive.Range

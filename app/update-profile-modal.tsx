@@ -357,16 +357,27 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                   WebkitOverflowScrolling: 'touch',
                   overscrollBehavior: 'contain'
                 }}
+                onTouchStart={(e) => {
+                  // Check if touch started on slider - if so, prevent scroll
+                  const target = e.target as HTMLElement
+                  if (
+                    target.closest('[data-slot="slider"]') ||
+                    target.closest('[data-slot="slider-thumb"]') ||
+                    target.closest('[data-slot="slider-track"]')
+                  ) {
+                    e.stopPropagation()
+                  }
+                }}
                 onTouchMove={(e) => {
                   // Allow touch events on slider elements - check the entire path
                   const target = e.target as HTMLElement
                   if (
                     target.closest('[data-slot="slider"]') ||
                     target.closest('[data-slot="slider-thumb"]') ||
-                    target.closest('[data-slot="slider-track"]') ||
-                    target.closest('[role="slider"]')
+                    target.closest('[data-slot="slider-track"]')
                   ) {
-                    // Don't interfere with slider touch events
+                    // Stop propagation to prevent modal scroll from interfering
+                    e.stopPropagation()
                     return
                   }
                   e.stopPropagation()
@@ -545,14 +556,14 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                           </div>
                         )}
 
-                        <div className="py-2 px-1">
+                        <div className="py-4 px-2" style={{ touchAction: 'none' }}>
                           <Slider
                             value={[typeof profile.activityLevel === 'number' ? profile.activityLevel : Number(profile.activityLevel) || 3]}
                             onValueChange={(value) => updateProfileState({ activityLevel: value[0] })}
                             max={5}
                             min={1}
                             step={1}
-                            className="py-4"
+                            className="py-6"
                           />
                         </div>
                         <div className="flex justify-between text-xs text-white/50">
