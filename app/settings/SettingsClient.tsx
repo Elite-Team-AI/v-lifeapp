@@ -111,6 +111,7 @@ export default function SettingsClient() {
     }
 
     const profile = appData.profile
+    console.log("🔍 [BODY FAT DEBUG] Raw from DB - body_fat_percentage:", profile.body_fat_percentage, "goal_body_fat_percentage:", profile.goal_body_fat_percentage)
     console.log("[SettingsClient] Raw profile from appData:", profile)
 
     const mappedData = {
@@ -140,6 +141,7 @@ export default function SettingsClient() {
       timezone: profile.timezone || "America/New_York",
     }
 
+    console.log("🔍 [BODY FAT DEBUG] After mapping - bodyFatPercentage:", mappedData.bodyFatPercentage, "goalBodyFatPercentage:", mappedData.goalBodyFatPercentage)
     console.log("[SettingsClient] Mapped profileData:", mappedData)
     return mappedData
   }, [appData?.profile])

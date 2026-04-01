@@ -157,16 +157,22 @@ export async function updateProfile(profileData: {
       updated_at: new Date().toISOString(),
     }
     
+    console.log("🔍 [BODY FAT DEBUG] Server received - bodyFatPercentage:", profileData.bodyFatPercentage, "goalBodyFatPercentage:", profileData.goalBodyFatPercentage)
     console.log("[updateProfile] User ID:", user.id)
     console.log("[updateProfile] Incoming profileData:", profileData)
     console.log("[updateProfile] Data to upsert:", dataToUpsert)
+    console.log("🔍 [BODY FAT DEBUG] Upserting to DB - body_fat_percentage:", dataToUpsert.body_fat_percentage, "goal_body_fat_percentage:", dataToUpsert.goal_body_fat_percentage)
     console.log("[updateProfile] Critical fields check:", {
       age: profileData.age,
       parsedAge: dataToUpsert.age,
       heightFeet: profileData.heightFeet,
       parsedHeightFeet: dataToUpsert.height_feet,
       weight: profileData.weight,
-      parsedWeight: dataToUpsert.weight
+      parsedWeight: dataToUpsert.weight,
+      bodyFatPercentage: profileData.bodyFatPercentage,
+      parsedBodyFat: dataToUpsert.body_fat_percentage,
+      goalBodyFatPercentage: profileData.goalBodyFatPercentage,
+      parsedGoalBodyFat: dataToUpsert.goal_body_fat_percentage
     })
 
     await retryWithBackoff(

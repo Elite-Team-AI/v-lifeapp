@@ -210,6 +210,7 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
     setSaving(true)
 
     try {
+      console.log("🔍 [BODY FAT DEBUG] Before parsing - BF:", profile.bodyFatPercentage, "Goal:", profile.goalBodyFatPercentage)
       console.log("[UpdateProfileModal] Profile state before parsing:", {
         bodyFatPercentage: profile.bodyFatPercentage,
         goalBodyFatPercentage: profile.goalBodyFatPercentage,
@@ -230,6 +231,7 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
         plankTime: profile.plankTime ? parseInt(profile.plankTime) : undefined,
       }
 
+      console.log("🔍 [BODY FAT DEBUG] After parsing - BF:", profileDataToSave.bodyFatPercentage, "Goal:", profileDataToSave.goalBodyFatPercentage)
       console.log("[UpdateProfileModal] Parsed profileDataToSave:", {
         bodyFatPercentage: profileDataToSave.bodyFatPercentage,
         goalBodyFatPercentage: profileDataToSave.goalBodyFatPercentage,
@@ -239,7 +241,7 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
 
       const result = await updateProfile(profileDataToSave as any)
 
-      console.log("[UpdateProfileModal] Update result:", result)
+      console.log("🔍 [BODY FAT DEBUG] Update result success:", result.success, "error:", result.error)
 
       if (result.error) {
         toast({
