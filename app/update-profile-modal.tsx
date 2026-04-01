@@ -248,7 +248,8 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
           variant: "destructive",
         })
       } else {
-        onUpdate(profile)
+        // Pass the parsed data to parent component so UI shows correct values
+        onUpdate(profileDataToSave)
         toast({
           title: "Success",
           description: "Your profile has been updated successfully",
