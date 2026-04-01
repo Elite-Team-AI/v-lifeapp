@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/hooks/use-toast"
+import { createClient } from "@/lib/supabase/client"
 
 interface CreatePostModalProps {
   isOpen: boolean
@@ -151,33 +152,57 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
           size: selectedFile.size
         })
 
-        const formData = new FormData()
-        formData.append("file", selectedFile)
-
-        console.log("[CreatePostModal] FormData created, calling uploadPostImage...")
-
         try {
-          const { uploadPostImage } = await import("@/lib/actions/community")
-          const result = await uploadPostImage(formData)
-
-          console.log("[CreatePostModal] Upload result:", result)
-
-          if (result.success && result.imageUrl) {
-            imageUrl = result.imageUrl
-            console.log("[CreatePostModal] Image uploaded successfully:", imageUrl)
-          } else {
-            console.error("[CreatePostModal] Upload failed:", result.error)
-            toast({
-              title: "Image upload failed",
-              description: result.error || "Failed to upload image. Posting without image.",
-              variant: "destructive",
-            })
-            // Continue posting without image
+          // Validate file size (max 10MB)
+          if (selectedFile.size > 10 * 1024 * 1024) {
+            throw new Error("Please upload an image smaller than 10MB")
           }
+
+          // Upload directly to Supabase storage from client
+          const supabase = createClient()
+
+          // Get current user
+          const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+          if (authError || !user) {
+            throw new Error("Not authenticated")
+          }
+
+          console.log("[CreatePostModal] User authenticated:", user.id)
+
+          // Generate unique filename
+          const fileExt = selectedFile.name.split(".").pop()?.toLowerCase() || "jpg"
+          const fileName = `${user.id}/${Date.now()}.${fileExt}`
+
+          console.log("[CreatePostModal] Uploading to post-images bucket:", fileName)
+
+          // Upload file
+          const { error: uploadError, data: uploadData } = await supabase.storage
+            .from("post-images")
+            .upload(fileName, selectedFile, {
+              upsert: false,
+              contentType: selectedFile.type
+            })
+
+          if (uploadError) {
+            console.error("[CreatePostModal] Upload error:", uploadError)
+            throw new Error(uploadError.message || "Upload failed")
+          }
+
+          console.log("[CreatePostModal] Upload successful:", uploadData)
+
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from("post-images")
+            .getPublicUrl(fileName)
+
+          imageUrl = publicUrl
+          console.log("[CreatePostModal] Image uploaded successfully:", imageUrl)
+
         } catch (uploadError) {
           console.error("[CreatePostModal] Upload exception:", uploadError)
           toast({
-            title: "Image upload error",
+            title: "Image upload failed",
             description: uploadError instanceof Error ? uploadError.message : "Failed to upload image. Posting without image.",
             variant: "destructive",
           })
