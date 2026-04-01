@@ -210,6 +210,13 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
     setSaving(true)
 
     try {
+      console.log("[UpdateProfileModal] Profile state before parsing:", {
+        bodyFatPercentage: profile.bodyFatPercentage,
+        goalBodyFatPercentage: profile.goalBodyFatPercentage,
+        bodyFatPercentageType: typeof profile.bodyFatPercentage,
+        goalBodyFatPercentageType: typeof profile.goalBodyFatPercentage,
+      })
+
       // Parse numeric fields before sending to updateProfile
       const profileDataToSave = {
         ...profile,
@@ -223,7 +230,16 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
         plankTime: profile.plankTime ? parseInt(profile.plankTime) : undefined,
       }
 
+      console.log("[UpdateProfileModal] Parsed profileDataToSave:", {
+        bodyFatPercentage: profileDataToSave.bodyFatPercentage,
+        goalBodyFatPercentage: profileDataToSave.goalBodyFatPercentage,
+        bodyFatPercentageType: typeof profileDataToSave.bodyFatPercentage,
+        goalBodyFatPercentageType: typeof profileDataToSave.goalBodyFatPercentage,
+      })
+
       const result = await updateProfile(profileDataToSave as any)
+
+      console.log("[UpdateProfileModal] Update result:", result)
 
       if (result.error) {
         toast({
