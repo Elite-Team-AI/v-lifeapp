@@ -122,23 +122,15 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
     setProfile(currentProfile)
   }, [currentProfile])
 
-  // Lock body scroll when modal is open
+  // Lock body scroll when modal is open - but don't use position fixed which breaks touch events
   useEffect(() => {
     if (isOpen) {
-      // Save current scroll position
-      const scrollY = window.scrollY
-      document.body.style.position = 'fixed'
-      document.body.style.top = `-${scrollY}px`
-      document.body.style.width = '100%'
-      document.body.style.overflowY = 'scroll' // Prevent layout shift
+      // Use overflow hidden instead of position fixed to allow touch events to work
+      const originalOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
 
       return () => {
-        // Restore scroll position
-        document.body.style.position = ''
-        document.body.style.top = ''
-        document.body.style.width = ''
-        document.body.style.overflowY = ''
-        window.scrollTo(0, scrollY)
+        document.body.style.overflow = originalOverflow
       }
     }
   }, [isOpen])
@@ -329,6 +321,9 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
             exit={{ y: "100%", opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 500 }}
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
           >
             <Card className="border-accent/30 bg-black/90 backdrop-blur-lg h-full flex flex-col overflow-hidden">
               {/* Fixed Header */}
@@ -549,21 +544,7 @@ export function UpdateProfileModal({ isOpen, onClose, currentProfile, onUpdate }
                           </div>
                         )}
 
-                        <div
-                          className="py-4 px-2 relative"
-                          style={{ touchAction: 'none', zIndex: 10 }}
-                          onTouchStart={(e) => {
-                            // Prevent modal from handling this touch
-                            e.stopPropagation()
-                          }}
-                          onTouchMove={(e) => {
-                            // Prevent modal scroll during slider interaction
-                            e.stopPropagation()
-                          }}
-                          onTouchEnd={(e) => {
-                            e.stopPropagation()
-                          }}
-                        >
+                        <div className="py-4 px-2">
                           <Slider
                             value={[typeof profile.activityLevel === 'number' ? profile.activityLevel : Number(profile.activityLevel) || 3]}
                             onValueChange={(value) => updateProfileState({ activityLevel: value[0] })}
