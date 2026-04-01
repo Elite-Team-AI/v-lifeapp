@@ -12,19 +12,29 @@ export async function uploadPostImage(formData: FormData): Promise<{
   error?: string
 }> {
   try {
+    console.log("[uploadPostImage] Starting upload...")
     const file = formData.get("file") as File | null
 
     if (!file) {
+      console.error("[uploadPostImage] No file in FormData")
       return { success: false, error: "No file provided" }
     }
 
+    console.log("[uploadPostImage] File received:", {
+      name: file.name,
+      type: file.type,
+      size: file.size
+    })
+
     // Validate file type
     if (!file.type.startsWith("image/")) {
+      console.error("[uploadPostImage] Invalid file type:", file.type)
       return { success: false, error: "Please upload an image file" }
     }
 
     // Validate file size (max 10MB for posts)
     if (file.size > 10 * 1024 * 1024) {
+      console.error("[uploadPostImage] File too large:", file.size)
       return { success: false, error: "Please upload an image smaller than 10MB" }
     }
 
@@ -33,9 +43,17 @@ export async function uploadPostImage(formData: FormData): Promise<{
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    if (authError || !user) {
+    if (authError) {
+      console.error("[uploadPostImage] Auth error:", authError)
+      return { success: false, error: `Authentication failed: ${authError.message}` }
+    }
+
+    if (!user) {
+      console.error("[uploadPostImage] No user found")
       return { success: false, error: "Not authenticated" }
     }
+
+    console.log("[uploadPostImage] User authenticated:", user.id)
 
     // Convert File to ArrayBuffer for upload
     const arrayBuffer = await file.arrayBuffer()
@@ -45,7 +63,9 @@ export async function uploadPostImage(formData: FormData): Promise<{
     const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg"
     const fileName = `${user.id}/${Date.now()}.${fileExt}`
 
-    const { error: uploadError } = await supabase.storage
+    console.log("[uploadPostImage] Uploading to post-images bucket:", fileName)
+
+    const { error: uploadError, data: uploadData } = await supabase.storage
       .from("post-images")
       .upload(fileName, fileBuffer, {
         upsert: false,
@@ -54,13 +74,26 @@ export async function uploadPostImage(formData: FormData): Promise<{
 
     if (uploadError) {
       console.error("[uploadPostImage] Upload error:", uploadError)
+
+      // Check for specific error types
+      if (uploadError.message?.includes("Bucket not found")) {
+        return { success: false, error: "Storage bucket 'post-images' not found. Please contact support." }
+      }
+      if (uploadError.message?.includes("row-level security") || uploadError.message?.includes("policy")) {
+        return { success: false, error: "Permission denied. Storage policy may not be configured correctly." }
+      }
+
       return { success: false, error: uploadError.message || "Upload failed" }
     }
+
+    console.log("[uploadPostImage] Upload successful:", uploadData)
 
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from("post-images")
       .getPublicUrl(fileName)
+
+    console.log("[uploadPostImage] Public URL:", publicUrl)
 
     return { success: true, imageUrl: publicUrl }
   } catch (error) {

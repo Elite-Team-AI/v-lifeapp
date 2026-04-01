@@ -145,20 +145,43 @@ export function CreatePostModal({ isOpen, onClose, onCreatePost, userName, userA
 
       // Upload image to storage if one was selected
       if (selectedFile) {
+        console.log("[CreatePostModal] Uploading image:", {
+          name: selectedFile.name,
+          type: selectedFile.type,
+          size: selectedFile.size
+        })
+
         const formData = new FormData()
         formData.append("file", selectedFile)
 
-        const { uploadPostImage } = await import("@/lib/actions/community")
-        const result = await uploadPostImage(formData)
+        console.log("[CreatePostModal] FormData created, calling uploadPostImage...")
 
-        if (result.success && result.imageUrl) {
-          imageUrl = result.imageUrl
-        } else {
+        try {
+          const { uploadPostImage } = await import("@/lib/actions/community")
+          const result = await uploadPostImage(formData)
+
+          console.log("[CreatePostModal] Upload result:", result)
+
+          if (result.success && result.imageUrl) {
+            imageUrl = result.imageUrl
+            console.log("[CreatePostModal] Image uploaded successfully:", imageUrl)
+          } else {
+            console.error("[CreatePostModal] Upload failed:", result.error)
+            toast({
+              title: "Image upload failed",
+              description: result.error || "Failed to upload image. Posting without image.",
+              variant: "destructive",
+            })
+            // Continue posting without image
+          }
+        } catch (uploadError) {
+          console.error("[CreatePostModal] Upload exception:", uploadError)
           toast({
-            title: "Image upload failed",
-            description: result.error || "Failed to upload image. Posting without image.",
+            title: "Image upload error",
+            description: uploadError instanceof Error ? uploadError.message : "Failed to upload image. Posting without image.",
             variant: "destructive",
           })
+          // Continue posting without image
         }
       }
 
