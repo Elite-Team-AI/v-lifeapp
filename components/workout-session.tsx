@@ -639,7 +639,7 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
 
   // Main workout session UI
   return (
-    <div className="fixed inset-0 bg-[#101938] z-50 overflow-auto">
+    <div className="fixed inset-0 bg-[#101938] z-[60] overflow-auto">
       <div className="min-h-full pb-40">
         {/* Header */}
         <div className="sticky top-0 z-10 bg-gradient-to-b from-[#101938] via-[#101938]/98 to-[#101938]/95 backdrop-blur-xl border-b border-[#8FD1FF]/20 shadow-lg shadow-[#101938]/50">
