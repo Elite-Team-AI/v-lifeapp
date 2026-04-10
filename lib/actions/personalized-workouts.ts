@@ -216,10 +216,10 @@ export async function generateWorkoutPlan(preferences: WorkoutPlanPreferences) {
     const availableEquipment = preferences.availableEquipment || profile.available_equipment || []
     const excludedIds = preferences.excludeExercises || []
 
-    // Fetch ALL active exercises first
+    // Fetch ALL active exercises first (explicit columns to avoid over-fetching)
     const { data: allExercises, error: exercisesError } = await supabase
       .from('exercise_library')
-      .select('*')
+      .select('id, name, category, equipment, difficulty, primary_muscles, secondary_muscles, training_modality, recommended_sets_min, recommended_sets_max, recommended_reps_min, recommended_reps_max, recommended_rest_seconds_min, recommended_rest_seconds_max')
       .eq('is_active', true)
 
     if (exercisesError || !allExercises || allExercises.length === 0) {
@@ -451,6 +451,19 @@ NOTE: Good exercise variety (${finalExercises.length} exercises). Maximize quali
 - Days per Week: ${daysPerWeek}
 - Session Duration: ${sessionDuration} minutes
 - Training Style: ${trainingStyleDisplay}
+
+**ASSESSMENT DATA — MANDATORY EXERCISE CONSTRAINTS:**
+${profile.push_ups !== undefined && profile.push_ups !== null ? `- Push-ups: ${profile.push_ups} reps → ${profile.push_ups < 5 ? 'WEAKNESS: Avoid heavy pressing. Use machine press or modified push-ups at RPE ≤6.' : profile.push_ups < 15 ? 'DEVELOPING: Moderate pressing loads (50-65% 1RM). Prioritize push-up progressions.' : profile.push_ups < 30 ? 'ADEQUATE: Standard compound pressing at 65-75% 1RM.' : 'STRONG: Heavy pressing at 75-85% 1RM appropriate.'}` : ''}
+${profile.pull_ups !== undefined && profile.pull_ups !== null ? `- Pull-ups: ${profile.pull_ups} reps → ${profile.pull_ups < 1 ? 'WEAKNESS: No pull-ups. Use lat pulldown (light) and cable rows only.' : profile.pull_ups < 5 ? 'DEVELOPING: Use lat pulldown and horizontal rows. No weighted pull-ups.' : profile.pull_ups < 10 ? 'ADEQUATE: Standard pull-up and row variations at moderate load.' : 'STRONG: Weighted pull-ups and heavy rows appropriate.'}` : ''}
+${profile.plank_time ? `- Plank time: ${profile.plank_time}s → ${profile.plank_time < 30 ? 'WEAK CORE: Add 2 core exercises per session. Avoid heavy spinal loading (use rack pulls instead of deadlifts).' : profile.plank_time < 60 ? 'DEVELOPING CORE: Add 1 core exercise per session.' : 'STRONG CORE: Heavy compound lifts with spinal loading appropriate.'}` : ''}
+
+**MOBILITY CONSTRAINTS — MANDATORY EXERCISE SUBSTITUTIONS:**
+${profile.shoulder_mobility ? `- Shoulder: ${profile.shoulder_mobility}/10 → ${profile.shoulder_mobility < 6 ? '⛔ AVOID overhead press, upright rows. USE: Neutral-grip dumbbell press, landmine press, cable laterals.' : profile.shoulder_mobility < 8 ? 'CAUTION: Prefer dumbbell over barbell for pressing. No behind-neck movements.' : 'Full overhead range acceptable.'}` : ''}
+${profile.hip_mobility ? `- Hip: ${profile.hip_mobility}/10 → ${profile.hip_mobility < 6 ? '⛔ AVOID deep barbell squats, full lunges. USE: Box squats, partial-ROM RDL, leg press.' : profile.hip_mobility < 8 ? 'CAUTION: Limit squat depth to parallel. Sumo stance preferred.' : 'Full ROM hip movements acceptable.'}` : ''}
+${profile.ankle_mobility ? `- Ankle: ${profile.ankle_mobility}/10 → ${profile.ankle_mobility < 6 ? '⛔ AVOID heel-down squats, Olympic lifts. USE: Heel-elevated goblet squat, leg press, hack squat.' : profile.ankle_mobility < 8 ? 'CAUTION: Slight heel elevation for squat patterns.' : 'Full ankle-range patterns acceptable.'}` : ''}
+
+**EXPERIENCE LEVEL VOLUME CONSTRAINTS (MANDATORY):**
+${experienceLevel === 'beginner' ? 'BEGINNER: Max 2 sets per exercise. Total 10-14 sets/session. Rep range 10-15. Load 50-65% 1RM (RPE ≤7). Simple movements only. No Olympic lifts or plyometrics.' : experienceLevel === 'intermediate' ? 'INTERMEDIATE: 2-3 sets per exercise. Total 12-18 sets/session. Rep range 8-12 compounds / 10-15 isolation. Load 65-75% 1RM (RPE 7-8).' : experienceLevel === 'advanced' ? 'ADVANCED: 3-4 sets per exercise. Total 16-24 sets/session. Rep range 5-10 compounds / 8-15 isolation. Load 75-85% 1RM (RPE 7.5-9). Supersets and advanced techniques appropriate.' : experienceLevel === 'expert' ? 'EXPERT: 3-5 sets per exercise. Total 20-30 sets/session. Rep range 3-8 compounds / 6-15 isolation. Load 80-95% 1RM (RPE 8-10). Full advanced periodization.' : 'INTERMEDIATE: 2-3 sets per exercise. Total 12-18 sets/session. Load 65-75% 1RM (RPE 7-8).'}
 
 ${adaptiveInstructions}
 

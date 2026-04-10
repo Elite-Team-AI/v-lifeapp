@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     const limit = parseInt(searchParams.get('limit') || '10')
+    const since = searchParams.get('since') // ISO date string to filter logs after this date
 
     if (!userId) {
       return NextResponse.json(
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Fetch workout logs with workout details
-    const { data: logs, error } = await supabase
+    let query = supabase
       .from('workout_logs')
       .select(`
         id,
@@ -65,6 +66,19 @@ export async function GET(request: NextRequest) {
       .eq('completion_status', 'completed')
       .order('completed_at', { ascending: false })
       .limit(limit)
+
+    if (since) {
+      query = query.gte('completed_at', since)
+    }
+
+    const { data: logs, error } = await query
+
+    // Get the total all-time count (for display purposes, separate from the paginated results)
+    const { count: totalCount } = await supabase
+      .from('workout_logs')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('completion_status', 'completed')
 
     if (error) {
       console.error('Error fetching workout logs:', error)
@@ -88,7 +102,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      logs: transformedLogs
+      logs: transformedLogs,
+      totalCount: totalCount ?? transformedLogs.length
     })
 
   } catch (error) {

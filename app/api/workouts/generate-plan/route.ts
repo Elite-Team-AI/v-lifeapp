@@ -5,6 +5,9 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createApiLogger } from '@/lib/utils/logger'
 import { workoutGenerationSchema, safeValidate } from '@/lib/validations/api'
 
+// Allow up to 300s (5 min) for AI plan generation — each week can take 30-60s
+export const maxDuration = 300
+
 /**
  * Generate workout plan using AI with automatic fallback
  * Tries OpenAI first, falls back to Claude if OpenAI fails
@@ -261,9 +264,11 @@ export async function POST(request: NextRequest) {
       fromPreferences: preferences.trainingStyle
     })
 
-    const { data: exercises, error: exercisesError } = await supabase
+    const exerciseSelectFields = 'id, name, category, equipment, difficulty, primary_muscles, training_modality, recommended_sets_min, recommended_sets_max, recommended_reps_min, recommended_reps_max, recommended_rest_seconds_min, recommended_rest_seconds_max'
+
+    let { data: exercises, error: exercisesError } = await supabase
       .from('exercise_library')
-      .select('id, name, category, equipment, difficulty, primary_muscles, training_modality, recommended_sets_min, recommended_sets_max, recommended_reps_min, recommended_reps_max, recommended_rest_seconds_min, recommended_rest_seconds_max')
+      .select(exerciseSelectFields)
       .eq('is_active', true)
       .eq('training_modality', trainingStyle) // Filter by user's preferred modality
 
@@ -276,6 +281,31 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to fetch exercise library' },
         { status: 500 }
       )
+    }
+
+    // Fallback: if no exercises match the specific training modality, fetch ALL active exercises
+    // This prevents total failure when exercise_library is sparse for a given modality
+    if (!exercises || exercises.length === 0) {
+      log.warn("No exercises found for training modality, falling back to all active exercises", undefined, {
+        userId,
+        trainingStyle,
+        originalModality: trainingStyle
+      })
+
+      const { data: fallbackExercises, error: fallbackError } = await supabase
+        .from('exercise_library')
+        .select(exerciseSelectFields)
+        .eq('is_active', true)
+
+      if (fallbackError) {
+        log.error("Failed to fetch fallback exercise library", new Error(fallbackError.message), undefined, { userId })
+        return NextResponse.json(
+          { error: 'Failed to fetch exercise library' },
+          { status: 500 }
+        )
+      }
+
+      exercises = fallbackExercises
     }
 
     log.debug("Exercise library loaded", undefined, {
@@ -665,16 +695,26 @@ function buildWorkoutPlanPrompt(profile: any, exercises: any[], preferences: any
 - Preferred Workout Time: ${profile.preferred_workout_time || 'Flexible'}
 - ⚠️ MANDATORY DAYS PER WEEK: ${daysPerWeek} (YOU MUST GENERATE EXACTLY ${daysPerWeek} WORKOUTS PER WEEK - NOT ${daysPerWeek - 1}, NOT ${daysPerWeek + 1}, EXACTLY ${daysPerWeek})
 
-**ASSESSMENT DATA:**
-${profile.push_ups ? `- Push-ups: ${profile.push_ups}` : ''}
-${profile.pull_ups ? `- Pull-ups: ${profile.pull_ups}` : ''}
-${profile.squat_depth ? `- Squat depth: ${profile.squat_depth}` : ''}
-${profile.plank_time ? `- Plank time: ${profile.plank_time}s` : ''}
+**ASSESSMENT DATA — MANDATORY EXERCISE CONSTRAINTS (YOU MUST APPLY THESE RULES):**
+${profile.push_ups !== undefined && profile.push_ups !== null ? `- Push-ups: ${profile.push_ups} reps → ${profile.push_ups < 5 ? 'WEAKNESS: Avoid heavy barbell/dumbbell pressing. Use only machine chest press or incline push-up variations at light loads (RPE ≤6).' : profile.push_ups < 15 ? 'DEVELOPING: Use moderate loads on pressing movements (50-65% 1RM, RPE 6-7). Prioritize push-up progressions.' : profile.push_ups < 30 ? 'ADEQUATE: Standard compound pressing at 65-75% 1RM is appropriate.' : 'STRONG: Full pressing range at 75-85% 1RM including heavy barbell compounds.'}` : ''}
+${profile.pull_ups !== undefined && profile.pull_ups !== null ? `- Pull-ups: ${profile.pull_ups} reps → ${profile.pull_ups < 1 ? 'WEAKNESS: AVOID pull-ups entirely. Use lat pulldown (light), seated cable row, and band-assisted row alternatives only.' : profile.pull_ups < 5 ? 'DEVELOPING: Use lat pulldown, banded pull-ups, and horizontal row variations. Avoid weighted pull-ups.' : profile.pull_ups < 10 ? 'ADEQUATE: Standard pull-up and row variations at moderate load are appropriate.' : 'STRONG: Weighted pull-ups and heavy row variations are appropriate.'}` : ''}
+${profile.squat_depth ? `- Squat depth: ${profile.squat_depth} → ${profile.squat_depth === 'below_parallel' || profile.squat_depth === 'full' ? 'Full ROM squats acceptable.' : 'LIMIT: Use box squats or parallel-depth squats only. Avoid ATG (ass-to-grass) squat depth.'}` : ''}
+${profile.plank_time ? `- Plank time: ${profile.plank_time}s → ${profile.plank_time < 30 ? 'WEAK CORE: Include 2 core exercises per session. Avoid heavy spinal loading (no deadlifts from floor, use rack pulls instead).' : profile.plank_time < 60 ? 'DEVELOPING CORE: Include 1 core exercise per session. Moderate spinal loading acceptable.' : 'STRONG CORE: Heavy compound lifts with spinal loading are appropriate.'}` : ''}
 
-**MOBILITY SCORES:**
-${profile.shoulder_mobility ? `- Shoulder: ${profile.shoulder_mobility}/10` : ''}
-${profile.hip_mobility ? `- Hip: ${profile.hip_mobility}/10` : ''}
-${profile.ankle_mobility ? `- Ankle: ${profile.ankle_mobility}/10` : ''}
+**MOBILITY SCORES — MANDATORY EXERCISE SUBSTITUTIONS:**
+${profile.shoulder_mobility ? `- Shoulder mobility: ${profile.shoulder_mobility}/10 → ${profile.shoulder_mobility < 6 ? '⛔ AVOID: Overhead press, behind-neck movements, upright rows, wide-grip barbell press. SUBSTITUTE WITH: Neutral-grip dumbbell press, landmine press, cable lateral raises.' : profile.shoulder_mobility < 8 ? 'CAUTION: Limit overhead range. Prefer dumbbell over barbell for pressing. No behind-neck movements.' : 'Full overhead pressing range is acceptable.'}` : ''}
+${profile.hip_mobility ? `- Hip mobility: ${profile.hip_mobility}/10 → ${profile.hip_mobility < 6 ? '⛔ AVOID: Deep barbell squats, full-range lunges, hip hinges to floor. SUBSTITUTE WITH: Box squats, partial-ROM Romanian deadlift, step-ups, leg press.' : profile.hip_mobility < 8 ? 'CAUTION: Limit squat depth to parallel. Use sumo stance. Avoid ATG squat depth.' : 'Full ROM hip movements including deep squats are acceptable.'}` : ''}
+${profile.ankle_mobility ? `- Ankle mobility: ${profile.ankle_mobility}/10 → ${profile.ankle_mobility < 6 ? '⛔ AVOID: Heel-down barbell squats, Olympic lifts. SUBSTITUTE WITH: Heel-elevated goblet squat, leg press, hack squat machine.' : profile.ankle_mobility < 8 ? 'CAUTION: Use slight heel elevation for squat patterns. Avoid deep squat below parallel.' : 'Full ankle-range squat patterns are acceptable.'}` : ''}
+
+**EXPERIENCE LEVEL VOLUME & INTENSITY CONSTRAINTS (MANDATORY):**
+${(() => {
+  const level = profile.experience_level || 'intermediate'
+  if (level === 'beginner') return `BEGINNER: Max 2 sets per exercise. Total session sets: 10-14. Rep range: 10-15. Load: 50-65% 1RM (RPE ≤7). Simple compound movements only (goblet squat > barbell back squat). NO Olympic lifts or plyometrics. Rest: 2+ minutes between sets.`
+  if (level === 'intermediate') return `INTERMEDIATE: 2-3 sets per exercise. Total session sets: 12-18. Rep range: 8-12 compounds / 10-15 isolation. Load: 65-75% 1RM (RPE 7-8). Mix of compounds and isolation. Progressive overload is priority.`
+  if (level === 'advanced') return `ADVANCED: 3-4 sets per exercise. Total session sets: 16-24. Rep range: 5-10 compounds / 8-15 isolation. Load: 75-85% 1RM (RPE 7.5-9). Advanced techniques (supersets, drop sets, pause reps) are appropriate.`
+  if (level === 'expert') return `EXPERT: 3-5 sets per exercise. Total session sets: 20-30. Rep range: 3-8 compounds / 6-15 isolation. Load: 80-95% 1RM (RPE 8-10). Full advanced periodization including cluster sets, rest-pause, mechanical drop sets.`
+  return `INTERMEDIATE: 2-3 sets per exercise. Total session sets: 12-18. Load: 65-75% 1RM (RPE 7-8).`
+})()}
 
 **PREFERENCES:**
 - ⚠️ MANDATORY Training Style: ${userTrainingStyle} (THIS IS THE USER'S SELECTED TRAINING MODALITY - YOU MUST FOLLOW THIS)
@@ -1092,16 +1132,26 @@ function buildWeekPrompt(
 - Preferred Workout Time: ${profile.preferred_workout_time || 'Flexible'}
 - ⚠️ MANDATORY DAYS PER WEEK: ${daysPerWeek} (YOU MUST GENERATE EXACTLY ${daysPerWeek} WORKOUTS FOR THIS WEEK)
 
-**ASSESSMENT DATA:**
-${profile.push_ups ? `- Push-ups: ${profile.push_ups}` : ''}
-${profile.pull_ups ? `- Pull-ups: ${profile.pull_ups}` : ''}
-${profile.squat_depth ? `- Squat depth: ${profile.squat_depth}` : ''}
-${profile.plank_time ? `- Plank time: ${profile.plank_time}s` : ''}
+**ASSESSMENT DATA — MANDATORY EXERCISE CONSTRAINTS (YOU MUST APPLY THESE RULES):**
+${profile.push_ups !== undefined && profile.push_ups !== null ? `- Push-ups: ${profile.push_ups} reps → ${profile.push_ups < 5 ? 'WEAKNESS: Avoid heavy barbell/dumbbell pressing. Use only machine chest press or incline push-up variations at light loads (RPE ≤6).' : profile.push_ups < 15 ? 'DEVELOPING: Use moderate loads on pressing movements (50-65% 1RM, RPE 6-7). Prioritize push-up progressions.' : profile.push_ups < 30 ? 'ADEQUATE: Standard compound pressing at 65-75% 1RM is appropriate.' : 'STRONG: Full pressing range at 75-85% 1RM including heavy barbell compounds.'}` : ''}
+${profile.pull_ups !== undefined && profile.pull_ups !== null ? `- Pull-ups: ${profile.pull_ups} reps → ${profile.pull_ups < 1 ? 'WEAKNESS: AVOID pull-ups entirely. Use lat pulldown (light), seated cable row, and band-assisted row alternatives only.' : profile.pull_ups < 5 ? 'DEVELOPING: Use lat pulldown, banded pull-ups, and horizontal row variations. Avoid weighted pull-ups.' : profile.pull_ups < 10 ? 'ADEQUATE: Standard pull-up and row variations at moderate load are appropriate.' : 'STRONG: Weighted pull-ups and heavy row variations are appropriate.'}` : ''}
+${profile.squat_depth ? `- Squat depth: ${profile.squat_depth} → ${profile.squat_depth === 'below_parallel' || profile.squat_depth === 'full' ? 'Full ROM squats acceptable.' : 'LIMIT: Use box squats or parallel-depth squats only. Avoid ATG squat depth.'}` : ''}
+${profile.plank_time ? `- Plank time: ${profile.plank_time}s → ${profile.plank_time < 30 ? 'WEAK CORE: Include 2 core exercises per session. Avoid heavy spinal loading (no deadlifts from floor, use rack pulls instead).' : profile.plank_time < 60 ? 'DEVELOPING CORE: Include 1 core exercise per session. Moderate spinal loading acceptable.' : 'STRONG CORE: Heavy compound lifts with spinal loading are appropriate.'}` : ''}
 
-**MOBILITY SCORES:**
-${profile.shoulder_mobility ? `- Shoulder: ${profile.shoulder_mobility}/10` : ''}
-${profile.hip_mobility ? `- Hip: ${profile.hip_mobility}/10` : ''}
-${profile.ankle_mobility ? `- Ankle: ${profile.ankle_mobility}/10` : ''}
+**MOBILITY SCORES — MANDATORY EXERCISE SUBSTITUTIONS:**
+${profile.shoulder_mobility ? `- Shoulder mobility: ${profile.shoulder_mobility}/10 → ${profile.shoulder_mobility < 6 ? '⛔ AVOID: Overhead press, behind-neck movements, upright rows, wide-grip barbell press. SUBSTITUTE WITH: Neutral-grip dumbbell press, landmine press, cable lateral raises.' : profile.shoulder_mobility < 8 ? 'CAUTION: Limit overhead range. Prefer dumbbell over barbell for pressing. No behind-neck movements.' : 'Full overhead pressing range is acceptable.'}` : ''}
+${profile.hip_mobility ? `- Hip mobility: ${profile.hip_mobility}/10 → ${profile.hip_mobility < 6 ? '⛔ AVOID: Deep barbell squats, full-range lunges, hip hinges to floor. SUBSTITUTE WITH: Box squats, partial-ROM Romanian deadlift, step-ups, leg press.' : profile.hip_mobility < 8 ? 'CAUTION: Limit squat depth to parallel. Use sumo stance. Avoid ATG squat depth.' : 'Full ROM hip movements including deep squats are acceptable.'}` : ''}
+${profile.ankle_mobility ? `- Ankle mobility: ${profile.ankle_mobility}/10 → ${profile.ankle_mobility < 6 ? '⛔ AVOID: Heel-down barbell squats, Olympic lifts. SUBSTITUTE WITH: Heel-elevated goblet squat, leg press, hack squat machine.' : profile.ankle_mobility < 8 ? 'CAUTION: Use slight heel elevation for squat patterns. Avoid deep squat below parallel.' : 'Full ankle-range squat patterns are acceptable.'}` : ''}
+
+**EXPERIENCE LEVEL VOLUME & INTENSITY CONSTRAINTS (MANDATORY):**
+${(() => {
+  const level = profile.experience_level || 'intermediate'
+  if (level === 'beginner') return `BEGINNER: Max 2 sets per exercise. Total session sets: 10-14. Rep range: 10-15. Load: 50-65% 1RM (RPE ≤7). Simple compound movements only (goblet squat > barbell back squat). NO Olympic lifts or plyometrics. Rest: 2+ minutes between sets.`
+  if (level === 'intermediate') return `INTERMEDIATE: 2-3 sets per exercise. Total session sets: 12-18. Rep range: 8-12 compounds / 10-15 isolation. Load: 65-75% 1RM (RPE 7-8). Mix of compounds and isolation. Progressive overload is priority.`
+  if (level === 'advanced') return `ADVANCED: 3-4 sets per exercise. Total session sets: 16-24. Rep range: 5-10 compounds / 8-15 isolation. Load: 75-85% 1RM (RPE 7.5-9). Advanced techniques (supersets, drop sets, pause reps) are appropriate.`
+  if (level === 'expert') return `EXPERT: 3-5 sets per exercise. Total session sets: 20-30. Rep range: 3-8 compounds / 6-15 isolation. Load: 80-95% 1RM (RPE 8-10). Full advanced periodization including cluster sets, rest-pause, mechanical drop sets.`
+  return `INTERMEDIATE: 2-3 sets per exercise. Total session sets: 12-18. Load: 65-75% 1RM (RPE 7-8).`
+})()}
 
 **PREFERENCES:**
 - ⚠️ MANDATORY Training Style: ${userTrainingStyle} (THIS IS THE USER'S SELECTED TRAINING MODALITY - YOU MUST FOLLOW THIS)
@@ -1120,7 +1170,7 @@ ${weekNumber === 4 ? '- This is the DELOAD week - reduce volume to 60-70% for re
 
 **AVAILABLE EXERCISES (${availableExercises.length} exercises - PRE-FILTERED FOR ${userTrainingStyle.toUpperCase()} MODALITY):**
 
-${availableExercises.slice(0, 50).map(ex =>
+${availableExercises.slice(0, 100).map(ex =>
   `- ID: ${ex.id} | ${ex.name} | ${ex.category} | ${ex.difficulty} | ${ex.primary_muscles?.join(', ')} | Sets: ${ex.recommended_sets_min || 2}-${ex.recommended_sets_max || 3} | Reps: ${ex.recommended_reps_min || 8}-${ex.recommended_reps_max || 12} | Rest: ${ex.recommended_rest_seconds_min || 60}-${ex.recommended_rest_seconds_max || 90}s`
 ).join('\n')}
 

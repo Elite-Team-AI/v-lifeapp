@@ -309,7 +309,7 @@ export function QuickWorkoutModal({ isOpen, onClose, onWorkoutGenerated }: Quick
                   {isGenerating ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Generating Workout...
+                      Building your workout...
                     </>
                   ) : (
                     <>
@@ -320,7 +320,9 @@ export function QuickWorkoutModal({ isOpen, onClose, onWorkoutGenerated }: Quick
                 </Button>
 
                 <p className="text-center text-[#8FD1FF]/60 text-xs mt-3">
-                  AI will create a personalized {duration}-minute {selectedOption?.name.toLowerCase()} workout based on your equipment and goals
+                  {isGenerating
+                    ? 'AI is personalizing your workout — usually takes 10–20 seconds'
+                    : `AI will create a personalized ${duration}-minute ${selectedOption?.name.toLowerCase()} workout based on your equipment and goals`}
                 </p>
               </CardContent>
             </Card>

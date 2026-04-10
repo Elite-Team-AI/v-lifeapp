@@ -2,8 +2,18 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Calendar, Dumbbell, TrendingUp, CheckCircle2, Play, Sparkles, Loader2, RefreshCw, Info, ChevronDown, ChevronUp, Clock } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -17,10 +27,12 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
   const [isLoading, setIsLoading] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatingWeek, setGeneratingWeek] = useState<number | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<{ message: string; needsEquipment?: boolean } | null>(null)
   const [showRationale, setShowRationale] = useState(false)
   const [showUpcoming, setShowUpcoming] = useState(false)
   const [wakeLock, setWakeLock] = useState<any>(null)
+  const [showRegenConfirm, setShowRegenConfirm] = useState(false)
+  const isGeneratingRef = useRef(false)
 
   useEffect(() => {
     if (user?.id) {
@@ -69,13 +81,16 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
       }
     } catch (err: any) {
       console.error('Error fetching plan:', err)
-      setError(err.message || 'Failed to load workout plan')
+      setError({ message: err.message || 'Failed to load workout plan' })
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleGeneratePlan = async () => {
+    if (isGeneratingRef.current) return
+    isGeneratingRef.current = true
+
     let wakeLockInstance: any = null
 
     try {
@@ -104,10 +119,8 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
       const allWeeks: any[] = []
       let planMetadata: any = null
 
-      // Generate each week sequentially
-      for (let weekNumber = 1; weekNumber <= 4; weekNumber++) {
-        setGeneratingWeek(weekNumber)
-
+      // Helper: generate a single week with up to 2 retries
+      const generateWeekWithRetry = async (weekNumber: number, retryCount = 0): Promise<any> => {
         const requestBody: any = {
           userId: user?.id,
           weekNumber
@@ -132,6 +145,7 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
         if (!response.ok) {
           let errorMessage = `Failed to generate week ${weekNumber}`
           let needsEquipment = false
+          let isRetryable = true
           try {
             const data = await response.json()
             needsEquipment = data.needsEquipment || false
@@ -142,9 +156,22 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
             } else {
               errorMessage = data.error || data.message || errorMessage
             }
+
+            // Don't retry equipment/profile errors — user needs to fix their settings
+            if (needsEquipment || response.status === 400) {
+              isRetryable = false
+            }
           } catch {
-            // If JSON parsing fails, use status text
-            errorMessage = response.statusText || errorMessage
+            // If JSON parsing fails, use status text (could be a gateway timeout)
+            errorMessage = response.status === 504
+              ? 'The request timed out. Please try again.'
+              : (response.statusText || errorMessage)
+          }
+
+          // Retry transient errors (AI failures, timeouts, 5xx)
+          if (isRetryable && retryCount < 2) {
+            console.warn(`Week ${weekNumber} failed (attempt ${retryCount + 1}), retrying...`, errorMessage)
+            return generateWeekWithRetry(weekNumber, retryCount + 1)
           }
 
           const error: any = new Error(errorMessage)
@@ -152,7 +179,14 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
           throw error
         }
 
-        const data = await response.json()
+        return response.json()
+      }
+
+      // Generate each week sequentially
+      for (let weekNumber = 1; weekNumber <= 4; weekNumber++) {
+        setGeneratingWeek(weekNumber)
+
+        const data = await generateWeekWithRetry(weekNumber)
 
         // Store week data
         if (data.weekData) {
@@ -188,27 +222,30 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
         throw new Error(errorData.message || errorData.error || 'Failed to save. Please try again.')
       }
 
-      // Refresh the plan
-      await fetchCurrentPlan()
+      // Refresh the plan — wrap separately so save errors vs load errors are distinct
+      try {
+        await fetchCurrentPlan()
+      } catch (loadErr: any) {
+        console.error('Plan saved but failed to load it:', loadErr)
+        // Plan was saved successfully — just refresh the page to show it
+        setError({ message: 'Plan created! Please refresh the page to view it.' })
+      }
     } catch (err: any) {
       console.error('Error generating plan:', err)
-      // Use the error message as-is if it exists, otherwise use a generic message
-      const errorMessage = err.message || 'Failed to generate. Please try again.'
-      setError(errorMessage)
-      // Store needsEquipment flag for rendering
-      if (err.needsEquipment) {
-        setError(`${err.message}|NEEDS_EQUIPMENT`)
-      }
+      setError({
+        message: err.message || 'Failed to generate. Please try again.',
+        needsEquipment: !!err.needsEquipment
+      })
     } finally {
       setIsGenerating(false)
       setGeneratingWeek(null)
+      isGeneratingRef.current = false
 
       // Release wake lock when generation completes
       if (wakeLockInstance) {
         try {
           await wakeLockInstance.release()
           setWakeLock(null)
-          console.log('Wake Lock released - screen can now sleep')
         } catch (releaseError) {
           console.warn('Failed to release wake lock:', releaseError)
         }
@@ -216,15 +253,12 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
     }
   }
 
-  const handleRegeneratePlan = async () => {
-    const confirmed = window.confirm(
-      'Regenerating your plan will replace your current plan and reset all progress. Are you sure you want to continue?'
-    )
+  const handleRegeneratePlan = () => {
+    setShowRegenConfirm(true)
+  }
 
-    if (!confirmed) {
-      return
-    }
-
+  const confirmRegenerate = async () => {
+    setShowRegenConfirm(false)
     await handleGeneratePlan()
   }
 
@@ -269,9 +303,9 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
 
         {error && (
           <div className="mb-4 p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
-            {error.includes('|NEEDS_EQUIPMENT') ? (
+            {error.needsEquipment ? (
               <>
-                <p className="text-red-200 text-sm mb-3">{error.split('|')[0]}</p>
+                <p className="text-red-200 text-sm mb-3">{error.message}</p>
                 <a
                   href="/settings"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-[#8FD1FF]/20 hover:bg-[#8FD1FF]/30 text-[#8FD1FF] rounded-lg text-sm font-medium transition-all duration-200"
@@ -283,7 +317,7 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
                 </a>
               </>
             ) : (
-              <p className="text-red-200 text-sm">{error}</p>
+              <p className="text-red-200 text-sm">{error.message}</p>
             )}
           </div>
         )}
@@ -380,9 +414,9 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
         {/* Error Display */}
         {error && (
           <div className="mb-4 p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
-            {error.includes('|NEEDS_EQUIPMENT') ? (
+            {error.needsEquipment ? (
               <>
-                <p className="text-red-200 text-sm mb-3">{error.split('|')[0]}</p>
+                <p className="text-red-200 text-sm mb-3">{error.message}</p>
                 <a
                   href="/settings"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-[#8FD1FF]/20 hover:bg-[#8FD1FF]/30 text-[#8FD1FF] rounded-lg text-sm font-medium transition-all duration-200"
@@ -394,7 +428,7 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
                 </a>
               </>
             ) : (
-              <p className="text-red-200 text-sm">{error}</p>
+              <p className="text-red-200 text-sm">{error.message}</p>
             )}
           </div>
         )}
@@ -757,6 +791,29 @@ export function PersonalizedWorkoutPlan({ onStartWorkout }: PersonalizedWorkoutP
           </div>
         </Card>
       )}
+
+      {/* Regenerate Confirmation Dialog */}
+      <AlertDialog open={showRegenConfirm} onOpenChange={setShowRegenConfirm}>
+        <AlertDialogContent className="bg-neutral-900 border-white/10">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Regenerate Your Plan?</AlertDialogTitle>
+            <AlertDialogDescription className="text-neutral-400">
+              This will replace your current plan and reset all progress. A brand-new 4-week plan will be generated based on your current fitness profile.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-neutral-800 text-white border-white/10 hover:bg-neutral-700">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmRegenerate}
+              className="bg-yellow-400 text-black hover:bg-yellow-300 font-semibold"
+            >
+              Yes, Regenerate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

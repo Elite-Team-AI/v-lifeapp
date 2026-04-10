@@ -92,6 +92,7 @@ export const BottomNav = memo(function BottomNav() {
         <Link
           href="/vbot"
           prefetch={true}
+          aria-label="Open AI Coach"
           className="absolute left-1/2 -translate-x-1/2 -top-4"
         >
           <motion.div
@@ -106,7 +107,7 @@ export const BottomNav = memo(function BottomNav() {
             animate={isVBotActive ? { scale: [1, 1.05, 1] } : {}}
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
-            <Bot className="h-7 w-7 text-black" strokeWidth={2.5} />
+            <Bot className="h-7 w-7 text-black" strokeWidth={2.5} aria-hidden="true" />
           </motion.div>
         </Link>
 

@@ -2,6 +2,9 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { createApiLogger } from '@/lib/utils/logger'
 
+// Allow up to 60s for database writes after AI generation completes
+export const maxDuration = 60
+
 /**
  * Save complete 4-week workout plan to database
  *
@@ -131,24 +134,25 @@ export async function POST(request: NextRequest) {
       const invalidIds = Array.from(allExerciseIds).filter(id => !validIds.has(id))
 
       if (invalidIds.length > 0) {
-        log.error("Invalid exercise IDs detected in plan", new Error("Invalid exercise IDs"), undefined, {
+        // Log the problem but don't fail — filter invalid IDs out so the plan still saves
+        // This handles AI hallucinating exercise UUIDs that don't exist in the database
+        log.warn("Invalid exercise IDs detected — filtering them out and continuing", undefined, {
           userId,
           invalidIds,
           invalidCount: invalidIds.length,
-          allExerciseIds: Array.from(allExerciseIds),
-          validIds: Array.from(validIds)
+          validCount: validIds.size
         })
-        return NextResponse.json(
-          {
-            error: 'Failed to save workout plan',
-            message: 'Failed to save. Please try again.',
-            // Include technical details only in development
-            ...(process.env.NODE_ENV === 'development' && {
-              details: `Invalid exercise IDs: ${invalidIds.join(', ')}`
-            })
-          },
-          { status: 500 }
-        )
+
+        // Remove invalid exercise IDs from each workout so inserts don't fail
+        weeks.forEach((week: any) => {
+          week.workouts?.forEach((workout: any) => {
+            if (Array.isArray(workout.exercises)) {
+              workout.exercises = workout.exercises.filter((ex: any) =>
+                ex.exerciseId && validIds.has(ex.exerciseId)
+              )
+            }
+          })
+        })
       }
     }
 

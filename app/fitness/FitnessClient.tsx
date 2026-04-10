@@ -142,12 +142,22 @@ const COMMON_EQUIPMENT = [
 ]
 
 // Helper function to format weight with correct units (outside component for global access)
+// Input: weightKg — weight in kilograms
 function formatWeight(weightKg: number, useMetric: boolean) {
   if (useMetric) {
     return `${weightKg}kg`
   } else {
     const weightLbs = Math.round(weightKg * 2.20462)
     return `${weightLbs}lbs`
+  }
+}
+
+// Helper for weights already stored in lbs (e.g. workout log set data)
+function formatWeightFromLbs(weightLbs: number, useMetric: boolean) {
+  if (useMetric) {
+    return `${(weightLbs / 2.20462).toFixed(1)}kg`
+  } else {
+    return `${Math.round(weightLbs)}lbs`
   }
 }
 
@@ -277,6 +287,10 @@ export function FitnessClient() {
           <WorkoutPlanGeneratorModal
             isOpen={showPlanGenerator}
             onClose={() => {
+              setShowPlanGenerator(false)
+              handleRefreshPlan()
+            }}
+            onSuccess={() => {
               setShowPlanGenerator(false)
               handleRefreshPlan()
             }}
@@ -446,11 +460,14 @@ function WorkoutsTab({
 function AnalyticsTab({ useMetric }: { useMetric: boolean }) {
   const { user } = useAuth()
   const [workoutLogs, setWorkoutLogs] = useState<any[]>([])
+  const [totalWorkoutCount, setTotalWorkoutCount] = useState<number>(0)
   const [personalRecords, setPersonalRecords] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null)
   const [workoutDetails, setWorkoutDetails] = useState<any>(null)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
+  const [detailsError, setDetailsError] = useState<string | null>(null)
 
   useEffect(() => {
     if (user?.id) {
@@ -461,6 +478,7 @@ function AnalyticsTab({ useMetric }: { useMetric: boolean }) {
   const fetchAnalyticsData = async () => {
     try {
       setIsLoading(true)
+      setLoadError(null)
 
       // Fetch workout logs and PRs in parallel
       const [logsRes, prsRes] = await Promise.all([
@@ -468,13 +486,18 @@ function AnalyticsTab({ useMetric }: { useMetric: boolean }) {
         fetch(`/api/workouts/personal-records?userId=${user?.id}&limit=10`)
       ])
 
+      if (!logsRes.ok || !prsRes.ok) {
+        throw new Error('Failed to load analytics data')
+      }
+
       const logsData = await logsRes.json()
       const prsData = await prsRes.json()
 
       setWorkoutLogs(logsData.logs || [])
+      setTotalWorkoutCount(logsData.totalCount ?? (logsData.logs?.length || 0))
       setPersonalRecords(prsData.records || [])
     } catch (error) {
-      console.error('Error fetching analytics:', error)
+      setLoadError('Failed to load analytics. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -483,16 +506,17 @@ function AnalyticsTab({ useMetric }: { useMetric: boolean }) {
   const fetchWorkoutDetails = async (logId: string) => {
     try {
       setIsLoadingDetails(true)
+      setDetailsError(null)
       const res = await fetch(`/api/workouts/logs/${logId}`)
       const data = await res.json()
 
       if (data.success) {
         setWorkoutDetails(data.workoutLog)
       } else {
-        console.error('Failed to fetch workout details:', data.error)
+        setDetailsError(data.error || 'Failed to load workout details')
       }
     } catch (error) {
-      console.error('Error fetching workout details:', error)
+      setDetailsError('Failed to load workout details. Please try again.')
     } finally {
       setIsLoadingDetails(false)
     }
@@ -506,6 +530,7 @@ function AnalyticsTab({ useMetric }: { useMetric: boolean }) {
   const closeWorkoutDetails = () => {
     setSelectedWorkoutId(null)
     setWorkoutDetails(null)
+    setDetailsError(null)
   }
 
   return (
@@ -515,6 +540,19 @@ function AnalyticsTab({ useMetric }: { useMetric: boolean }) {
       exit={{ opacity: 0, y: -20 }}
       className="space-y-4"
     >
+      {/* Error Banner */}
+      {loadError && (
+        <div className="flex items-center justify-between p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+          <p className="text-sm text-red-400">{loadError}</p>
+          <button
+            onClick={fetchAnalyticsData}
+            className="ml-4 px-3 py-1.5 text-xs font-medium bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Overview Stats */}
       <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 border-yellow-500/20">
         <CardContent className="p-6">
@@ -531,7 +569,7 @@ function AnalyticsTab({ useMetric }: { useMetric: boolean }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-neutral-800/50 rounded-lg p-4">
               <div className="text-2xl font-bold text-yellow-400">
-                {workoutLogs.length}
+                {totalWorkoutCount}
               </div>
               <div className="text-xs text-neutral-400 mt-1">Workouts Completed</div>
             </div>
@@ -671,28 +709,6 @@ function AnalyticsTab({ useMetric }: { useMetric: boolean }) {
         </CardContent>
       </Card>
 
-      {/* Volume Trends Placeholder */}
-      <Card className="bg-neutral-900/50 border-white/5">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-lg bg-blue-500/20">
-              <TrendingUp className="w-5 h-5 text-blue-400" />
-            </div>
-            <div>
-              <h3 className="text-base font-semibold text-white">Volume Trends</h3>
-              <p className="text-xs text-neutral-400">Training volume over time</p>
-            </div>
-          </div>
-
-          <div className="text-center py-8">
-            <TrendingUp className="w-12 h-12 text-neutral-600 mx-auto mb-3" />
-            <p className="text-sm text-neutral-400">Volume charts coming soon</p>
-            <p className="text-xs text-neutral-500 mt-1">
-              Track your weekly training volume and progression
-            </p>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Workout Details Modal */}
       <AlertDialog open={selectedWorkoutId !== null} onOpenChange={closeWorkoutDetails}>
@@ -717,6 +733,16 @@ function AnalyticsTab({ useMetric }: { useMetric: boolean }) {
               <Skeleton className="h-20 w-full" />
               <Skeleton className="h-32 w-full" />
               <Skeleton className="h-32 w-full" />
+            </div>
+          ) : detailsError ? (
+            <div className="py-8 text-center">
+              <p className="text-sm text-red-400 mb-4">{detailsError}</p>
+              <button
+                onClick={() => selectedWorkoutId && fetchWorkoutDetails(selectedWorkoutId)}
+                className="px-4 py-2 text-sm bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition-colors"
+              >
+                Retry
+              </button>
             </div>
           ) : workoutDetails ? (
             <div className="space-y-4 py-4">
@@ -825,7 +851,7 @@ function AnalyticsTab({ useMetric }: { useMetric: boolean }) {
                             <div className="flex items-center gap-3 text-xs">
                               {set.weight && (
                                 <span className="text-white font-medium">
-                                  {set.weight} lbs
+                                  {formatWeightFromLbs(set.weight, useMetric)}
                                 </span>
                               )}
                               {set.reps && (
@@ -855,7 +881,7 @@ function AnalyticsTab({ useMetric }: { useMetric: boolean }) {
                       <div className="text-center">
                         <p className="text-xs text-neutral-500">Max Weight</p>
                         <p className="text-sm font-semibold text-white">
-                          {exercise.maxWeightLbs ? `${exercise.maxWeightLbs} lbs` : 'N/A'}
+                          {exercise.maxWeightLbs ? formatWeightFromLbs(exercise.maxWeightLbs, useMetric) : 'N/A'}
                         </p>
                       </div>
                       <div className="text-center">
@@ -908,6 +934,7 @@ function ProgressTab({ useMetric }: { useMetric: boolean }) {
   const [personalRecords, setPersonalRecords] = useState<any[]>([])
   const [workoutLogs, setWorkoutLogs] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     if (user?.id) {
@@ -918,12 +945,18 @@ function ProgressTab({ useMetric }: { useMetric: boolean }) {
   const fetchProgressData = async () => {
     try {
       setIsLoading(true)
+      setLoadError(null)
 
-      // Fetch PRs and recent workout logs in parallel
+      // Fetch PRs and recent workout logs (last 7 days) in parallel
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
       const [prsRes, logsRes] = await Promise.all([
         fetch(`/api/workouts/personal-records?userId=${user?.id}&limit=5`),
-        fetch(`/api/workouts/logs?userId=${user?.id}&limit=7`)
+        fetch(`/api/workouts/logs?userId=${user?.id}&limit=7&since=${encodeURIComponent(since)}`)
       ])
+
+      if (!prsRes.ok || !logsRes.ok) {
+        throw new Error('Failed to load progress data')
+      }
 
       const prsData = await prsRes.json()
       const logsData = await logsRes.json()
@@ -931,13 +964,13 @@ function ProgressTab({ useMetric }: { useMetric: boolean }) {
       setPersonalRecords(prsData.records || [])
       setWorkoutLogs(logsData.logs || [])
     } catch (error) {
-      console.error('Error fetching progress data:', error)
+      setLoadError('Failed to load progress data. Please try again.')
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Calculate weekly stats
+  // Calculate weekly stats (data is already filtered to last 7 days)
   const weeklyWorkoutsCompleted = workoutLogs.length
   const totalWeeklyVolume = workoutLogs.reduce((sum, log) => sum + (log.totalVolume || 0), 0)
   const averageRpe = workoutLogs.length > 0
@@ -951,6 +984,19 @@ function ProgressTab({ useMetric }: { useMetric: boolean }) {
       exit={{ opacity: 0, y: -20 }}
       className="space-y-4"
     >
+      {/* Error Banner */}
+      {loadError && (
+        <div className="flex items-center justify-between p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+          <p className="text-sm text-red-400">{loadError}</p>
+          <button
+            onClick={fetchProgressData}
+            className="ml-4 px-3 py-1.5 text-xs font-medium bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Weekly Stats Overview */}
       <Card className="bg-neutral-900/50 border-white/5">
         <CardContent className="p-6">
@@ -1216,6 +1262,8 @@ function FitnessProfileSection({ appData }: { appData: any }) {
         availableTimeMinutes: profile.available_time_minutes?.toString() || '45',
         selectedEquipment: parseEquipment(profile.custom_equipment),
         preferredWorkoutTime: profile.preferred_workout_time || '',
+        weight: profile.weight?.toString() || '',
+        goalWeight: profile.goal_weight?.toString() || '',
         bodyFatPercentage: profile.body_fat_percentage?.toString() || '',
         goalBodyFatPercentage: profile.goal_body_fat_percentage?.toString() || '',
         shoulderMobility: profile.shoulder_mobility?.toString() || '',
@@ -1438,8 +1486,8 @@ function FitnessProfileSection({ appData }: { appData: any }) {
         availableTimeMinutes: formData.availableTimeMinutes ? parseInt(formData.availableTimeMinutes) : undefined,
         customEquipment: formData.selectedEquipment.length > 0 ? formData.selectedEquipment.join(',') : undefined,
         preferredWorkoutTime: formData.preferredWorkoutTime || undefined,
-        weight: formData.weight ? parseFloat(formData.weight) : undefined,
-        goalWeight: formData.goalWeight ? parseFloat(formData.goalWeight) : undefined,
+        weight: formData.weight || undefined,
+        goalWeight: formData.goalWeight || undefined,
         bodyFatPercentage: formData.bodyFatPercentage ? parseFloat(formData.bodyFatPercentage) : undefined,
         goalBodyFatPercentage: formData.goalBodyFatPercentage ? parseFloat(formData.goalBodyFatPercentage) : undefined,
         shoulderMobility: formData.shoulderMobility ? parseInt(formData.shoulderMobility) : undefined,
@@ -1553,15 +1601,16 @@ function FitnessProfileSection({ appData }: { appData: any }) {
             {!isEditing && (
               <button
                 className="p-1 rounded-lg hover:bg-neutral-800 transition-colors"
+                aria-label={isExpanded ? "Collapse workout details" : "Expand workout details"}
                 onClick={(e) => {
                   e.stopPropagation()
                   setIsExpanded(!isExpanded)
                 }}
               >
                 {isExpanded ? (
-                  <ChevronUp className="w-5 h-5 text-neutral-400" />
+                  <ChevronUp className="w-5 h-5 text-neutral-400" aria-hidden="true" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 text-neutral-400" />
+                  <ChevronDown className="w-5 h-5 text-neutral-400" aria-hidden="true" />
                 )}
               </button>
             )}

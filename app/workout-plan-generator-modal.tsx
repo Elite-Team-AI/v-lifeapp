@@ -95,35 +95,20 @@ export function WorkoutPlanGeneratorModal({ isOpen, onClose, onSuccess }: Workou
     setGenerationProgress(0)
     setCurrentWeek(1)
 
-    console.log('[WorkoutPlanGenerator] Starting plan generation...')
+    const startTime = Date.now()
 
-    // Track previous week to detect week changes
-    let previousWeek = 1
-
-    // Simulate progress updates (each week fills 0-100% in ~23 seconds)
-    const progressInterval = setInterval(() => {
-      setCurrentWeek((currentWeekValue) => {
-        // Reset progress when week changes
-        if (currentWeekValue !== previousWeek) {
-          previousWeek = currentWeekValue
-          setGenerationProgress(0)
-        }
-        return currentWeekValue
-      })
-
-      setGenerationProgress((prev) => {
-        const newProgress = prev + 4.35 // ~23 seconds per week = 4.35% per 250ms
-        if (newProgress >= 100) {
-          return 100
-        }
-        return newProgress
-      })
-    }, 250)
-
-    // Update week indicator every ~23 seconds
+    // Advance week indicator every ~12 seconds (realistic estimate: ~10-15s per week)
     const weekInterval = setInterval(() => {
       setCurrentWeek((prev) => (prev < 4 ? prev + 1 : 4))
-    }, 23000)
+    }, 12000)
+
+    // Update elapsed progress display every second
+    const progressInterval = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000
+      // Estimate ~48 seconds total (4 weeks × 12s). Cap at 95% so it never falsely reaches 100.
+      const estimated = Math.min(95, (elapsed / 48) * 100)
+      setGenerationProgress(estimated)
+    }, 1000)
 
     try {
       const preferences: WorkoutPlanPreferences = {
@@ -136,37 +121,28 @@ export function WorkoutPlanGeneratorModal({ isOpen, onClose, onSuccess }: Workou
         focusAreas,
       }
 
-      console.log('[WorkoutPlanGenerator] Calling generateWorkoutPlan with preferences:', preferences)
       const result = await generateWorkoutPlan(preferences)
-      console.log('[WorkoutPlanGenerator] Result received:', result)
 
       if (!result.success) {
         const errorMsg = result.error || "Failed to generate workout plan"
-        console.error('[WorkoutPlanGenerator] Plan generation failed:', errorMsg)
         setError(errorMsg)
         clearInterval(progressInterval)
         clearInterval(weekInterval)
         return
       }
 
-      console.log('[WorkoutPlanGenerator] Plan generated successfully! Plan ID:', result.planId)
-
-      // Complete progress bar
       clearInterval(progressInterval)
       clearInterval(weekInterval)
       setGenerationProgress(100)
       setCurrentWeek(4)
 
-      // Reset form
       resetForm()
       onSuccess(result.planId!)
       onClose()
     } catch (err) {
-      console.error('[WorkoutPlanGenerator] Exception during plan generation:', err)
       clearInterval(progressInterval)
       clearInterval(weekInterval)
       const errorMsg = err instanceof Error ? err.message : "An unexpected error occurred"
-      console.error('[WorkoutPlanGenerator] Error message:', errorMsg)
       setError(errorMsg)
     } finally {
       setIsLoading(false)
@@ -582,7 +558,7 @@ export function WorkoutPlanGeneratorModal({ isOpen, onClose, onSuccess }: Workou
                       >
                         <p className="font-medium mb-1">Generation Failed</p>
                         <p className="text-xs text-red-300/80">{error}</p>
-                        <p className="text-xs text-red-300/60 mt-2">Check browser console for details</p>
+                        <p className="text-xs text-red-300/60 mt-2">Please try again or adjust your preferences.</p>
                       </motion.div>
                     )}
                     <ButtonGlow

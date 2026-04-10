@@ -2,6 +2,8 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { createApiLogger } from '@/lib/utils/logger'
 
+export const maxDuration = 30
+
 /**
  * Get the user's current active workout plan
  *

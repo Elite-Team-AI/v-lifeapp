@@ -14,10 +14,12 @@ import {
   ChevronRight,
   CheckCircle2,
   Trophy,
-  ChevronLeft
+  ChevronLeft,
+  SkipForward
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { toast } from "@/hooks/use-toast"
+import { invalidateFitnessCache } from "@/hooks/use-fitness-data"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,6 +52,7 @@ interface ExerciseLog {
 
 export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSessionProps) {
   const { user } = useAuth()
+  const [useMetric, setUseMetric] = useState(false)
   const [workoutLogId, setWorkoutLogId] = useState<string | null>(null)
   const [isStarting, setIsStarting] = useState(false)
   const [isCompleting, setIsCompleting] = useState(false)
@@ -60,9 +63,13 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
   const [showCompletionSummary, setShowCompletionSummary] = useState(false)
   const [completionSummary, setCompletionSummary] = useState<any>(null)
   const hasStartedSessionRef = useRef(false)
+  const isCompletingRef = useRef(false)
   const [showExitConfirmation, setShowExitConfirmation] = useState(false)
   const [showSkipExerciseConfirmation, setShowSkipExerciseConfirmation] = useState(false)
   const [currentGroupIndex, setCurrentGroupIndex] = useState(0)
+  // Rest timer
+  const [restSecondsLeft, setRestSecondsLeft] = useState<number | null>(null)
+  const restIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const exercises = workout.plan_exercises || []
 
@@ -94,23 +101,10 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
   const isSuperset = currentGroup.length > 1
   const currentExercise = exercises[currentExerciseIndex]
 
-  // Debug logging
+  // Load metric preference
   useEffect(() => {
-    console.log('WorkoutSession Debug:', {
-      workout,
-      hasWorkout: !!workout,
-      hasPlanExercises: !!workout.plan_exercises,
-      planExercisesLength: workout.plan_exercises?.length || 0,
-      exercises,
-      exercisesLength: exercises.length,
-      currentExerciseIndex,
-      currentExercise: currentExercise ? {
-        id: currentExercise.id,
-        exercise_id: currentExercise.exercise_id,
-        exercise_name: currentExercise.exercise?.name
-      } : null
-    })
-  }, [workout, exercises, currentExerciseIndex, currentExercise])
+    setUseMetric(localStorage.getItem('useMetric') === 'true')
+  }, [])
 
   // Timer effect
   useEffect(() => {
@@ -125,6 +119,44 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
     }
   }, [isTimerRunning])
 
+  // Rest timer countdown effect
+  useEffect(() => {
+    if (restSecondsLeft === null) return
+    if (restSecondsLeft <= 0) {
+      setRestSecondsLeft(null)
+      return
+    }
+    restIntervalRef.current = setInterval(() => {
+      setRestSecondsLeft(prev => (prev !== null ? prev - 1 : null))
+    }, 1000)
+    return () => {
+      if (restIntervalRef.current) clearInterval(restIntervalRef.current)
+    }
+  }, [restSecondsLeft])
+
+  // Cleanup rest timer on unmount
+  useEffect(() => {
+    return () => {
+      if (restIntervalRef.current) clearInterval(restIntervalRef.current)
+    }
+  }, [])
+
+  const startRestTimer = (seconds: number) => {
+    if (restIntervalRef.current) clearInterval(restIntervalRef.current)
+    setRestSecondsLeft(seconds)
+  }
+
+  const skipRestTimer = () => {
+    if (restIntervalRef.current) clearInterval(restIntervalRef.current)
+    setRestSecondsLeft(null)
+  }
+
+  const formatRestTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60)
+    const s = seconds % 60
+    return m > 0 ? `${m}:${s.toString().padStart(2, '0')}` : `${s}s`
+  }
+
   // Auto-start workout when user is available
   useEffect(() => {
     if (user?.id && !hasStartedSessionRef.current && !workoutLogId) {
@@ -138,13 +170,6 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
       hasStartedSessionRef.current = true
 
       const isQuickWorkout = workout.id?.startsWith('quick-') || workout.is_quick_workout
-
-      console.log('Starting workout with:', {
-        userId: user?.id,
-        workoutId: workout.id,
-        isQuickWorkout,
-        workout: workout
-      })
 
       const requestBody: any = {
         userId: user?.id,
@@ -164,14 +189,7 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
 
       const data = await response.json()
 
-      console.log('Workout start response:', {
-        status: response.status,
-        ok: response.ok,
-        data
-      })
-
       if (!response.ok) {
-        console.error('Failed to start workout:', data)
         toast({
           title: "Failed to Start Workout",
           description: `${data.error || 'Unknown error'}${data.details ? '\n' + JSON.stringify(data.details) : ''}`,
@@ -278,7 +296,7 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
     if (!set || set.completed) return
 
     try {
-      // Mark set as completed
+      // Optimistically mark set as completed
       const updatedSets = [...exerciseLog.sets]
       updatedSets[setIndex] = { ...set, completed: true }
 
@@ -287,18 +305,17 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
       newLogs.set(exercise.exercise_id, updatedLog)
       setExerciseLogs(newLogs)
 
+      // Start rest timer immediately after completing a set (not just the last set)
+      const restSeconds = exercise.rest_seconds
+      if (restSeconds && restSeconds > 0) {
+        startRestTimer(restSeconds)
+      }
+
       // Check if all sets are completed
       const allSetsCompleted = updatedSets.every(s => s.completed)
 
       // If all sets completed, log to backend
       if (allSetsCompleted) {
-        console.log('Logging completed exercise:', {
-          userId: user?.id,
-          workoutLogId,
-          exerciseId: exercise.exercise_id,
-          sets: updatedSets.length
-        })
-
         const response = await fetch('/api/workouts/logs/exercise', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -311,7 +328,6 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
             sets: updatedSets.map(s => ({
               reps: s.reps,
               weight: s.weight,
-              // Only include RPE if provided (already validated to be 1-10 or undefined)
               ...(s.rpe !== undefined ? { rpe: s.rpe } : {})
             }))
           })
@@ -319,19 +335,16 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
 
         const data = await response.json()
 
-        console.log('Exercise log response:', {
-          status: response.status,
-          ok: response.ok,
-          data
-        })
-
         if (!response.ok) {
-          console.error('Failed to log exercise:', data)
-          // Show specific error details
+          // Rollback optimistic state on failure
+          const rolledBackLogs = new Map(exerciseLogs)
+          rolledBackLogs.set(exercise.exercise_id, exerciseLog)
+          setExerciseLogs(rolledBackLogs)
+          skipRestTimer()
+
           let errorMessage = 'Failed to save exercise'
           if (data.details) {
             if (Array.isArray(data.details)) {
-              // Validation errors
               errorMessage += ':\n' + data.details.map((d: any) => `${d.path}: ${d.message}`).join('\n')
             } else if (typeof data.details === 'string') {
               errorMessage += ': ' + data.details
@@ -344,11 +357,14 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
             description: errorMessage,
             variant: "destructive"
           })
-        } else {
-          console.log('Exercise logged successfully!')
         }
       }
     } catch (error) {
+      // Rollback optimistic state on network error
+      const rolledBackLogs = new Map(exerciseLogs)
+      rolledBackLogs.set(exercise.exercise_id, exerciseLog)
+      setExerciseLogs(rolledBackLogs)
+      skipRestTimer()
       console.error('Error logging set:', error)
       toast({
         title: "Error Logging Set",
@@ -463,14 +479,13 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
       return
     }
 
+    if (isCompletingRef.current) return
+    isCompletingRef.current = true
+
     try {
       setIsCompleting(true)
       setIsTimerRunning(false)
-
-      console.log('Completing workout with:', {
-        userId: user?.id,
-        workoutLogId
-      })
+      skipRestTimer()
 
       const response = await fetch('/api/workouts/logs/complete', {
         method: 'POST',
@@ -483,14 +498,7 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
 
       const data = await response.json()
 
-      console.log('Workout complete response:', {
-        status: response.status,
-        ok: response.ok,
-        data
-      })
-
       if (!response.ok) {
-        console.error('Failed to complete workout:', data)
         toast({
           title: "Failed to Complete Workout",
           description: `${data.error || 'Unknown error'}${data.details ? '\n' + JSON.stringify(data.details) : ''}`,
@@ -503,7 +511,6 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
         setCompletionSummary(data.summary)
         setShowCompletionSummary(true)
       } else {
-        console.error('Workout completion returned success=false:', data)
         toast({
           title: "Failed to Complete Workout",
           description: "Please try again.",
@@ -519,6 +526,7 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
       })
     } finally {
       setIsCompleting(false)
+      isCompletingRef.current = false
     }
   }
 
@@ -527,6 +535,13 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
     const secs = seconds % 60
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
+
+  const formatWeightDisplay = (weightLbs: number) => {
+    if (useMetric) return `${(weightLbs / 2.20462).toFixed(1)}kg`
+    return `${Math.round(weightLbs)}lbs`
+  }
+
+  const weightUnit = useMetric ? 'kg' : 'lbs'
 
   const getProgressPercentage = () => {
     const totalGroups = exerciseGroups.length
@@ -590,7 +605,7 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
                         <Dumbbell className="w-5 h-5" />
                         Total Volume
                       </span>
-                      <span className="text-white font-bold text-xl">{completionSummary.totalVolume.toLocaleString()} lbs</span>
+                      <span className="text-white font-bold text-xl">{formatWeightDisplay(completionSummary.totalVolume)}</span>
                     </div>
                   </div>
                 )}
@@ -609,6 +624,7 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
                 className="w-full h-16 bg-gradient-to-r from-[#FADF4A] to-[#F9C74F] hover:from-[#F9C74F] hover:to-[#FADF4A] text-[#101938] rounded-2xl font-bold text-lg shadow-2xl shadow-[#FADF4A]/40 transition-all duration-300 transform active:scale-95"
                 onClick={() => {
                   setShowCompletionSummary(false)
+                  invalidateFitnessCache()
                   onComplete()
                 }}
               >
@@ -624,7 +640,7 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
   // Main workout session UI
   return (
     <div className="fixed inset-0 bg-[#101938] z-50 overflow-auto">
-      <div className="min-h-full pb-20">
+      <div className="min-h-full pb-40">
         {/* Header */}
         <div className="sticky top-0 z-10 bg-gradient-to-b from-[#101938] via-[#101938]/98 to-[#101938]/95 backdrop-blur-xl border-b border-[#8FD1FF]/20 shadow-lg shadow-[#101938]/50">
           <div className="px-4 py-5">
@@ -682,6 +698,45 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
             </div>
           </div>
         </div>
+
+        {/* Rest Timer Banner */}
+        {restSecondsLeft !== null && restSecondsLeft > 0 && (
+          <div className="sticky top-[120px] z-20 mx-4 mt-3">
+            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#1D295B] to-[#101938] border border-[#8FD1FF]/40 rounded-2xl shadow-xl shadow-[#8FD1FF]/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#8FD1FF]/20 flex items-center justify-center">
+                  <Timer className="w-5 h-5 text-[#8FD1FF]" />
+                </div>
+                <div>
+                  <p className="text-xs text-[#8FD1FF]/70 font-medium uppercase tracking-wide">Rest Timer</p>
+                  <p className="text-2xl font-bold text-[#8FD1FF] font-mono leading-none">{formatRestTime(restSecondsLeft)}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Progress ring */}
+                <div className="relative w-12 h-12">
+                  <svg className="w-12 h-12 -rotate-90" viewBox="0 0 48 48">
+                    <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(143,209,255,0.15)" strokeWidth="4" />
+                    <circle
+                      cx="24" cy="24" r="20" fill="none"
+                      stroke="#8FD1FF" strokeWidth="4" strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 20}`}
+                      strokeDashoffset={`${2 * Math.PI * 20 * (restSecondsLeft / (currentGroup[0]?.rest_seconds || restSecondsLeft))}`}
+                      className="transition-all duration-1000"
+                    />
+                  </svg>
+                </div>
+                <button
+                  onClick={skipRestTimer}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-[#8FD1FF]/10 hover:bg-[#8FD1FF]/20 border border-[#8FD1FF]/30 rounded-xl text-[#8FD1FF] text-sm font-semibold transition-all"
+                >
+                  <SkipForward className="w-4 h-4" />
+                  Skip
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Current Exercise Group (Superset or Solo) */}
         {currentGroup.length > 0 && (
@@ -815,25 +870,42 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
                               {/* Weight Input */}
                               <div>
                                 <label className="text-[#F676CD] text-xs font-semibold mb-2 block uppercase tracking-wide">Weight</label>
-                                <div className={`relative ${set.completed ? 'opacity-60' : ''}`}>
-                                  <Input
-                                    type="number"
-                                    value={set.weight}
-                                    onChange={(e) => updateSet(exercise, index, 'weight', Math.max(0, parseFloat(e.target.value) || 0))}
-                                    disabled={set.completed}
-                                    min="0"
-                                    step="2.5"
-                                    className={`h-14 text-center text-xl font-bold border-2 rounded-xl transition-all ${
-                                      set.completed
-                                        ? 'bg-[#101938]/30 border-green-500/30 text-green-300'
-                                        : 'bg-[#101938]/80 border-[#F676CD]/30 text-white hover:border-[#F676CD]/50 focus:border-[#F676CD] focus:ring-2 focus:ring-[#F676CD]/20'
-                                    }`}
-                                  />
-                                  <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold ${
-                                    set.completed ? 'text-green-400/60' : 'text-[#F676CD]/60'
-                                  }`}>
-                                    lbs
-                                  </span>
+                                <div className={set.completed ? 'opacity-60' : ''}>
+                                  {/* +/- stepper row */}
+                                  <div className="flex items-center gap-1 mb-1">
+                                    <button
+                                      type="button"
+                                      disabled={set.completed}
+                                      onClick={() => updateSet(exercise, index, 'weight', Math.max(0, (set.weight || 0) - (useMetric ? 2.5 : 5)))}
+                                      className="w-8 h-8 rounded-lg bg-[#F676CD]/15 hover:bg-[#F676CD]/30 text-[#F676CD] font-bold text-lg flex items-center justify-center transition-all disabled:opacity-30"
+                                    >−</button>
+                                    <div className="relative flex-1">
+                                      <Input
+                                        type="number"
+                                        value={set.weight}
+                                        onChange={(e) => updateSet(exercise, index, 'weight', Math.max(0, parseFloat(e.target.value) || 0))}
+                                        disabled={set.completed}
+                                        min="0"
+                                        step={useMetric ? '2.5' : '5'}
+                                        className={`h-10 text-center text-base font-bold border-2 rounded-xl transition-all pr-8 ${
+                                          set.completed
+                                            ? 'bg-[#101938]/30 border-green-500/30 text-green-300'
+                                            : 'bg-[#101938]/80 border-[#F676CD]/30 text-white hover:border-[#F676CD]/50 focus:border-[#F676CD] focus:ring-2 focus:ring-[#F676CD]/20'
+                                        }`}
+                                      />
+                                      <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold ${
+                                        set.completed ? 'text-green-400/60' : 'text-[#F676CD]/60'
+                                      }`}>
+                                        {weightUnit}
+                                      </span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      disabled={set.completed}
+                                      onClick={() => updateSet(exercise, index, 'weight', (set.weight || 0) + (useMetric ? 2.5 : 5))}
+                                      className="w-8 h-8 rounded-lg bg-[#F676CD]/15 hover:bg-[#F676CD]/30 text-[#F676CD] font-bold text-lg flex items-center justify-center transition-all disabled:opacity-30"
+                                    >+</button>
+                                  </div>
                                 </div>
                               </div>
 
@@ -889,7 +961,7 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
                                 </div>
                                 <div className="bg-green-500/10 rounded-lg p-2 text-center">
                                   <div className="text-green-400 text-xs font-medium">Weight</div>
-                                  <div className="text-green-300 font-bold">{set.weight} lbs</div>
+                                  <div className="text-green-300 font-bold">{formatWeightDisplay(set.weight)}</div>
                                 </div>
                                 <div className="bg-green-500/10 rounded-lg p-2 text-center">
                                   <div className="text-green-400 text-xs font-medium">RPE</div>
@@ -916,7 +988,7 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
 
         {/* Navigation - Fixed bottom bar */}
         {currentGroup.length > 0 && (
-          <div className="fixed bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-[#101938] via-[#101938]/98 to-[#101938]/95 backdrop-blur-xl border-t border-[#8FD1FF]/20 shadow-2xl">
+          <div className="fixed bottom-0 left-0 right-0 z-[60] bg-gradient-to-t from-[#101938] via-[#101938]/98 to-[#101938]/95 backdrop-blur-xl border-t border-[#8FD1FF]/20 shadow-2xl">
             <div className="px-4 py-4">
               <div className="flex gap-3">
                 <Button

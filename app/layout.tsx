@@ -103,8 +103,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
   viewportFit: 'cover',
 }
 
@@ -113,8 +113,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseHostname = supabaseUrl ? new URL(supabaseUrl).hostname : null
+
   return (
     <html lang="en" suppressHydrationWarning className={`${dmSans.variable} ${outfit.variable}`}>
+      <head>
+        {/* Preconnect to Supabase to reduce API call latency */}
+        {supabaseHostname && (
+          <>
+            <link rel="preconnect" href={`https://${supabaseHostname}`} />
+            <link rel="dns-prefetch" href={`https://${supabaseHostname}`} />
+          </>
+        )}
+      </head>
       <body className={`${dmSans.className} font-sans antialiased`}>
         <Providers>{children}</Providers>
       </body>
