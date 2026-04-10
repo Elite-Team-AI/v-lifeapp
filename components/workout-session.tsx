@@ -409,9 +409,8 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
 
       hasAnyCompleted = true
 
-      // Check for missing weight/RPE in completed sets
+      // Check for missing weight in completed sets (RPE is optional)
       const missingWeight: number[] = []
-      const missingRPE: number[] = []
 
       completedSets.forEach((set, index) => {
         const actualSetNumber = exerciseLog.sets.findIndex(s => s === set) + 1
@@ -420,18 +419,10 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
         if (set.weight === 0 || set.weight === undefined || set.weight === null) {
           missingWeight.push(actualSetNumber)
         }
-
-        // Check for missing RPE
-        if (set.rpe === undefined || set.rpe === null) {
-          missingRPE.push(actualSetNumber)
-        }
       })
 
       if (missingWeight.length > 0) {
         allIssues.push(`${exercise.exercise?.name}: Weight not logged for set${missingWeight.length > 1 ? 's' : ''}: ${missingWeight.join(', ')}`)
-      }
-      if (missingRPE.length > 0) {
-        allIssues.push(`${exercise.exercise?.name}: RPE not logged for set${missingRPE.length > 1 ? 's' : ''}: ${missingRPE.join(', ')}`)
       }
     }
 
