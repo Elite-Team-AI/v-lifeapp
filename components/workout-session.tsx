@@ -870,42 +870,25 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
                               {/* Weight Input */}
                               <div>
                                 <label className="text-[#F676CD] text-xs font-semibold mb-2 block uppercase tracking-wide">Weight</label>
-                                <div className={set.completed ? 'opacity-60' : ''}>
-                                  {/* +/- stepper row */}
-                                  <div className="flex items-center gap-1 mb-1">
-                                    <button
-                                      type="button"
-                                      disabled={set.completed}
-                                      onClick={() => updateSet(exercise, index, 'weight', Math.max(0, (set.weight || 0) - (useMetric ? 2.5 : 5)))}
-                                      className="w-8 h-8 rounded-lg bg-[#F676CD]/15 hover:bg-[#F676CD]/30 text-[#F676CD] font-bold text-lg flex items-center justify-center transition-all disabled:opacity-30"
-                                    >−</button>
-                                    <div className="relative flex-1">
-                                      <Input
-                                        type="number"
-                                        value={set.weight}
-                                        onChange={(e) => updateSet(exercise, index, 'weight', Math.max(0, parseFloat(e.target.value) || 0))}
-                                        disabled={set.completed}
-                                        min="0"
-                                        step={useMetric ? '2.5' : '5'}
-                                        className={`h-10 text-center text-base font-bold border-2 rounded-xl transition-all pr-8 ${
-                                          set.completed
-                                            ? 'bg-[#101938]/30 border-green-500/30 text-green-300'
-                                            : 'bg-[#101938]/80 border-[#F676CD]/30 text-white hover:border-[#F676CD]/50 focus:border-[#F676CD] focus:ring-2 focus:ring-[#F676CD]/20'
-                                        }`}
-                                      />
-                                      <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold ${
-                                        set.completed ? 'text-green-400/60' : 'text-[#F676CD]/60'
-                                      }`}>
-                                        {weightUnit}
-                                      </span>
-                                    </div>
-                                    <button
-                                      type="button"
-                                      disabled={set.completed}
-                                      onClick={() => updateSet(exercise, index, 'weight', (set.weight || 0) + (useMetric ? 2.5 : 5))}
-                                      className="w-8 h-8 rounded-lg bg-[#F676CD]/15 hover:bg-[#F676CD]/30 text-[#F676CD] font-bold text-lg flex items-center justify-center transition-all disabled:opacity-30"
-                                    >+</button>
-                                  </div>
+                                <div className={`relative ${set.completed ? 'opacity-60' : ''}`}>
+                                  <Input
+                                    type="number"
+                                    value={set.weight}
+                                    onChange={(e) => updateSet(exercise, index, 'weight', Math.max(0, parseFloat(e.target.value) || 0))}
+                                    disabled={set.completed}
+                                    min="0"
+                                    step={useMetric ? '2.5' : '5'}
+                                    className={`h-10 text-center text-base font-bold border-2 rounded-xl transition-all pr-8 ${
+                                      set.completed
+                                        ? 'bg-[#101938]/30 border-green-500/30 text-green-300'
+                                        : 'bg-[#101938]/80 border-[#F676CD]/30 text-white hover:border-[#F676CD]/50 focus:border-[#F676CD] focus:ring-2 focus:ring-[#F676CD]/20'
+                                    }`}
+                                  />
+                                  <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold ${
+                                    set.completed ? 'text-green-400/60' : 'text-[#F676CD]/60'
+                                  }`}>
+                                    {weightUnit}
+                                  </span>
                                 </div>
                               </div>
 
