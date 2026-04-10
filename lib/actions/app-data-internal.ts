@@ -32,17 +32,6 @@ export async function getProfileInternal(
 ): Promise<Profile | null> {
   console.log("[getProfileInternal] Fetching profile for userId:", userId)
 
-  // First, check if profile exists at all (count query doesn't require RLS)
-  const { count, error: countError } = await supabase
-    .from("profiles")
-    .select("*", { count: "exact", head: true })
-    .eq("id", userId)
-
-  console.log("[getProfileInternal] Profile count check:", {
-    count,
-    countError: countError?.message,
-  })
-
   const { data: profile, error } = await supabase
     .from("profiles")
     .select("*")
@@ -325,38 +314,66 @@ export async function getStreakStatsInternal(
   timezone: string,
   supabase: SupabaseClient
 ): Promise<StreakStats> {
+  const today = getTodayInTimezone(timezone)
+
+  // Start of current week (7 days ago) for workout count
+  const sevenDaysAgo = new Date(today)
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6)
+  const weekStart = sevenDaysAgo.toISOString().split("T")[0]
+
   const defaultStats: StreakStats = {
     overallStreak: 0,
     longestStreak: 0,
     totalDaysActive: 0,
     habitStreaks: [],
     weeklyActivity: [],
+    workoutsThisWeek: 0,
   }
 
-  const today = getTodayInTimezone(timezone)
-
   try {
-    // Get all user's habits with their streaks
-    const { data: habits, error: habitsError } = await supabase
-      .from("habits")
-      .select("id, name, category, current_streak, best_streak, created_at")
-      .eq("user_id", userId)
-      .order("current_streak", { ascending: false })
+    // Fetch habits, habit logs, and workout count all in parallel
+    const [habitsResult, logsResult, workoutsResult] = await Promise.all([
+      supabase
+        .from("habits")
+        .select("id, name, category, current_streak, best_streak, created_at")
+        .eq("user_id", userId)
+        .order("current_streak", { ascending: false }),
+      supabase
+        .from("habit_logs")
+        .select("habit_id, logged_at, completed")
+        .eq("user_id", userId)
+        .order("logged_at", { ascending: false }),
+      supabase
+        .from("workouts")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("completed", true)
+        .gte("completed_at", `${weekStart}T00:00:00.000Z`),
+    ])
 
-    if (habitsError || !habits || habits.length === 0) {
-      return defaultStats
+    const workoutsThisWeek = workoutsResult.count ?? 0
+    const habits = habitsResult.data
+    const logs = logsResult.data
+
+    if (!habits || habits.length === 0) {
+      // No habits — still return workout count and empty weekly activity
+      const weeklyActivity: WeeklyActivityDay[] = []
+      const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today)
+        date.setDate(date.getDate() - i)
+        weeklyActivity.push({
+          day: daysOfWeek[date.getDay()],
+          active: false,
+          date: date.toISOString().split("T")[0],
+        })
+      }
+      return { ...defaultStats, weeklyActivity, workoutsThisWeek }
     }
 
     // Calculate overall streak
     const overallStreak = Math.max(...habits.map((h) => h.current_streak || 0), 0)
     const longestStreak = Math.max(...habits.map((h) => h.best_streak || 0), 0)
-
-    // Get habit logs
-    const { data: logs } = await supabase
-      .from("habit_logs")
-      .select("habit_id, logged_at, completed")
-      .eq("user_id", userId)
-      .order("logged_at", { ascending: false })
 
     // Calculate stats for each habit
     const habitStreaks: HabitStreakDetail[] = habits.map((habit) => {
@@ -404,7 +421,7 @@ export async function getStreakStatsInternal(
       }
     })
 
-    // Calculate weekly activity (last 7 days)
+    // Calculate weekly activity (last 7 days) based on habit completions
     const weeklyActivity: WeeklyActivityDay[] = []
     const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
@@ -434,6 +451,7 @@ export async function getStreakStatsInternal(
       totalDaysActive,
       habitStreaks,
       weeklyActivity,
+      workoutsThisWeek,
     }
   } catch (error) {
     console.error("[getStreakStatsInternal] Error:", error)

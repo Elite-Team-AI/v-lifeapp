@@ -35,25 +35,28 @@ export function AppDataProvider({ children }: AppDataProviderProps) {
   const fetchInProgressRef = useRef(false)
   const lastFetchRef = useRef<number>(0)
 
-  // Minimum time between fetches (5 seconds) to prevent rapid refreshes
+  // Minimum time between background refreshes (5 seconds) to prevent rapid polling.
+  // Explicit refresh() calls and retries bypass this debounce via force=true.
   const MIN_FETCH_INTERVAL = 5000
 
-  const fetchAppData = useCallback(async (isBackgroundRefresh = false) => {
+  const fetchAppData = useCallback(async (isBackgroundRefresh = false, force = false) => {
     // Prevent concurrent fetches
     if (fetchInProgressRef.current) {
       console.log("[AppDataProvider] Fetch already in progress, skipping")
       return
     }
 
-    // Debounce rapid fetches
-    const now = Date.now()
-    if (now - lastFetchRef.current < MIN_FETCH_INTERVAL) {
-      console.log("[AppDataProvider] Fetch debounced (too soon since last fetch)")
-      return
+    // Debounce rapid background fetches — explicit refreshes bypass this
+    if (!force) {
+      const now = Date.now()
+      if (now - lastFetchRef.current < MIN_FETCH_INTERVAL) {
+        console.log("[AppDataProvider] Fetch debounced (too soon since last fetch)")
+        return
+      }
     }
 
     fetchInProgressRef.current = true
-    lastFetchRef.current = now
+    lastFetchRef.current = Date.now()
 
     if (isBackgroundRefresh) {
       setIsRefreshing(true)
@@ -96,7 +99,7 @@ export function AppDataProvider({ children }: AppDataProviderProps) {
             console.error("[AppDataProvider] RevenueCat init failed:", err)
           )
         }
-        
+
         const endTime = performance.now()
         const duration = Math.round(endTime - startTime)
         console.log(
@@ -106,6 +109,14 @@ export function AppDataProvider({ children }: AppDataProviderProps) {
           `| Progress: ${data.weeklyProgress}%`,
           `| Habits: ${data.habits.length}`
         )
+
+        // If profile came back null for an authenticated user, schedule one
+        // automatic retry after 3 seconds — this recovers from transient RLS glitches
+        // where auth context wasn't fully propagated on the first request.
+        if (!data.profile) {
+          console.warn("[AppDataProvider] ⚠️ Profile is null after successful fetch — scheduling retry in 3s")
+          setTimeout(() => fetchAppData(true, true), 3000)
+        }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to load app data"
@@ -120,9 +131,9 @@ export function AppDataProvider({ children }: AppDataProviderProps) {
     }
   }, [])
 
-  // Manual refresh function
+  // Manual refresh function — bypasses debounce so it always fetches fresh data
   const refresh = useCallback(async () => {
-    await fetchAppData(true)
+    await fetchAppData(true, true)
   }, [fetchAppData])
 
   // Initial fetch on mount
@@ -159,10 +170,20 @@ export function AppDataProvider({ children }: AppDataProviderProps) {
   // Background refresh on tab focus
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" && appData) {
-        // Refresh in background when user returns to tab
-        console.log("[AppDataProvider] 👁️ Tab became visible, triggering background refresh")
-        fetchAppData(true)
+      if (document.visibilityState === "visible") {
+        if (!appData) {
+          // No data at all — force a fresh attempt (debounce bypass)
+          console.log("[AppDataProvider] 👁️ Tab became visible, no data loaded — forcing fetch")
+          fetchAppData(false, true)
+        } else if (!appData.profile) {
+          // Data loaded but profile missing — force retry
+          console.log("[AppDataProvider] 👁️ Tab became visible, profile missing — forcing retry")
+          fetchAppData(true, true)
+        } else {
+          // Normal background refresh (debounced)
+          console.log("[AppDataProvider] 👁️ Tab became visible, triggering background refresh")
+          fetchAppData(true)
+        }
       }
     }
 

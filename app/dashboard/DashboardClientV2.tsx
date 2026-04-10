@@ -82,37 +82,36 @@ function DashboardClientV2() {
 
   // Power stats data
   const powerStatsData = useMemo(() => {
-    const weeklyActivity = appData?.streakStats?.weeklyActivity ?? []
-    const workoutDays = weeklyActivity.filter(d => d.active).length
-    const previousWorkoutDays = Math.max(0, workoutDays - 1) // Simplified comparison
-    
+    // Actual workout sessions logged this week (from workouts table)
+    const workoutsThisWeek = appData?.streakStats?.workoutsThisWeek ?? 0
+
     const habitsCompleted = appData?.habits?.filter(h => h.completed).length ?? 0
-    const totalHabits = appData?.habits?.length ?? 1
+    const totalHabits = appData?.habits?.length ?? 0
     const habitRate = totalHabits > 0 ? Math.round((habitsCompleted / totalHabits) * 100) : 0
-    
+
     const weeklyProgress = appData?.weeklyProgress ?? 0
 
     return {
       workoutStreak: {
-        current: workoutDays,
-        previous: previousWorkoutDays,
+        current: workoutsThisWeek,
+        previous: 0,
         label: "This Week",
-        suffix: " days"
+        suffix: " workouts"
       },
       nutritionScore: {
         current: weeklyProgress,
         previous: Math.max(0, weeklyProgress - 5),
-        label: "Progress",
+        label: "7-Day Habits",
         suffix: "%"
       },
       habitCompletion: {
         current: habitRate,
         previous: Math.max(0, habitRate - 10),
-        label: "Habits",
+        label: "Today",
         suffix: "%"
       }
     }
-  }, [appData?.streakStats?.weeklyActivity, appData?.habits, appData?.weeklyProgress])
+  }, [appData?.streakStats?.workoutsThisWeek, appData?.habits, appData?.weeklyProgress])
   
   const profileData = useMemo<ProfileFormData>(() => {
     if (!appData?.profile) {

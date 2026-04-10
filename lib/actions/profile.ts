@@ -116,8 +116,8 @@ export async function updateProfile(profileData: {
   }
 
   try {
-    const dataToUpsert = {
-      id: user.id,
+    // Build a candidate update object with all mapped fields
+    const candidate: Record<string, unknown> = {
       name: profileData.name,
       avatar_url: profileData.avatar_url,
       age: profileData.age ? Number.parseInt(profileData.age) : null,
@@ -156,33 +156,23 @@ export async function updateProfile(profileData: {
       visual_coach_enabled: profileData.visual_coach_enabled,
       updated_at: new Date().toISOString(),
     }
-    
-    console.log("🔍 [BODY FAT DEBUG] Server received - bodyFatPercentage:", profileData.bodyFatPercentage, "goalBodyFatPercentage:", profileData.goalBodyFatPercentage)
-    console.log("[updateProfile] User ID:", user.id)
-    console.log("[updateProfile] Incoming profileData:", profileData)
-    console.log("[updateProfile] Data to upsert:", dataToUpsert)
-    console.log("🔍 [BODY FAT DEBUG] Upserting to DB - body_fat_percentage:", dataToUpsert.body_fat_percentage, "goal_body_fat_percentage:", dataToUpsert.goal_body_fat_percentage)
-    console.log("[updateProfile] Critical fields check:", {
-      age: profileData.age,
-      parsedAge: dataToUpsert.age,
-      heightFeet: profileData.heightFeet,
-      parsedHeightFeet: dataToUpsert.height_feet,
-      weight: profileData.weight,
-      parsedWeight: dataToUpsert.weight,
-      bodyFatPercentage: profileData.bodyFatPercentage,
-      parsedBodyFat: dataToUpsert.body_fat_percentage,
-      goalBodyFatPercentage: profileData.goalBodyFatPercentage,
-      parsedGoalBodyFat: dataToUpsert.goal_body_fat_percentage
-    })
+
+    // Strip null/undefined values so we only PATCH fields that were actually provided.
+    // This prevents an empty form (e.g. opened before data loaded) from overwriting
+    // existing profile data with nulls.
+    const dataToUpdate = Object.fromEntries(
+      Object.entries(candidate).filter(([, v]) => v !== null && v !== undefined)
+    )
 
     await retryWithBackoff(
       async () => {
-        const { error, data } = await supabase.from("profiles").upsert(
-          dataToUpsert,
-          { onConflict: "id" }
-        ).select()
+        const { error, data } = await supabase
+          .from("profiles")
+          .update(dataToUpdate)
+          .eq("id", user.id)
+          .select()
 
-        console.log("[updateProfile] Upsert result - error:", error, "data:", data)
+        console.log("[updateProfile] Update result - error:", error, "data:", data)
 
         if (error) throw error
       },

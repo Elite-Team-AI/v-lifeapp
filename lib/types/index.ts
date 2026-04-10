@@ -330,6 +330,7 @@ export interface StreakStats {
   totalDaysActive: number
   habitStreaks: HabitStreakDetail[]
   weeklyActivity: WeeklyActivityDay[]
+  workoutsThisWeek: number
 }
 
 export interface HabitStreakDetail {

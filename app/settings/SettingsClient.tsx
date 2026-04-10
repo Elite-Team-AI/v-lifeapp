@@ -592,9 +592,15 @@ export default function SettingsClient() {
         >
           <Accordion type="multiple" className="space-y-4">
             <AccountSection
-              loading={false}
+              loading={appDataLoading}
               profileData={profileData}
-              onEditProfile={() => setUpdateProfileModalOpen(true)}
+              onEditProfile={async () => {
+                if (appDataLoading || !appData?.profile) {
+                  // Ensure data is loaded before opening modal
+                  await refresh()
+                }
+                setUpdateProfileModalOpen(true)
+              }}
               onChangePassword={() => setChangePasswordModalOpen(true)}
               onManageSubscription={() => setManageSubscriptionModalOpen(true)}
               onSignOut={handleSignOut}

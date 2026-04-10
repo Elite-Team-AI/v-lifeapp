@@ -8,7 +8,7 @@ import type { ProfileFormData } from "@/lib/types"
 interface AccountSectionProps {
   loading: boolean
   profileData: ProfileFormData
-  onEditProfile: () => void
+  onEditProfile: () => void | Promise<void>
   onChangePassword: () => void
   onManageSubscription: () => void
   onSignOut: () => void
