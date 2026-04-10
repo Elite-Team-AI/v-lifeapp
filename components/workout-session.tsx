@@ -250,6 +250,22 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
             setElapsedSeconds(Math.max(0, elapsedSecs))
           }
 
+          // Also initialize any exercises that weren't in the saved logs yet
+          // (e.g. exercises the user hadn't reached before closing the app)
+          exercises.forEach((ex: any) => {
+            if (!logs.has(ex.exercise_id)) {
+              logs.set(ex.exercise_id, {
+                exerciseId: ex.exercise_id,
+                sets: Array(ex.target_sets || 3).fill(null).map(() => ({
+                  reps: ex.target_reps_min ?? 1,
+                  weight: ex.target_weight_lbs ?? 0,
+                  rpe: undefined,
+                  completed: false
+                }))
+              })
+            }
+          })
+
           toast({
             title: "Workout Resumed",
             description: "Continuing from where you left off"
@@ -257,17 +273,15 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
         } else {
           // New workout - initialize fresh exercise logs
           exercises.forEach((ex: any) => {
-            if (ex.exercise?.exercise_type === 'strength' || !ex.exercise?.exercise_type) {
-              logs.set(ex.exercise_id, {
-                exerciseId: ex.exercise_id,
-                sets: Array(ex.target_sets).fill(null).map(() => ({
-                  reps: ex.target_reps_min ?? 1, // Use nullish coalescing to allow 0 for isometric holds
-                  weight: ex.target_weight_lbs ?? 0,
-                  rpe: undefined,
-                  completed: false
-                }))
-              })
-            }
+            logs.set(ex.exercise_id, {
+              exerciseId: ex.exercise_id,
+              sets: Array(ex.target_sets || 3).fill(null).map(() => ({
+                reps: ex.target_reps_min ?? 1,
+                weight: ex.target_weight_lbs ?? 0,
+                rpe: undefined,
+                completed: false
+              }))
+            })
           })
         }
 
