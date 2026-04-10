@@ -293,7 +293,7 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
     if (!exerciseLog) return
 
     const set = exerciseLog.sets[setIndex]
-    if (!set || set.completed) return
+    if (!set) return
 
     try {
       // Optimistically mark set as completed
@@ -851,16 +851,15 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
                               {/* Reps Input */}
                               <div>
                                 <label className="text-[#8FD1FF] text-xs font-semibold mb-2 block uppercase tracking-wide">Reps</label>
-                                <div className={`relative ${set.completed ? 'opacity-60' : ''}`}>
+                                <div className="relative">
                                   <Input
                                     type="number"
                                     value={set.reps}
                                     onChange={(e) => updateSet(exercise, index, 'reps', Math.max(1, parseInt(e.target.value) || 1))}
-                                    disabled={set.completed}
                                     min="1"
                                     className={`h-14 text-center text-xl font-bold border-2 rounded-xl transition-all ${
                                       set.completed
-                                        ? 'bg-[#101938]/30 border-green-500/30 text-green-300'
+                                        ? 'bg-[#101938]/50 border-green-500/50 text-green-300 focus:border-green-400 focus:ring-2 focus:ring-green-400/20'
                                         : 'bg-[#101938]/80 border-[#8FD1FF]/30 text-white hover:border-[#8FD1FF]/50 focus:border-[#8FD1FF] focus:ring-2 focus:ring-[#8FD1FF]/20'
                                     }`}
                                   />
@@ -870,17 +869,16 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
                               {/* Weight Input */}
                               <div>
                                 <label className="text-[#F676CD] text-xs font-semibold mb-2 block uppercase tracking-wide">Weight</label>
-                                <div className={`relative ${set.completed ? 'opacity-60' : ''}`}>
+                                <div className="relative">
                                   <Input
                                     type="number"
                                     value={set.weight}
                                     onChange={(e) => updateSet(exercise, index, 'weight', Math.max(0, parseFloat(e.target.value) || 0))}
-                                    disabled={set.completed}
                                     min="0"
                                     step={useMetric ? '2.5' : '5'}
                                     className={`h-10 text-center text-base font-bold border-2 rounded-xl transition-all pr-8 ${
                                       set.completed
-                                        ? 'bg-[#101938]/30 border-green-500/30 text-green-300'
+                                        ? 'bg-[#101938]/50 border-green-500/50 text-green-300 focus:border-green-400 focus:ring-2 focus:ring-green-400/20'
                                         : 'bg-[#101938]/80 border-[#F676CD]/30 text-white hover:border-[#F676CD]/50 focus:border-[#F676CD] focus:ring-2 focus:ring-[#F676CD]/20'
                                     }`}
                                   />
@@ -895,7 +893,7 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
                               {/* RPE Input */}
                               <div>
                                 <label className="text-[#FADF4A] text-xs font-semibold mb-2 block uppercase tracking-wide">RPE</label>
-                                <div className={`relative ${set.completed ? 'opacity-60' : ''}`}>
+                                <div className="relative">
                                   <Input
                                     type="number"
                                     value={set.rpe ?? ''}
@@ -905,13 +903,12 @@ export function WorkoutSession({ workout, onComplete, onCancel }: WorkoutSession
                                         updateSet(exercise, index, 'rpe', val)
                                       }
                                     }}
-                                    disabled={set.completed}
                                     placeholder="1-10"
                                     min="1"
                                     max="10"
                                     className={`h-14 text-center text-xl font-bold border-2 rounded-xl transition-all ${
                                       set.completed
-                                        ? 'bg-[#101938]/30 border-green-500/30 text-green-300'
+                                        ? 'bg-[#101938]/50 border-green-500/50 text-green-300 focus:border-green-400 focus:ring-2 focus:ring-green-400/20'
                                         : 'bg-[#101938]/80 border-[#FADF4A]/30 text-white hover:border-[#FADF4A]/50 focus:border-[#FADF4A] focus:ring-2 focus:ring-[#FADF4A]/20'
                                     }`}
                                   />
